@@ -48,7 +48,13 @@ You can comment on the issue to let others know you're interested in working on 
 
 ## Code Guidelines
 
+### Rust
+
 You can read about our standards and recommendations for working with Rust [here](https://github.com/EmbarkStudios/rust-ecosystem/blob/master/guidelines.md).
+
+### Python
+
+We recommend following [PEP8 conventions](https://www.python.org/dev/peps/pep-0008/) when working with Python modules. When working with the Blender Python API, we also recommend following [conventions established by Blender](https://docs.blender.org/api/current/index.html).
 
 ## Licensing
 
