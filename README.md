@@ -3,12 +3,14 @@
 
 <!--- FIXME: Update crate and repo names here! --->
 [![Build Status](https://travis-ci.com/EmbarkStudios/tame-oauth.svg?branch=master)](https://travis-ci.com/EmbarkStudios/tame-oauth)
+<!--- If you are opensourcing a Rust crate (otherwise delete) --->
 [![Crates.io](https://img.shields.io/crates/v/tame-oauth.svg)](https://crates.io/crates/tame-oauth)
 [![Docs](https://docs.rs/tame-oauth/badge.svg)](https://docs.rs/tame-oauth)
+<!--- For all repos --->
 [![Contributor Covenant](https://img.shields.io/badge/contributor%20covenant-v1.4%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md)
 [![Embark](https://img.shields.io/badge/embark-open%20source-blueviolet.svg)](http://embark.rs)
 
-Template for creating new Rust repositories
+Template for creating new open source repositories that follow the Embark open source guidelines.
 
 ## Contributing
 
