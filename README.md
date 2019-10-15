@@ -2,7 +2,7 @@
 # 🌻 opensource-template
 
 <!--- FIXME: Update crate and repo names here! --->
-[![Build Status](https://travis-ci.com/EmbarkStudios/tame-oauth.svg?branch=master)](https://travis-ci.com/EmbarkStudios/tame-oauth)
+[![Build Status](https://github.com/EmbarkStudios/template/workflows/CI/badge.svg)](https://github.com/EmbarkStudios/template/actions?workflow=CI)
 [![Crates.io](https://img.shields.io/crates/v/tame-oauth.svg)](https://crates.io/crates/tame-oauth)
 [![Docs](https://docs.rs/tame-oauth/badge.svg)](https://docs.rs/tame-oauth)
 [![Contributor Covenant](https://img.shields.io/badge/contributor%20covenant-v1.4%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md)
