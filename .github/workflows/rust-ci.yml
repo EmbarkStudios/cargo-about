@@ -1,6 +1,4 @@
-# Replace this line with the commented one to actually run the action in your repo(s)
-on: public
-#on: [push, pull_request]
+on: [push, pull_request]
 
 name: CI
 jobs:
@@ -150,19 +148,19 @@ jobs:
           - os: ubuntu-latest
             rust: stable
             target: x86_64-unknown-linux-musl
-            bin: $BIN_NAME
+            bin: about-me
             # We don't enable the progress feature when targeting
             # musl since there are some dependencies on shared libs
             features: ""
           - os: windows-latest
             rust: stable
             target: x86_64-pc-windows-msvc
-            bin: $BIN_NAME.exe
+            bin: about-me.exe
             features: --features=progress
           - os: macOS-latest
             rust: stable
             target: x86_64-apple-darwin
-            bin: $BIN_NAME
+            bin: about-me
             features: --features=progress
     runs-on: ${{ matrix.os }}
     steps:
@@ -192,7 +190,7 @@ jobs:
       - name: Package
         shell: bash
         run: |
-          name=$BIN_NAME
+          name=about-me
           tag=$(git describe --tags --abbrev=0)
           release_name="$name-$tag-${{ matrix.target }}"
           release_tar="${release_name}.tar.gz"
@@ -219,6 +217,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           draft: true
-          files: '$BIN_NAME*'
+          files: 'about-me*'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
