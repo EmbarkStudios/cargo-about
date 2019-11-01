@@ -6,7 +6,7 @@
 [![Contributor Covenant](https://img.shields.io/badge/contributor%20covenant-v1.4%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md)
 [![Embark](https://img.shields.io/badge/embark-open%20source-blueviolet.svg)](https://embark.dev)
 
-Cargo plugin for generating a listing of all of the crates and the the terms under which they are licensed.
+Cargo plugin for generating a listing of all of the crates used by a root crate, and the the terms under which they are licensed.
 
 ## TODO:
 
