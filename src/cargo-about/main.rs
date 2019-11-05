@@ -2,7 +2,7 @@
 #![warn(rust_2018_idioms)]
 
 use anyhow::{anyhow, bail, Context, Error};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
 mod generate;
@@ -51,7 +51,8 @@ fn setup_logger(level: log::LevelFilter) -> Result<(), fern::InitError> {
     use log::Level::*;
 
     fern::Dispatch::new()
-        .level(level)
+        .level(log::LevelFilter::Warn)
+        .level_for("cargo_about", level)
         .format(move |out, message, record| {
             out.finish(format_args!(
                 "{date} [{level}] {message}\x1B[0m",
@@ -69,6 +70,33 @@ fn setup_logger(level: log::LevelFilter) -> Result<(), fern::InitError> {
         .chain(std::io::stderr())
         .apply()?;
     Ok(())
+}
+
+fn load_config(manifest_path: &Path) -> Result<cargo_about::licenses::config::Config, Error> {
+    let mut parent = manifest_path.parent();
+
+    // Move up directories until we find an about.toml, to handle
+    // cases where eg in a workspace there is a top-level about.toml
+    // but the user is only getting a listing for a particular crate from it
+    while let Some(p) = parent {
+        if !p.join("Cargo.toml").exists() {
+            break;
+        }
+
+        let about_toml = p.join("about.toml");
+
+        if about_toml.exists() {
+            let contents = std::fs::read_to_string(&about_toml)?;
+            let cfg = toml::from_str(&contents)?;
+
+            log::info!("loaded config from {}", about_toml.display());
+            return Ok(cfg);
+        }
+
+        parent = p.parent();
+    }
+
+    Ok(cargo_about::licenses::config::Config::default())
 }
 
 fn real_main() -> Result<(), Error> {
@@ -101,14 +129,16 @@ fn real_main() -> Result<(), Error> {
         );
     }
 
+    let cfg = load_config(&manifest_path)?;
+
     let (all_crates, store) = rayon::join(
         || {
             log::info!("gathering crates for {}", manifest_path.display());
-            about_me::get_all_crates(&manifest_path)
+            cargo_about::get_all_crates(&manifest_path)
         },
         || {
             log::info!("loading license store");
-            about_me::licenses::LicenseStore::from_cache()
+            cargo_about::licenses::LicenseStore::from_cache()
         },
     );
 
@@ -118,7 +148,7 @@ fn real_main() -> Result<(), Error> {
     log::info!("gathered {} crates", all_crates.krates.len());
 
     match args.cmd {
-        Command::Generate(gen) => generate::cmd(gen, all_crates, store),
+        Command::Generate(gen) => generate::cmd(gen, cfg, all_crates, store),
     }
 }
 

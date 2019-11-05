@@ -22,7 +22,15 @@ pub fn get_all_crates<P: AsRef<Path>>(cargo_toml: P) -> Result<Krates, Error> {
         .exec()
         .context("failed to fetch metadata")?;
 
-    let krates = metadata.packages;
+    let mut krates = metadata.packages;
+
+    for krate in &mut krates {
+        if let Some(ref mut lf) = krate.license {
+            *lf = lf.replace("/", " OR ");
+        }
+    }
+
+    krates.par_sort_by(|a, b| a.id.cmp(&b.id));
 
     let map = krates
         .iter()

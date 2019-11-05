@@ -1,4 +1,4 @@
-# 📜 about-me
+# 📜 cargo-about
 
 [![Build Status](https://github.com/EmbarkStudios/template/workflows/CI/badge.svg)](https://github.com/EmbarkStudios/about-me/actions?workflow=CI)
 [![Crates.io](https://img.shields.io/crates/v/about-me.svg)](https://crates.io/crates/about-me)
