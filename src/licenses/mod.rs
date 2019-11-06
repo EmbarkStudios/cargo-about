@@ -35,17 +35,17 @@ pub enum LicenseInfo {
 pub enum LicenseFileInfo {
     /// The license file is the canonical text of the license
     Text(String),
-    /// The license file is the canonical text, and was explicitly
-    /// allowed by configuration
-    ExplicitText(String),
+    /// The license file is the canonical text, and applies to
+    /// a path root
+    AddendumText(String, PathBuf),
     /// The file just has a license header, and presumably
     /// also contains other text in it (like, you know, code)
     Header,
 }
 
 impl LicenseFileInfo {
-    fn is_explicit(&self) -> bool {
-        if let LicenseFileInfo::ExplicitText(_) = self {
+    fn is_addendum(&self) -> bool {
+        if let LicenseFileInfo::AddendumText(_, _) = self {
             true
         } else {
             false
@@ -148,7 +148,7 @@ impl Gatherer {
                     }
                     None => {
                         log::warn!(
-                            "crate '{} - {}' doesn't have a license field",
+                            "crate '{}({})' doesn't have a license field",
                             krate.name,
                             krate.version,
                         );
@@ -157,10 +157,9 @@ impl Gatherer {
                 };
 
                 let root_path = krate.manifest_path.parent().unwrap();
+                let krate_cfg = cfg.inner.get(&krate.name);
 
-                let external = cfg.external.get(&krate.name);
-
-                let license_files = match scan_files(&root_path, &strategy, threshold, external.map(|e| (e, krate.name.as_str()))) {
+                let license_files = match scan_files(&root_path, &strategy, threshold, krate_cfg.map(|kc| (kc, krate.name.as_str()))) {
                     Ok(files) => files,
                     Err(err) => {
                         log::error!(
@@ -230,7 +229,7 @@ fn scan_files(
     root_dir: &Path,
     strat: &askalono::ScanStrategy,
     threshold: f32,
-    external: Option<(&config::External, &str)>,
+    krate_cfg: Option<(&config::KrateConfig, &str)>,
 ) -> Result<Vec<LicenseFile>, Error> {
     use walkdir::WalkDir;
 
@@ -241,25 +240,6 @@ fn scan_files(
         .filter_map(|e| e.ok())
         .collect();
 
-    macro_rules! read_file {
-        ($file:expr) => {{
-            let p = $file.path();
-            match std::fs::read_to_string(p) {
-                Err(ref e) if e.kind() == std::io::ErrorKind::InvalidData => {
-                    // If we fail due to invaliddata, it just means the file in question was
-                    // probably binary and didn't have valid utf-8 data, so we can ignore it
-                    log::debug!("binary file {} detected", p.display());
-                    return None;
-                }
-                Err(e) => {
-                    log::error!("failed to read '{}': {}", p.display(), e);
-                    return None;
-                }
-                Ok(c) => c,
-            }
-        }};
-    }
-
     let license_files: Vec<_> = files
         .into_par_iter()
         .filter_map(|file| {
@@ -269,124 +249,187 @@ fn scan_files(
                 return None;
             }
 
-            let contents: Option<(String, spdx::LicenseId, &str)> = match external {
-                Some(ext) => {
+            let mut contents = match read_file(file.path()) {
+                Some(c) => c,
+                None => return None,
+            };
+
+            let expected = match krate_cfg {
+                Some(krate_cfg) => {
                     let relative = match file.path().strip_prefix(root_dir) {
                         Ok(rel) => rel,
                         Err(_) => return None,
                     };
 
-                    let mut clarify = None;
-
-                    for clarification in &ext.0.clarify {
-                        if relative == clarification.license_file {
-                            clarify = Some(clarification);
-                            break;
+                    match krate_cfg.0.ignore.iter().find(|i| relative == i.license_file) {
+                        Some(ignore) => {
+                            contents = snip_contents(contents, ignore.license_start, ignore.license_end);
+                            Some((ignore.license, None))
                         }
+                        None => {
+                            let mut addendum = None;
 
-                        if relative.starts_with(&clarification.root) {
-                            log::trace!("skipping {} due to clarification for root {}", file.path().display(), clarification.root.display());
-                            return None;
-                        }
-                    }
-
-                    match clarify {
-                        Some(cl) => {
-                            let contents = read_file!(file);
-                            let rng = cl.license_start.unwrap_or(0)..cl.license_end.unwrap_or(std::usize::MAX);
-
-                            let contents = if rng.start == 0 && rng.end == std::usize::MAX {
-                                contents
-                            } else {
-                                let mut snipped_contents = String::with_capacity(contents.len());
-                                for (i, line) in contents.lines().enumerate() {
-                                    if i >= rng.start && i < rng.end {
-                                        snipped_contents.push_str(line);
-                                        snipped_contents.push('\n');
-                                    }
+                            for additional in &krate_cfg.0.additional {
+                                if relative == additional.license_file {
+                                    addendum = Some(additional);
+                                    break;
                                 }
 
-                                snipped_contents
-                            };
+                                if relative.starts_with(&additional.root) {
+                                    log::trace!("skipping {} due to addendum for root {}", file.path().display(), additional.root.display());
+                                    return None;
+                                }
+                            }
 
-                            Some((contents, cl.license, ext.1))
+                            addendum.map(|addendum| (addendum.license, Some(&addendum.license_file)))
                         }
-                        None => None,
                     }
                 }
                 None => None,
             };
 
-            let (contents, expected) = match contents {
-                Some(s) => (s.0, Some((s.1, s.2))),
-                None => (read_file!(file), None),
-            };
+            let path = file.into_path();
 
-            let text = askalono::TextData::new(&contents);
-            match strat.scan(&text) {
-                Ok(lic_match) => {
-                    match lic_match.license {
-                        Some(identified) => {
-                            // askalano doesn't report any matches below the confidence threshold
-                            // but we want to see what it thinks the license is if the confidence
-                            // is somewhat ok at least
-                            if lic_match.score >= threshold {
-                                match spdx::license_id(&identified.name) {
-                                    Some(id) => {
-                                        let info = if let Some(expected) = expected {
-                                            if expected.0 != id {
-                                                log::error!("license '{}' specified for {} did not match the license '{}' retrieved from {}", expected.0.name, expected.1, id.name, file.path().display());
-                                                return None;
-                                            }
-
-                                            match identified.kind {
-                                                askalono::LicenseType::Header => LicenseFileInfo::Header,
-                                                askalono::LicenseType::Original => LicenseFileInfo::ExplicitText(contents),
-                                                askalono::LicenseType::Alternate => unimplemented!("I guess askalono uses this now"),
-                                            }
-                                        } else {
-                                            match identified.kind {
-                                                askalono::LicenseType::Header => LicenseFileInfo::Header,
-                                                askalono::LicenseType::Original => LicenseFileInfo::Text(contents),
-                                                askalono::LicenseType::Alternate => unimplemented!("I guess askalono uses this now"),
-                                            }
-                                        };
-
-                                        return Some(LicenseFile {
-                                            id,
-                                            path: file.into_path(),
-                                            info,
-                                        });
-                                    }
-                                    None => {
-                                        log::error!("found a license '{}' in '{}', but it is not a valid SPDX identifier", identified.name, file.path().display());
-                                        return None;
-                                    }
-                                }
-                            } else {
-                                log::debug!("file {} has a {} chance of having a license", file.path().display(), lic_match.score);
-                            }
-
-                            None
-                        }
-                        None => {
-                            log::debug!("file {} has no license", file.path().display());
-                            None
+            match scan_text(&contents, strat, threshold) {
+                ScanResult::Header(id) => {
+                    if let Some((exp_id, addendum)) = expected {
+                        if exp_id != id {
+                            log::error!("expected license '{}' in path '{}', but found '{}'", exp_id.name, path.display(), id.name);
+                        } else if addendum.is_none() {
+                            log::debug!("ignoring '{}', matched license '{}'", path.display(), id.name);
+                            return None;
                         }
                     }
+
+                    Some(LicenseFile {
+                        id,
+                        path,
+                        info: LicenseFileInfo::Header,
+                    })
                 }
-                Err(e) => {
-                    // the elimination strategy can't currently fail
-                    unimplemented!(
-                        "I guess askalano's elimination strategy can now fail: {}",
-                        e
-                    );
+                ScanResult::Text(id) => {
+                    let info = if let Some((exp_id, addendum)) = expected {
+                        if exp_id != id {
+                            log::error!("expected license '{}' in path '{}', but found '{}'", exp_id.name, path.display(), id.name);
+                        }
+                        
+                        match addendum {
+                            Some(path) => LicenseFileInfo::AddendumText(contents, path.clone()),
+                            None => {
+                                log::debug!("ignoring '{}', matched license '{}'", path.display(), id.name);
+                                return None;
+                            }
+                        }
+                    } else {
+                        LicenseFileInfo::Text(contents)
+                    };
+
+                    Some(LicenseFile {
+                        id,
+                        path,
+                        info,
+                    })
+                }
+                ScanResult::UnknownId(id_str) => {
+                    log::error!("found unknown SPDX identifier '{}' scanning '{}'", id_str, path.display());
+                    None
+                }
+                ScanResult::LowLicenseChance(confidence, id_str) => {
+                    log::debug!("found '{}' scanning '{}' but it only has a confidence score of {}", id_str, path.display(), confidence);
+                    None
+                }
+                ScanResult::NoLicense => {
+                    None
                 }
             }
         })
         .collect();
 
     Ok(license_files)
+}
+
+fn read_file(path: &Path) -> Option<String> {
+    match std::fs::read_to_string(path) {
+        Err(ref e) if e.kind() == std::io::ErrorKind::InvalidData => {
+            // If we fail due to invaliddata, it just means the file in question was
+            // probably binary and didn't have valid utf-8 data, so we can ignore it
+            log::debug!("binary file {} detected", path.display());
+            None
+        }
+        Err(e) => {
+            log::error!("failed to read '{}': {}", path.display(), e);
+            None
+        }
+        Ok(c) => Some(c),
+    }
+}
+
+fn snip_contents(contents: String, start: Option<usize>, end: Option<usize>) -> String {
+    let rng = start.unwrap_or(0)..end.unwrap_or(std::usize::MAX);
+
+    if rng.start == 0 && rng.end == std::usize::MAX {
+        contents
+    } else {
+        let mut snipped_contents = String::with_capacity(contents.len());
+        for (i, line) in contents.lines().enumerate() {
+            if i >= rng.start && i < rng.end {
+                snipped_contents.push_str(line);
+                snipped_contents.push('\n');
+            }
+        }
+
+        snipped_contents
+    }
+}
+
+enum ScanResult {
+    Header(spdx::LicenseId),
+    Text(spdx::LicenseId),
+    UnknownId(String),
+    LowLicenseChance(f32, String),
+    NoLicense,
+}
+
+fn scan_text(contents: &str, strat: &askalono::ScanStrategy,
+    threshold: f32,) -> ScanResult {
+    let text = askalono::TextData::new(&contents);
+    match strat.scan(&text) {
+        Ok(lic_match) => {
+            match lic_match.license {
+                Some(identified) => {
+                    // askalano doesn't report any matches below the confidence threshold
+                    // but we want to see what it thinks the license is if the confidence
+                    // is somewhat ok at least
+                    if lic_match.score >= threshold {
+                        match spdx::license_id(&identified.name) {
+                            Some(id) => {
+                                match identified.kind {
+                                    askalono::LicenseType::Header => ScanResult::Header(id),
+                                    askalono::LicenseType::Original => ScanResult::Text(id),
+                                    askalono::LicenseType::Alternate => unimplemented!("I guess askalono uses this now"),
+                                }
+                            }
+                            None => {
+                                ScanResult::UnknownId(identified.name)
+                            }
+                        }
+                    } else {
+                        ScanResult::LowLicenseChance(lic_match.score, identified.name)
+                    }
+                }
+                None => {
+                    ScanResult::NoLicense
+                }
+            }
+        }
+        Err(e) => {
+            // the elimination strategy can't currently fail
+            unimplemented!(
+                "I guess askalano's elimination strategy can now fail: {}",
+                e
+            );
+        }
+    }
 }
 
 pub fn sanitize(summary: &mut Summary) -> Result<(), Error> {
@@ -419,9 +462,10 @@ pub fn sanitize(summary: &mut Summary) -> Result<(), Error> {
                         );
 
                         for lf in &krate_license.license_files {
-                            if !lf.info.is_explicit() && !spdx_reqs.contains(&lf.id) {
+                            if !lf.info.is_addendum() && !spdx_reqs.contains(&lf.id) {
                                 log::warn!(
-                                    "mismatching license found: license '{}' in path '{}'",
+                                    "mismatching license found for {}: license '{}' in path '{}'",
+                                    krate_license.krate.name,
                                     lf.id.name,
                                     lf.path.display()
                                 );

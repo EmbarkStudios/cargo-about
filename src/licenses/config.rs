@@ -33,7 +33,7 @@ where
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "kebab-case")]
-pub struct Clarification {
+pub struct Additional {
     pub root: PathBuf,
     #[serde(deserialize_with = "deserialize_spdx_id")]
     pub license: spdx::LicenseId,
@@ -43,18 +43,32 @@ pub struct Clarification {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct External {
-    pub clarify: Vec<Clarification>,
+#[serde(rename_all = "kebab-case")]
+pub struct Ignore {
+    #[serde(deserialize_with = "deserialize_spdx_id")]
+    pub license: spdx::LicenseId,
+    pub license_file: PathBuf,
+    pub license_start: Option<usize>,
+    pub license_end: Option<usize>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct KrateConfig {
+    #[serde(default)]
+    pub additional: Vec<Additional>,
+    #[serde(default)]
+    pub ignore: Vec<Ignore>,
 }
 
 #[derive(Deserialize, Debug, Default)]
 pub struct Config {
-    pub external: BTreeMap<String, External>,
+    #[serde(flatten)]
+    pub inner: BTreeMap<String, KrateConfig>,
 }
 
 #[test]
 fn try_des() {
-    let file = r#"[[external.physx-sys.clarify]]
+    let file = r#"[[physx-sys.additional]]
 root = "PhysX"
 license = "BSD-3-Clause"
 license-file = "PhysX/README.md"
