@@ -102,7 +102,7 @@ fn load_config(manifest_path: &Path) -> Result<cargo_about::licenses::config::Co
 fn real_main() -> Result<(), Error> {
     let args = Opts::from_iter({
         std::env::args().enumerate().filter_map(|(i, a)| {
-            if i == 1 && a == "about-me" {
+            if i == 1 && a == "about" {
                 None
             } else {
                 Some(a)

@@ -9,7 +9,7 @@ use std::{
 
 pub mod config;
 
-const LICENSE_CACHE: &[u8] = include_bytes!("../../spdx_cache.bin.gz");
+const LICENSE_CACHE: &[u8] = include_bytes!("../../spdx_cache.bin.zstd");
 
 pub struct LicenseStore {
     store: askalono::Store,
@@ -58,6 +58,9 @@ pub struct LicenseFile {
     pub id: LicenseId,
     /// Full path of the file which had license data in it
     pub path: PathBuf,
+    /// The confidence score for the license, the closer to the canonical
+    /// license text it is, the closert it approaches 1.0
+    pub confidence: f32,
     /// The contents of the file
     pub info: LicenseFileInfo,
 }
@@ -291,32 +294,33 @@ fn scan_files(
             let path = file.into_path();
 
             match scan_text(&contents, strat, threshold) {
-                ScanResult::Header(id) => {
+                ScanResult::Header(ided) => {
                     if let Some((exp_id, addendum)) = expected {
-                        if exp_id != id {
-                            log::error!("expected license '{}' in path '{}', but found '{}'", exp_id.name, path.display(), id.name);
+                        if exp_id != ided.id {
+                            log::error!("expected license '{}' in path '{}', but found '{}'", exp_id.name, path.display(), ided.id.name);
                         } else if addendum.is_none() {
-                            log::debug!("ignoring '{}', matched license '{}'", path.display(), id.name);
+                            log::debug!("ignoring '{}', matched license '{}'", path.display(), ided.id.name);
                             return None;
                         }
                     }
 
                     Some(LicenseFile {
-                        id,
+                        id: ided.id,
+                        confidence: ided.confidence,
                         path,
                         info: LicenseFileInfo::Header,
                     })
                 }
-                ScanResult::Text(id) => {
+                ScanResult::Text(ided) => {
                     let info = if let Some((exp_id, addendum)) = expected {
-                        if exp_id != id {
-                            log::error!("expected license '{}' in path '{}', but found '{}'", exp_id.name, path.display(), id.name);
+                        if exp_id != ided.id {
+                            log::error!("expected license '{}' in path '{}', but found '{}'", exp_id.name, path.display(), ided.id.name);
                         }
                         
                         match addendum {
                             Some(path) => LicenseFileInfo::AddendumText(contents, path.clone()),
                             None => {
-                                log::debug!("ignoring '{}', matched license '{}'", path.display(), id.name);
+                                log::debug!("ignoring '{}', matched license '{}'", path.display(), ided.id.name);
                                 return None;
                             }
                         }
@@ -325,7 +329,8 @@ fn scan_files(
                     };
 
                     Some(LicenseFile {
-                        id,
+                        id: ided.id,
+                        confidence: ided.confidence,
                         path,
                         info,
                     })
@@ -334,8 +339,8 @@ fn scan_files(
                     log::error!("found unknown SPDX identifier '{}' scanning '{}'", id_str, path.display());
                     None
                 }
-                ScanResult::LowLicenseChance(confidence, id_str) => {
-                    log::debug!("found '{}' scanning '{}' but it only has a confidence score of {}", id_str, path.display(), confidence);
+                ScanResult::LowLicenseChance(ided) => {
+                    log::debug!("found '{}' scanning '{}' but it only has a confidence score of {}", ided.id.name, path.display(), ided.confidence);
                     None
                 }
                 ScanResult::NoLicense => {
@@ -382,11 +387,16 @@ fn snip_contents(contents: String, start: Option<usize>, end: Option<usize>) -> 
     }
 }
 
+struct Identified {
+    confidence: f32,
+    id: spdx::LicenseId,
+}
+
 enum ScanResult {
-    Header(spdx::LicenseId),
-    Text(spdx::LicenseId),
+    Header(Identified),
+    Text(Identified),
     UnknownId(String),
-    LowLicenseChance(f32, String),
+    LowLicenseChance(Identified),
     NoLicense,
 }
 
@@ -397,24 +407,29 @@ fn scan_text(contents: &str, strat: &askalono::ScanStrategy,
         Ok(lic_match) => {
             match lic_match.license {
                 Some(identified) => {
+                    let lic_id = match spdx::license_id(&identified.name) {
+                        Some(id) => {
+                            Identified {
+                                confidence: lic_match.score,
+                                id,
+                            }
+                        }
+                        None => {
+                            return ScanResult::UnknownId(identified.name.to_owned())
+                        }
+                    };
+
                     // askalano doesn't report any matches below the confidence threshold
                     // but we want to see what it thinks the license is if the confidence
                     // is somewhat ok at least
                     if lic_match.score >= threshold {
-                        match spdx::license_id(&identified.name) {
-                            Some(id) => {
-                                match identified.kind {
-                                    askalono::LicenseType::Header => ScanResult::Header(id),
-                                    askalono::LicenseType::Original => ScanResult::Text(id),
-                                    askalono::LicenseType::Alternate => unimplemented!("I guess askalono uses this now"),
-                                }
-                            }
-                            None => {
-                                ScanResult::UnknownId(identified.name)
-                            }
+                        match identified.kind {
+                            askalono::LicenseType::Header => ScanResult::Header(lic_id),
+                            askalono::LicenseType::Original => ScanResult::Text(lic_id),
+                            askalono::LicenseType::Alternate => unimplemented!("I guess askalono uses this now"),
                         }
                     } else {
-                        ScanResult::LowLicenseChance(lic_match.score, identified.name)
+                        ScanResult::LowLicenseChance(lic_id)
                     }
                 }
                 None => {

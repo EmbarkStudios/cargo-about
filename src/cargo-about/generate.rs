@@ -121,13 +121,10 @@ pub fn cmd(
 }
 
 #[derive(Serialize)]
-enum KrateOrAddendum<'a> {
-    Krate(&'a Krate),
-    Addendum {
-        #[serde(rename = "crate")]
-        krate: &'a Krate,
-        path: PathBuf,
-    },
+struct UsedBy<'a> {
+    #[serde(rename = "crate")]
+    krate: &'a Krate,
+    path: Option<PathBuf>,
 }
 
 #[derive(Serialize)]
@@ -141,7 +138,7 @@ struct License<'a> {
     /// The path where the license text was sourced from
     source_path: PathBuf,
     /// The list of crates this license was applied to
-    used_by: Vec<KrateOrAddendum<'a>>,
+    used_by: Vec<UsedBy<'a>>,
 }
 
 #[derive(Serialize)]
@@ -204,12 +201,15 @@ fn generate(
 
                         match nfo.info {
                             licenses::LicenseFileInfo::Text(_) => {
-                                lic.used_by.push(KrateOrAddendum::Krate(k.krate))
+                                lic.used_by.push(UsedBy {
+                                    krate: k.krate,
+                                    path: None,
+                                });
                             }
                             licenses::LicenseFileInfo::AddendumText(_, ref p) => {
-                                lic.used_by.push(KrateOrAddendum::Addendum {
+                                lic.used_by.push(UsedBy {
                                     krate: k.krate,
-                                    path: p.clone(),
+                                    path: Some(p.clone()),
                                 })
                             }
                             _ => unreachable!(),
