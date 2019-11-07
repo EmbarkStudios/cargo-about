@@ -148,19 +148,19 @@ jobs:
           - os: ubuntu-latest
             rust: stable
             target: x86_64-unknown-linux-musl
-            bin: about-me
+            bin: cargo-about
             # We don't enable the progress feature when targeting
             # musl since there are some dependencies on shared libs
             features: ""
           - os: windows-latest
             rust: stable
             target: x86_64-pc-windows-msvc
-            bin: about-me.exe
+            bin: cargo-about.exe
             features: --features=progress
           - os: macOS-latest
             rust: stable
             target: x86_64-apple-darwin
-            bin: about-me
+            bin: cargo-about
             features: --features=progress
     runs-on: ${{ matrix.os }}
     steps:
@@ -190,7 +190,7 @@ jobs:
       - name: Package
         shell: bash
         run: |
-          name=about-me
+          name=cargo-about
           tag=$(git describe --tags --abbrev=0)
           release_name="$name-$tag-${{ matrix.target }}"
           release_tar="${release_name}.tar.gz"
@@ -217,6 +217,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           draft: true
-          files: 'about-me*'
+          files: 'cargo-about*'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

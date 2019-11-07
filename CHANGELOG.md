@@ -29,6 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial add of the thing
 
-[Unreleased]: https://github.com/EmbarkStudios/about-me/compare/0.1.1...HEAD
-[0.1.1]: https://github.com/EmbarkStudios/about-me/compare/0.1.0...0.1.1
-[0.1.0]: https://github.com/EmbarkStudios/about-me/releases/tag/0.1.0
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.1.1...HEAD
+[0.1.1]: https://github.com/EmbarkStudios/cargo-about/compare/0.1.0...0.1.1
+[0.1.0]: https://github.com/EmbarkStudios/cargo-about/releases/tag/0.1.0
