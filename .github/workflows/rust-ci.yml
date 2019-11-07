@@ -124,7 +124,7 @@ jobs:
 
   release:
     name: Release
-    needs: [test, self]
+    needs: [test]
     if: startsWith(github.ref, 'refs/tags/')
     strategy:
       matrix:
