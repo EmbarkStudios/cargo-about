@@ -162,7 +162,12 @@ impl Gatherer {
                 let root_path = krate.manifest_path.parent().unwrap();
                 let krate_cfg = cfg.inner.get(&krate.name);
 
-                let license_files = match scan_files(&root_path, &strategy, threshold, krate_cfg.map(|kc| (kc, krate.name.as_str()))) {
+                let license_files = match scan_files(
+                    &root_path,
+                    &strategy,
+                    threshold,
+                    krate_cfg.map(|kc| (kc, krate.name.as_str())),
+                ) {
                     Ok(files) => files,
                     Err(err) => {
                         log::error!(
@@ -194,7 +199,7 @@ fn is_ignored(entry: &walkdir::DirEntry) -> bool {
         .to_str()
         .map(|s| {
             // Ignore hidden directories
-            if s.starts_with(".") {
+            if s.starts_with('.') {
                 log::debug!("ignoring hidden directory {}", entry.path().display());
                 return true;
             }
@@ -213,12 +218,11 @@ fn is_ignored(entry: &walkdir::DirEntry) -> bool {
                         // Binary sources
                         "ttf" | "ico" | "dfa" | "rc" => true,
                         // Test data
-                        "png" | "spv" | "vert" | "wasm" | "zip" | "gz" | "wav" | "jpg" | "bin" | "zlib" | "p8" | "deflate" => true,
+                        "png" | "spv" | "vert" | "wasm" | "zip" | "gz" | "wav" | "jpg" | "bin"
+                        | "zlib" | "p8" | "deflate" => true,
                         // Misc binary
                         "der" | "metallib" | "pdf" => true,
-                        _ => {
-                            false
-                        }
+                        _ => false,
                     };
                 }
             }
@@ -264,9 +268,15 @@ fn scan_files(
                         Err(_) => return None,
                     };
 
-                    match krate_cfg.0.ignore.iter().find(|i| relative == i.license_file) {
+                    match krate_cfg
+                        .0
+                        .ignore
+                        .iter()
+                        .find(|i| relative == i.license_file)
+                    {
                         Some(ignore) => {
-                            contents = snip_contents(contents, ignore.license_start, ignore.license_end);
+                            contents =
+                                snip_contents(contents, ignore.license_start, ignore.license_end);
                             Some((ignore.license, None))
                         }
                         None => {
@@ -279,12 +289,17 @@ fn scan_files(
                                 }
 
                                 if relative.starts_with(&additional.root) {
-                                    log::trace!("skipping {} due to addendum for root {}", file.path().display(), additional.root.display());
+                                    log::trace!(
+                                        "skipping {} due to addendum for root {}",
+                                        file.path().display(),
+                                        additional.root.display()
+                                    );
                                     return None;
                                 }
                             }
 
-                            addendum.map(|addendum| (addendum.license, Some(&addendum.license_file)))
+                            addendum
+                                .map(|addendum| (addendum.license, Some(&addendum.license_file)))
                         }
                     }
                 }
@@ -297,9 +312,18 @@ fn scan_files(
                 ScanResult::Header(ided) => {
                     if let Some((exp_id, addendum)) = expected {
                         if exp_id != ided.id {
-                            log::error!("expected license '{}' in path '{}', but found '{}'", exp_id.name, path.display(), ided.id.name);
+                            log::error!(
+                                "expected license '{}' in path '{}', but found '{}'",
+                                exp_id.name,
+                                path.display(),
+                                ided.id.name
+                            );
                         } else if addendum.is_none() {
-                            log::debug!("ignoring '{}', matched license '{}'", path.display(), ided.id.name);
+                            log::debug!(
+                                "ignoring '{}', matched license '{}'",
+                                path.display(),
+                                ided.id.name
+                            );
                             return None;
                         }
                     }
@@ -314,13 +338,22 @@ fn scan_files(
                 ScanResult::Text(ided) => {
                     let info = if let Some((exp_id, addendum)) = expected {
                         if exp_id != ided.id {
-                            log::error!("expected license '{}' in path '{}', but found '{}'", exp_id.name, path.display(), ided.id.name);
+                            log::error!(
+                                "expected license '{}' in path '{}', but found '{}'",
+                                exp_id.name,
+                                path.display(),
+                                ided.id.name
+                            );
                         }
-                        
+
                         match addendum {
                             Some(path) => LicenseFileInfo::AddendumText(contents, path.clone()),
                             None => {
-                                log::debug!("ignoring '{}', matched license '{}'", path.display(), ided.id.name);
+                                log::debug!(
+                                    "ignoring '{}', matched license '{}'",
+                                    path.display(),
+                                    ided.id.name
+                                );
                                 return None;
                             }
                         }
@@ -336,16 +369,23 @@ fn scan_files(
                     })
                 }
                 ScanResult::UnknownId(id_str) => {
-                    log::error!("found unknown SPDX identifier '{}' scanning '{}'", id_str, path.display());
+                    log::error!(
+                        "found unknown SPDX identifier '{}' scanning '{}'",
+                        id_str,
+                        path.display()
+                    );
                     None
                 }
                 ScanResult::LowLicenseChance(ided) => {
-                    log::debug!("found '{}' scanning '{}' but it only has a confidence score of {}", ided.id.name, path.display(), ided.confidence);
+                    log::debug!(
+                        "found '{}' scanning '{}' but it only has a confidence score of {}",
+                        ided.id.name,
+                        path.display(),
+                        ided.confidence
+                    );
                     None
                 }
-                ScanResult::NoLicense => {
-                    None
-                }
+                ScanResult::NoLicense => None,
             }
         })
         .collect();
@@ -400,23 +440,18 @@ enum ScanResult {
     NoLicense,
 }
 
-fn scan_text(contents: &str, strat: &askalono::ScanStrategy,
-    threshold: f32,) -> ScanResult {
+fn scan_text(contents: &str, strat: &askalono::ScanStrategy, threshold: f32) -> ScanResult {
     let text = askalono::TextData::new(&contents);
     match strat.scan(&text) {
         Ok(lic_match) => {
             match lic_match.license {
                 Some(identified) => {
                     let lic_id = match spdx::license_id(&identified.name) {
-                        Some(id) => {
-                            Identified {
-                                confidence: lic_match.score,
-                                id,
-                            }
-                        }
-                        None => {
-                            return ScanResult::UnknownId(identified.name.to_owned())
-                        }
+                        Some(id) => Identified {
+                            confidence: lic_match.score,
+                            id,
+                        },
+                        None => return ScanResult::UnknownId(identified.name.to_owned()),
                     };
 
                     // askalano doesn't report any matches below the confidence threshold
@@ -426,15 +461,15 @@ fn scan_text(contents: &str, strat: &askalono::ScanStrategy,
                         match identified.kind {
                             askalono::LicenseType::Header => ScanResult::Header(lic_id),
                             askalono::LicenseType::Original => ScanResult::Text(lic_id),
-                            askalono::LicenseType::Alternate => unimplemented!("I guess askalono uses this now"),
+                            askalono::LicenseType::Alternate => {
+                                unimplemented!("I guess askalono uses this now")
+                            }
                         }
                     } else {
                         ScanResult::LowLicenseChance(lic_id)
                     }
                 }
-                None => {
-                    ScanResult::NoLicense
-                }
+                None => ScanResult::NoLicense,
             }
         }
         Err(e) => {
@@ -512,7 +547,7 @@ pub fn sanitize(summary: &mut Summary) -> Result<(), Error> {
 
                             expr_s
                         };
-                        
+
                         if found.is_empty() {
                             log::error!("unable to find any license files for crate {}({})", krate_license.krate.name, krate_license.krate.version);
                             return acc + 1;
@@ -529,7 +564,7 @@ pub fn sanitize(summary: &mut Summary) -> Result<(), Error> {
                         log::warn!("crate {}({}) had no license field, now using SPDX license expression '{}'", krate_license.krate.name, krate_license.krate.version, expr);
                         krate_license.lic_info = LicenseInfo::Expr(expr);
 
-                        acc + 0
+                        acc
                     },
                 }
             },

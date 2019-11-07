@@ -46,10 +46,10 @@ pub fn cmd(
         reg.register_helper(
             "json",
             Box::new(
-                |h: &Helper,
-                 r: &Handlebars,
+                |h: &Helper<'_, '_>,
+                 _r: &Handlebars,
                  _: &Context,
-                 rc: &mut RenderContext<'_>,
+                 _rc: &mut RenderContext<'_>,
                  out: &mut dyn Output|
                  -> HelperResult {
                     let param = h.param(0).ok_or(RenderError::new("param not found"))?;
