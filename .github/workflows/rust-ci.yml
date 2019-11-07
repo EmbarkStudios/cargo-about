@@ -81,7 +81,6 @@ jobs:
     - name: cargo-deny check bans
       run: ./cargo-deny -L debug check ban
 
-  # Remove this check if you don't publish the crate(s) from this repo
   publish-check:
     name: Publish Check
     runs-on: ubuntu-latest
@@ -95,27 +94,15 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: fetch
-    - name: copy README
-      shell: bash
-      run: |
-        cp README.md lib
-        cp README.md cli
-    - name: cargo publish lib
+    - name: cargo publish
       uses: actions-rs/cargo@v1
       with:
         command: publish
-        args: --dry-run --allow-dirty --manifest-path lib/Cargo.toml
-    - name: cargo publish cli
-      uses: actions-rs/cargo@v1
-      with:
-        command: publish
-        args: --dry-run --allow-dirty --manifest-path cli/Cargo.toml
+        args: --dry-run
 
-  # Remove this job if you don't publish the crate(s) from this repo
-  # You must add a crates.io API token to your GH secrets called CRATES_IO_TOKEN
   publish:
     name: Publish
-    needs: [test, deny-check, publish-check]
+    needs: [test, self, publish-check]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
@@ -135,11 +122,9 @@ jobs:
       with:
         command: publish
 
-  # Remove this job if you don't release binaries
-  # Replace occurances of $BIN_NAME with the name of your binary
   release:
     name: Release
-    needs: [test, deny-check]
+    needs: [test, self]
     if: startsWith(github.ref, 'refs/tags/')
     strategy:
       matrix:
@@ -149,19 +134,14 @@ jobs:
             rust: stable
             target: x86_64-unknown-linux-musl
             bin: cargo-about
-            # We don't enable the progress feature when targeting
-            # musl since there are some dependencies on shared libs
-            features: ""
           - os: windows-latest
             rust: stable
             target: x86_64-pc-windows-msvc
             bin: cargo-about.exe
-            features: --features=progress
           - os: macOS-latest
             rust: stable
             target: x86_64-apple-darwin
             bin: cargo-about
-            features: --features=progress
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install stable toolchain
@@ -183,10 +163,9 @@ jobs:
           args: --target ${{ matrix.target }}
       - name: Release build
         uses: actions-rs/cargo@v1
-        if: matrix.os != 'ubuntu-latest'
         with:
           command: build
-          args: --release --target ${{ matrix.target }} ${{ matrix.features }}
+          args: --release --target ${{ matrix.target }}
       - name: Package
         shell: bash
         run: |
