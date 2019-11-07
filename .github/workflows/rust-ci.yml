@@ -102,7 +102,7 @@ jobs:
 
   publish:
     name: Publish
-    needs: [test, self, publish-check]
+    needs: [test, publish-check]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
