@@ -1,7 +1,38 @@
 [package]
-name = "about-me"
-version = "0.1.0"
+name = "cargo-about"
+version = "0.0.1"
+description = "Cargo plugin for generating a listing of all of the crates and the the terms under which they are licensed"
 authors = ["Embark <opensource@embark-studios.com>", "Jake Shadle <jake.shadle@embark-studios.com>"]
 edition = "2018"
+repository = "https://github.com/EmbarkStudios/cargo-about"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+documentation = "https://docs.rs/cargo-about"
+homepage = "https://github.com/EmbarkStudios/cargo-about"
+categories = ["development-tools::cargo-plugins"]
+keywords = ["cargo", "license", "spdx"]
+
+[badges]
+maintenance = { status = "actively-developed" }
+
+[[bin]]
+name = "cargo-about"
+path = "src/cargo-about/main.rs"
 
 [dependencies]
+ansi_term = "0.11.0"
+anyhow = "1.0.18"
+askalono = "0.4.0"
+cargo_metadata = "0.9.0"
+chrono = "0.4.9"
+fern = "0.5.9"
+handlebars = "2.0.2"
+log = "0.4.8"
+rayon = "1.2.0"
+serde = { version = "1.0.102", features = ["derive"] }
+serde_json = "1.0.41"
+smallvec = "1.0.0"
+spdx = "0.2.3"
+structopt = "0.3.3"
+toml = "0.5.5"
+walkdir = "2.2.9"
