@@ -65,16 +65,3 @@ pub struct Config {
     #[serde(flatten)]
     pub inner: BTreeMap<String, KrateConfig>,
 }
-
-#[test]
-fn try_des() {
-    let file = r#"[[physx-sys.additional]]
-root = "PhysX"
-license = "BSD-3-Clause"
-license-file = "PhysX/README.md"
-license-start = 3
-license-end = 27
-"#;
-
-    let cfg: Config = toml::from_str(file).unwrap();
-}
