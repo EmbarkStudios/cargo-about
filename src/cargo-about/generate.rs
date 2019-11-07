@@ -52,7 +52,9 @@ pub fn cmd(
                  _rc: &mut RenderContext<'_>,
                  out: &mut dyn Output|
                  -> HelperResult {
-                    let param = h.param(0).ok_or(RenderError::new("param not found"))?;
+                    let param = h
+                        .param(0)
+                        .ok_or_else(|| RenderError::new("param not found"))?;
 
                     out.write(&serde_json::to_string_pretty(param.value())?)?;
                     Ok(())
@@ -183,7 +185,7 @@ fn generate(
                             _ => false,
                         }
                     }) {
-                        let entry = licenses.entry(req.name).or_insert_with(|| HashMap::new());
+                        let entry = licenses.entry(req.name).or_insert_with(HashMap::new);
 
                         let contents = match nfo.info {
                             licenses::LicenseFileInfo::Text(ref s) => s,
