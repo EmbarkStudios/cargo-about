@@ -162,7 +162,7 @@ impl Gatherer {
                 let root_path = krate.manifest_path.parent().unwrap();
                 let krate_cfg = cfg.inner.get(&krate.name);
 
-                let license_files = match scan_files(
+                let mut license_files = match scan_files(
                     &root_path,
                     &strategy,
                     threshold,
@@ -180,6 +180,38 @@ impl Gatherer {
                         Vec::new()
                     }
                 };
+
+                // Condense each license down to the best candidate if
+                // multiple are found
+
+                license_files.sort_by(|a, b| {
+                    use std::cmp::Ordering as Ord;
+                    match a.id.cmp(&b.id) {
+                        Ord::Equal => {
+                            // We want the highest confidence on top
+                            b.confidence
+                                .partial_cmp(&a.confidence)
+                                .expect("uhoh looks like we've got a NaN")
+                        }
+                        o => o,
+                    }
+                });
+
+                let mut id = None;
+                license_files.retain(|lf| match id {
+                    Some(cur) => {
+                        if cur != lf.id {
+                            id = Some(lf.id);
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                    None => {
+                        id = Some(lf.id);
+                        true
+                    }
+                });
 
                 KrateLicense {
                     krate,
