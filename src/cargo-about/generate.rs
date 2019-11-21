@@ -113,9 +113,15 @@ pub fn cmd(
         .with_confidence_threshold(args.threshold)
         .gather(&krates.krates, &cfg);
 
-    licenses::sanitize(&mut summary)?;
-
-    let output = generate(&summary, &registry, &template)?;
+    // for (krate_id, licenses) in licenses::resolve(&summary.nfos, &cfg.accepted)? {
+    //     let name = &summary.nfos[krate_id].krate.name;
+    //     log::info!("{}", name);
+    //     for license in licenses {
+    //         log::info!("    {:?}", license);
+    //     }
+    // }
+    let resolved = licenses::resolve(&summary.nfos, &cfg.accepted)?;
+    let output = generate(&summary, &resolved, &registry, &template)?;
 
     println!("{}", output);
 
@@ -159,6 +165,7 @@ struct Input<'a> {
 
 fn generate(
     summary: &licenses::Summary<'_>,
+    resolved: &licenses::Resolved,
     hbs: &Handlebars,
     template_name: &str,
 ) -> Result<String, Error> {

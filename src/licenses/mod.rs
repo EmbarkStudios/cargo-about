@@ -1,7 +1,8 @@
 use crate::Krate;
-use anyhow::{bail, Error};
+use anyhow::{bail, Context, Error};
 use rayon::prelude::*;
-use spdx::LicenseId;
+use spdx::{LicenseId, LicenseItem, LicenseReq, Licensee};
+use std::fmt;
 use std::{
     path::{Path, PathBuf},
     sync::Arc,
@@ -514,101 +515,94 @@ fn scan_text(contents: &str, strat: &askalono::ScanStrategy, threshold: f32) -> 
     }
 }
 
-pub fn sanitize(summary: &mut Summary) -> Result<(), Error> {
-    let num_errors = summary
-        .nfos
-        .par_iter_mut()
-        .fold(
-            || 0,
-            |acc, krate_license| {
-                // Check that the licenses found by scanning the crate contents match what was stated
-                // in the license expression
-                match krate_license.lic_info {
-                    LicenseInfo::Expr(ref expr) => {
-                        let spdx_reqs = expr
-                            .requirements()
-                            .filter_map(|req| {
-                                if let spdx::LicenseItem::SPDX { id, .. } = req.req.license {
-                                    Some(id)
-                                } else {
-                                    None
-                                }
-                            })
-                            .collect::<smallvec::SmallVec<[LicenseId; 2]>>();
+type KrateId = usize;
 
-                        log::info!(
-                            "crate {}({}) has license(s) {:?} in its `license` field",
-                            krate_license.krate.name,
-                            krate_license.krate.version,
-                            spdx_reqs
-                        );
+pub struct ResolveError<'a> {
+    pub krate: &'a Krate,
+    pub required: Vec<LicenseReq>,
+}
 
-                        for lf in &krate_license.license_files {
-                            if !lf.info.is_addendum() && !spdx_reqs.contains(&lf.id) {
-                                log::warn!(
-                                    "mismatching license found for {}: license '{}' in path '{}'",
-                                    krate_license.krate.name,
-                                    lf.id.name,
-                                    lf.path.display()
-                                );
-                            }
-                        }
-
-                        acc
-                    }
-                    LicenseInfo::Unknown => {
-                        let mut found = smallvec::SmallVec::<[(LicenseId, u32); 2]>::new();
-
-                        for lf in &krate_license.license_files {
-                            match found.iter_mut().find(|lic| lic.0 == lf.id) {
-                                Some(lic) => lic.1 += 1,
-                                None => found.push((lf.id, 1)),
-                            }
-                        }
-
-                        let expr_s = {
-                            let mut expr_s = String::new();
-
-                            for (i, name) in found.iter().map(|l| l.0.name).enumerate() {
-                                if i > 0 {
-                                    expr_s.push_str(" AND ");
-                                }
-
-                                expr_s.push_str(name);
-                            }
-
-                            expr_s
-                        };
-
-                        if found.is_empty() {
-                            log::error!("unable to find any license files for crate {}({})", krate_license.krate.name, krate_license.krate.version);
-                            return acc + 1;
-                        }
-
-                        let expr = match spdx::Expression::parse(&expr_s) {
-                            Ok(e) => e,
-                            Err(e) => {
-                                log::error!("failed to parse SPDX license expression from synthesized string '{}': {}", expr_s, e);
-                                return acc + 1;
-                            }
-                        };
-
-                        log::warn!("crate {}({}) had no license field, now using SPDX license expression '{}'", krate_license.krate.name, krate_license.krate.version, expr);
-                        krate_license.lic_info = LicenseInfo::Expr(expr);
-
-                        acc
-                    },
-                }
-            },
+impl fmt::Display for ResolveError<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Krate '{}' requires", self.krate.name)?;
+        f.debug_list().entries(self.required.iter()).finish()?;
+        writeln!(
+            f,
+            " , which were not specified as 'accepted' licenses in the 'about.toml' file"
         )
-        .sum::<u32>();
-
-    if num_errors > 0 {
-        bail!(
-            "encountered {} error sanity checking crate licenses",
-            num_errors
-        );
-    } else {
-        Ok(())
     }
+}
+
+struct DisplayLicenses<'a>(&'a [Licensee]);
+impl fmt::Display for DisplayLicenses<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "[")?;
+        for (id, license) in self.0.iter().enumerate() {
+            write!(f, "{}", license)?;
+            if id + 1 < self.0.len() {
+                write!(f, ", ")?;
+            }
+        }
+        write!(f, "]")
+    }
+}
+
+pub struct Resolved(Vec<(KrateId, Vec<Licensee>)>);
+
+/// Find the minimal required licenses for each crate.
+pub fn resolve<'a>(
+    licenses: &'a [KrateLicense],
+    accepted: &'a [Licensee],
+) -> Result<Resolved, Error> {
+    let res: Result<Vec<_>, Error> = licenses
+        .par_iter()
+        .enumerate()
+        .map(move |(id, krate_license)| {
+            // Check that the licenses found by scanning the crate contents match what was stated
+            // in the license expression
+            match krate_license.lic_info {
+                LicenseInfo::Expr(ref expr) => {
+                    // Only handles
+                    let license = accepted
+                        .iter()
+                        .find(|licensee| expr.evaluate(|req| licensee.satisfies(req)))
+                        .context(format!(
+                            "Crate '{}': Unable to satisfy [{}], with the following accepted licenses {}", krate_license.krate.name,
+                            expr, DisplayLicenses(accepted)
+                        ))?
+                        .clone();
+                    Ok((id, vec![license]))
+                }
+                // If the license is unknown, we will concatenate all the licenses
+                LicenseInfo::Unknown => {
+                    let licenses: Vec<_> = krate_license
+                        .license_files
+                        .iter()
+                        .map(|file| {
+                            Licensee::new(
+                                LicenseItem::SPDX {
+                                    id: file.id,
+                                    or_later: false,
+                                },
+                                None,
+                            )
+                        })
+                        .collect();
+
+                    let failed_licenses: Vec<_> = licenses
+                        .iter()
+                        .cloned()
+                        .filter(|license| !accepted.iter().any(|a| a.satisfies(license)))
+                        .collect();
+
+                    if failed_licenses.is_empty() {
+                        Ok((id, licenses))
+                    } else {
+                        bail!("Crate '{}': These licenses {}, could not be satisfied with the following accepted licenses {}", krate_license.krate.name, DisplayLicenses(failed_licenses.as_slice()), DisplayLicenses(accepted));
+                    }
+                }
+            }
+        })
+        .collect();
+    Ok(Resolved(res?))
 }
