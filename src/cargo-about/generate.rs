@@ -121,7 +121,7 @@ pub fn cmd(
     //     }
     // }
     let resolved = licenses::resolve(&summary.nfos, &cfg.accepted)?;
-    let output = generate(&summary, &resolved, &registry, &template)?;
+    let output = generate(&summary.nfos, &resolved, &registry, &template)?;
 
     println!("{}", output);
 
@@ -164,66 +164,59 @@ struct Input<'a> {
 }
 
 fn generate(
-    summary: &licenses::Summary<'_>,
+    nfos: &[licenses::KrateLicense<'_>],
     resolved: &licenses::Resolved,
     hbs: &Handlebars,
     template_name: &str,
 ) -> Result<String, Error> {
     let licenses = {
         let mut licenses = HashMap::new();
+        for (krate_id, license_list) in &resolved.0 {
+            let krate_license = &nfos[*krate_id];
 
-        for k in &summary.nfos {
-            if let licenses::LicenseInfo::Expr(ref expr) = k.lic_info {
-                for req in expr.requirements().filter_map(|r| {
-                    if let spdx::LicenseItem::SPDX { id, .. } = r.req.license {
-                        Some(id)
-                    } else {
-                        None
+            let license_file_iter = license_list.iter().filter_map(|license| {
+                let id = license.try_license_id()?;
+                krate_license.license_files.iter().find(move |lf| {
+                    if lf.id != id {
+                        return false;
                     }
-                }) {
-                    if let Some(nfo) = k.license_files.iter().find(|lf| {
-                        if lf.id != req {
-                            return false;
-                        }
+                    match lf.info {
+                        licenses::LicenseFileInfo::Text(_)
+                        | licenses::LicenseFileInfo::AddendumText(_, _) => true,
+                        _ => false,
+                    }
+                })
+            });
 
-                        match lf.info {
-                            licenses::LicenseFileInfo::Text(_)
-                            | licenses::LicenseFileInfo::AddendumText(_, _) => true,
-                            _ => false,
-                        }
-                    }) {
-                        let entry = licenses.entry(req.name).or_insert_with(HashMap::new);
+            for file in license_file_iter {
+                let entry = licenses.entry(file.id.name).or_insert_with(HashMap::new);
+                let contents = match file.info {
+                    licenses::LicenseFileInfo::Text(ref s) => s,
+                    licenses::LicenseFileInfo::AddendumText(ref s, _) => s,
+                    _ => unreachable!(),
+                };
 
-                        let contents = match nfo.info {
-                            licenses::LicenseFileInfo::Text(ref s) => s,
-                            licenses::LicenseFileInfo::AddendumText(ref s, _) => s,
-                            _ => unreachable!(),
-                        };
-
-                        let lic = entry.entry(contents).or_insert_with(|| License {
-                            name: req.full_name.to_owned(),
-                            id: req.name.to_owned(),
-                            text: contents.clone(),
-                            used_by: Vec::new(),
-                            source_path: nfo.path.clone(),
+                let lic = entry.entry(contents).or_insert_with(|| License {
+                    name: file.id.full_name.to_owned(),
+                    id: file.id.name.to_owned(),
+                    text: contents.clone(),
+                    used_by: Vec::new(),
+                    source_path: file.path.clone(),
+                });
+                match file.info {
+                    licenses::LicenseFileInfo::Text(_) => {
+                        lic.used_by.push(UsedBy {
+                            krate: krate_license.krate,
+                            path: None,
                         });
-
-                        match nfo.info {
-                            licenses::LicenseFileInfo::Text(_) => {
-                                lic.used_by.push(UsedBy {
-                                    krate: k.krate,
-                                    path: None,
-                                });
-                            }
-                            licenses::LicenseFileInfo::AddendumText(_, ref p) => {
-                                lic.used_by.push(UsedBy {
-                                    krate: k.krate,
-                                    path: Some(p.clone()),
-                                })
-                            }
-                            _ => unreachable!(),
-                        }
                     }
+                    licenses::LicenseFileInfo::AddendumText(_, ref p) => {
+                        lic.used_by.push(UsedBy {
+                            krate: krate_license.krate,
+                            path: Some(p.clone()),
+                        })
+                    }
+                    _ => unreachable!(),
                 }
             }
         }

@@ -547,7 +547,7 @@ impl fmt::Display for DisplayLicenses<'_> {
     }
 }
 
-pub struct Resolved(Vec<(KrateId, Vec<Licensee>)>);
+pub struct Resolved(pub Vec<(KrateId, Vec<Licensee>)>);
 
 /// Find the minimal required licenses for each crate.
 pub fn resolve<'a>(
