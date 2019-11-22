@@ -534,13 +534,13 @@ impl fmt::Display for ResolveError<'_> {
 }
 
 /// Simple wrapper to display a slice of licensees
-pub struct DisplayLicenses<'a>(pub &'a [Licensee]);
+pub struct DisplayList<'a, T>(pub &'a [T]);
 
-impl fmt::Display for DisplayLicenses<'_> {
+impl<T: fmt::Display> fmt::Display for DisplayList<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[")?;
-        for (id, license) in self.0.iter().enumerate() {
-            write!(f, "{}", license)?;
+        for (id, val) in self.0.iter().enumerate() {
+            write!(f, "{}", val)?;
             if id + 1 < self.0.len() {
                 write!(f, ", ")?;
             }
@@ -549,8 +549,7 @@ impl fmt::Display for DisplayLicenses<'_> {
     }
 }
 
-//
-pub struct Resolved(pub Vec<(KrateId, Vec<Licensee>)>);
+pub struct Resolved(pub Vec<(KrateId, Vec<LicenseReq>)>);
 
 impl Resolved {
     /// Find the minimal required licenses for each crate.
@@ -566,45 +565,44 @@ impl Resolved {
             // in the license expression
             match krate_license.lic_info {
                 LicenseInfo::Expr(ref expr) => {
-                    let license = accepted
-                        .iter()
-                        .find(|licensee| expr.evaluate(|req| licensee.satisfies(req)))
-                        .context(format!(
-                            "Crate '{}': Unable to satisfy [{}], with the following accepted licenses {}", krate_license.krate.name,
-                            expr, DisplayLicenses(accepted)
-                        ))?
-                        .clone();
-                    Ok((id, vec![license]))
+                    let req = expr.requirements().map(|expr| expr.req.clone()).find(|req| {
+                        accepted.iter().any(|licensee| licensee.satisfies(&req))
+                    })
+                    .context(format!(
+                        "Crate '{}': Unable to satisfy [{}], with the following accepted licenses {}", krate_license.krate.name,
+                        expr, DisplayList(accepted)
+                    ))?;
+                    Ok((id, vec![req]))
                 }
                 // If the license is unknown, we will concatenate all the licenses
                 LicenseInfo::Unknown => {
-                    let licenses: Vec<_> = krate_license
+                    let license_reqs: Vec<_> = krate_license
                         .license_files
                         .iter()
                         .map(|file| {
-                            Licensee::new(
-                                LicenseItem::SPDX {
+                            LicenseReq {
+                                license: LicenseItem::SPDX {
                                     id: file.id,
                                     or_later: false,
                                 },
-                                None,
-                            )
+                                exception: None,
+                            }
                         })
                         .collect();
 
-                    let failed_licenses: Vec<_> = licenses
+                    let failed_licenses: Vec<_> = license_reqs
                         .iter()
                         .cloned()
                         .filter(|license| !accepted.iter().any(|a| a.satisfies(license)))
                         .collect();
 
                     if failed_licenses.is_empty() {
-                        Ok((id, licenses))
+                        Ok((id, license_reqs))
                     } else {
                         bail!("Crate '{}': These licenses {}, could not be satisfied with the following accepted licenses {}",
                             krate_license.krate.name,
-                            DisplayLicenses(failed_licenses.as_slice()),
-                            DisplayLicenses(accepted));
+                            DisplayList(failed_licenses.as_slice()),
+                            DisplayList(accepted));
                     }
                 }
             }

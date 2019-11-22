@@ -166,28 +166,31 @@ fn generate(
         let mut licenses = HashMap::new();
         for (krate_id, license_list) in &resolved.0 {
             let krate_license = &nfos[*krate_id];
-            let license_file_iter = license_list.iter().filter_map(|license| {
-                let id = if let Some(id) = license.try_license_id() {
-                    id
-                } else {
-                    log::warn!(
-                        "{} has no license file for crate '{}'",
-                        license,
-                        krate_license.krate.name
-                    );
-                    return None;
-                };
-                krate_license.license_files.iter().find(move |lf| {
-                    if lf.id != id {
-                        return false;
-                    }
-                    match lf.info {
-                        licenses::LicenseFileInfo::Text(_)
-                        | licenses::LicenseFileInfo::AddendumText(_, _) => true,
-                        _ => false,
-                    }
-                })
-            });
+            let license_file_iter =
+                license_list
+                    .iter()
+                    .filter_map(|license| match license.license {
+                        spdx::LicenseItem::SPDX { id, .. } => {
+                            krate_license.license_files.iter().find(move |lf| {
+                                if lf.id != id {
+                                    return false;
+                                }
+                                match lf.info {
+                                    licenses::LicenseFileInfo::Text(_)
+                                    | licenses::LicenseFileInfo::AddendumText(_, _) => true,
+                                    _ => false,
+                                }
+                            })
+                        }
+                        _ => {
+                            log::warn!(
+                                "{} has no license file for crate '{}'",
+                                license,
+                                krate_license.krate.name
+                            );
+                            None
+                        }
+                    });
 
             for file in license_file_iter {
                 let entry = licenses.entry(file.id.name).or_insert_with(HashMap::new);
