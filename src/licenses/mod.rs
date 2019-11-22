@@ -533,7 +533,9 @@ impl fmt::Display for ResolveError<'_> {
     }
 }
 
-struct DisplayLicenses<'a>(&'a [Licensee]);
+/// Simple wrapper to display a slice of licensees
+pub struct DisplayLicenses<'a>(pub &'a [Licensee]);
+
 impl fmt::Display for DisplayLicenses<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[")?;
@@ -547,14 +549,16 @@ impl fmt::Display for DisplayLicenses<'_> {
     }
 }
 
+//
 pub struct Resolved(pub Vec<(KrateId, Vec<Licensee>)>);
 
-/// Find the minimal required licenses for each crate.
-pub fn resolve<'a>(
-    licenses: &'a [KrateLicense],
-    accepted: &'a [Licensee],
-) -> Result<Resolved, Error> {
-    let res: Result<Vec<_>, Error> = licenses
+impl Resolved {
+    /// Find the minimal required licenses for each crate.
+    pub fn resolve<'a>(
+        licenses: &'a [KrateLicense],
+        accepted: &'a [Licensee],
+    ) -> Result<Resolved, Error> {
+        let res: Result<Vec<_>, Error> = licenses
         .par_iter()
         .enumerate()
         .map(move |(id, krate_license)| {
@@ -562,7 +566,6 @@ pub fn resolve<'a>(
             // in the license expression
             match krate_license.lic_info {
                 LicenseInfo::Expr(ref expr) => {
-                    // Only handles
                     let license = accepted
                         .iter()
                         .find(|licensee| expr.evaluate(|req| licensee.satisfies(req)))
@@ -598,11 +601,15 @@ pub fn resolve<'a>(
                     if failed_licenses.is_empty() {
                         Ok((id, licenses))
                     } else {
-                        bail!("Crate '{}': These licenses {}, could not be satisfied with the following accepted licenses {}", krate_license.krate.name, DisplayLicenses(failed_licenses.as_slice()), DisplayLicenses(accepted));
+                        bail!("Crate '{}': These licenses {}, could not be satisfied with the following accepted licenses {}",
+                            krate_license.krate.name,
+                            DisplayLicenses(failed_licenses.as_slice()),
+                            DisplayLicenses(accepted));
                     }
                 }
             }
         })
         .collect();
-    Ok(Resolved(res?))
+        Ok(Resolved(res?))
+    }
 }

@@ -109,18 +109,11 @@ pub fn cmd(
         }
     };
 
-    let mut summary = licenses::Gatherer::with_store(std::sync::Arc::new(store))
+    let summary = licenses::Gatherer::with_store(std::sync::Arc::new(store))
         .with_confidence_threshold(args.threshold)
         .gather(&krates.krates, &cfg);
 
-    // for (krate_id, licenses) in licenses::resolve(&summary.nfos, &cfg.accepted)? {
-    //     let name = &summary.nfos[krate_id].krate.name;
-    //     log::info!("{}", name);
-    //     for license in licenses {
-    //         log::info!("    {:?}", license);
-    //     }
-    // }
-    let resolved = licenses::resolve(&summary.nfos, &cfg.accepted)?;
+    let resolved = licenses::Resolved::resolve(&summary.nfos, &cfg.accepted)?;
     let output = generate(&summary.nfos, &resolved, &registry, &template)?;
 
     println!("{}", output);
@@ -173,9 +166,17 @@ fn generate(
         let mut licenses = HashMap::new();
         for (krate_id, license_list) in &resolved.0 {
             let krate_license = &nfos[*krate_id];
-
             let license_file_iter = license_list.iter().filter_map(|license| {
-                let id = license.try_license_id()?;
+                let id = if let Some(id) = license.try_license_id() {
+                    id
+                } else {
+                    log::warn!(
+                        "{} has no license file for crate '{}'",
+                        license,
+                        krate_license.krate.name
+                    );
+                    return None;
+                };
                 krate_license.license_files.iter().find(move |lf| {
                     if lf.id != id {
                         return false;
@@ -210,12 +211,10 @@ fn generate(
                             path: None,
                         });
                     }
-                    licenses::LicenseFileInfo::AddendumText(_, ref p) => {
-                        lic.used_by.push(UsedBy {
-                            krate: krate_license.krate,
-                            path: Some(p.clone()),
-                        })
-                    }
+                    licenses::LicenseFileInfo::AddendumText(_, ref p) => lic.used_by.push(UsedBy {
+                        krate: krate_license.krate,
+                        path: Some(p.clone()),
+                    }),
                     _ => unreachable!(),
                 }
             }
