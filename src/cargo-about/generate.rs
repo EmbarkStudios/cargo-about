@@ -252,6 +252,8 @@ fn generate(
     }
 
     overview.iter_mut().for_each(|i| i.count = i.indices.len());
+    // Show the most used licenses first
+    overview.sort_by(|a, b| b.count.cmp(&a.count));
 
     let nput = Input { licenses, overview };
 
