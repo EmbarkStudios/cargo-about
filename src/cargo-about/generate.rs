@@ -121,14 +121,14 @@ pub fn cmd(
     Ok(())
 }
 
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 struct UsedBy<'a> {
     #[serde(rename = "crate")]
     krate: &'a Krate,
     path: Option<PathBuf>,
 }
 
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 struct License<'a> {
     /// The full name of the license
     name: String,
@@ -137,7 +137,7 @@ struct License<'a> {
     /// The full license text
     text: String,
     /// The path where the license text was sourced from
-    source_path: PathBuf,
+    source_path: Option<PathBuf>,
     /// The list of crates this license was applied to
     used_by: Vec<UsedBy<'a>>,
 }
@@ -166,60 +166,67 @@ fn generate(
         let mut licenses = HashMap::new();
         for (krate_id, license_list) in &resolved.0 {
             let krate_license = &nfos[*krate_id];
-            let license_file_iter =
-                license_list
-                    .iter()
-                    .filter_map(|license| match license.license {
-                        spdx::LicenseItem::SPDX { id, .. } => {
-                            krate_license.license_files.iter().find(move |lf| {
-                                if lf.id != id {
-                                    return false;
+            let license_iter = license_list
+                .iter()
+                .filter_map(|license| match license.license {
+                    spdx::LicenseItem::SPDX { id, .. } => {
+                        let file = krate_license.license_files.iter().find_map(move |lf| {
+                            if lf.id != id {
+                                return None;
+                            }
+                            match &lf.info {
+                                licenses::LicenseFileInfo::Text(text)
+                                | licenses::LicenseFileInfo::AddendumText(text, _) => {
+                                    let license = License {
+                                        name: lf.id.full_name.to_owned(),
+                                        id: lf.id.name.to_owned(),
+                                        text: text.clone(),
+                                        source_path: None,
+                                        used_by: Vec::new(),
+                                    };
+                                    Some(license)
                                 }
-                                match lf.info {
-                                    licenses::LicenseFileInfo::Text(_)
-                                    | licenses::LicenseFileInfo::AddendumText(_, _) => true,
-                                    _ => false,
-                                }
-                            })
-                        }
-                        _ => {
-                            log::warn!(
-                                "{} has no license file for crate '{}'",
-                                license,
-                                krate_license.krate.name
-                            );
-                            None
-                        }
-                    });
-
-            for file in license_file_iter {
-                let entry = licenses.entry(file.id.name).or_insert_with(HashMap::new);
-                let contents = match file.info {
-                    licenses::LicenseFileInfo::Text(ref s) => s,
-                    licenses::LicenseFileInfo::AddendumText(ref s, _) => s,
-                    _ => unreachable!(),
-                };
-
-                let lic = entry.entry(contents).or_insert_with(|| License {
-                    name: file.id.full_name.to_owned(),
-                    id: file.id.name.to_owned(),
-                    text: contents.clone(),
-                    used_by: Vec::new(),
-                    source_path: file.path.clone(),
-                });
-                match file.info {
-                    licenses::LicenseFileInfo::Text(_) => {
-                        lic.used_by.push(UsedBy {
-                            krate: krate_license.krate,
-                            path: None,
+                                _ => None,
+                            }
                         });
+                        file.or_else(|| {
+                            let license = license::from_id(id.name).map(|lic| License {
+                                name: lic.name().to_string(),
+                                id: lic.id().to_string(),
+                                text: lic.text().to_string(),
+                                source_path: None,
+                                used_by: Vec::new(),
+                            });
+                            if license.is_none() {
+                                log::warn!(
+                                    "No licene file or license text found for {} in crate {}",
+                                    id.name,
+                                    krate_license.krate.name
+                                );
+                            }
+                            license
+                        })
                     }
-                    licenses::LicenseFileInfo::AddendumText(_, ref p) => lic.used_by.push(UsedBy {
-                        krate: krate_license.krate,
-                        path: Some(p.clone()),
-                    }),
-                    _ => unreachable!(),
-                }
+                    _ => {
+                        log::warn!(
+                            "{} has no license file for crate '{}'",
+                            license,
+                            krate_license.krate.name
+                        );
+                        None
+                    }
+                });
+
+            for license in license_iter {
+                let entry = licenses
+                    .entry(license.name.clone())
+                    .or_insert_with(HashMap::new);
+
+                let lic = entry.entry(license.text.clone()).or_insert_with(|| license);
+                lic.used_by.push(UsedBy {
+                    krate: krate_license.krate,
+                    path: None,
+                });
             }
         }
 
