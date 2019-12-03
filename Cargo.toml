@@ -11,6 +11,9 @@ documentation = "https://docs.rs/cargo-about"
 homepage = "https://github.com/EmbarkStudios/cargo-about"
 categories = ["development-tools::cargo-plugins"]
 keywords = ["cargo", "license", "spdx"]
+exclude = [
+  "media/"
+]
 
 [badges]
 maintenance = { status = "actively-developed" }
