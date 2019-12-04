@@ -8,7 +8,7 @@
 
 Cargo plugin for generating a listing of all of the crates used by a root crate, and the terms under which they are licensed.
 
-![license](media/license.png)
+![license](https://i.imgur.com/pvOjj06.png)
 
 You can view the full license [here](media/license.html)
 
@@ -20,35 +20,37 @@ You can view the full license [here](media/license.html)
 cargo install cargo-about
 ```
 
-### Generating `license.html` for `cargo-about`
+### Generating license information for your own project
 
 ```bash
-cd cargo-about
+# Generates `about.toml` and `about.hbs` in your cargo project
+cargo-about init
+# Generate the license information with
 cargo about generate about.hbs > license.html
 ```
 
-### Generating license information for your own project
+## `about.toml`
 
-Create an `about.toml` file in the root of your project
+### `[accepted]`
+
+Priority list of all the accepted licenses for a project. `cargo-about` will try to satisfy the licenses in the order that they are declared in this list.
 
 ```toml
-# Add licenses that you accept for your project
 accepted = [
     "Apache-2.0",
     "MIT",
 ]
 ```
+### `[[DEPDENDENCY.additional]]`
+* `root` Name of the root folder
+* `license` Name of the license. Has to be parsable from SPDX, see https://spdx.org/licenses/
+* `license-file` The path to the license file where the license is specified
+* `license-start` The starting line number of the license in the specified license file
+* `license-end` The ending line number of the license in the specified license file
 
-`cargo-about` uses [handlebars](https://handlebarsjs.com/) to generate license information. An easy way to get started is to use the [about.hbs](about.hbs) from `cargo-about`
-
-
-Generate the license information with `cargo about generate about.hbs > license.html`
-
-### Adding additional licenses to `about.toml`
-
-Not all licenses are placed in separate license files. Those files can be explicitly added like this:
 
 ```toml
+# Example
 [[physx-sys.additional]]
 root = "PhysX"
 license = "BSD-3-Clause"
@@ -57,10 +59,14 @@ license-start = 3
 license-end = 28
 ```
 
-### Ignoring specific licenses in `about.toml`
+### `[[DEPDENDENCY.ignore]]`
+Sometimes libraries include licenses for example code that you don't want to use.
 
-Sometimes libraries include licenses for example code that you don't want to use. You can ignore those licenses with:
+* `license` Name of the license that you want to ingore. Has to be parsable from SPDX, see https://spdx.org/licenses/
+* `license-file` The path to the license file where the license is specified
+
 ```toml
+# Example
 [[imgui-sys.ignore]]
 license = "Zlib"
 license-file = "third-party/cimgui/imgui/examples/libs/glfw/COPYING.txt"
