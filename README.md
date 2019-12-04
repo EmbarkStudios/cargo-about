@@ -72,6 +72,34 @@ license = "Zlib"
 license-file = "third-party/cimgui/imgui/examples/libs/glfw/COPYING.txt"
 ```
 
+## `about.hbs`
+See [handlebars](https://handlebarsjs.com)
+
+### Variables
+
+* `overviews` A list of `LicenseSet`
+* `licenses` A list of `License`
+
+### Types
+
+* `LicenseSet`
+* * `count` The number of times the license is used
+* * `name` The name of the license
+* * `id` The `id` of the license
+
+* `License`
+* * `name` The full name of the license
+* * `id` The SPDX identifier
+* * `text` The license text
+* * `source_path` The path of the license
+* * `used_by` A list of `UsedBy`
+
+* `UsedBy`
+* * `crate` Metadata for a cargo [package](https://docs.rs/cargo_metadata/newest/cargo_metadata/struct.Package.html)
+* * `path` Optional path of the depndency that is being used by the license
+
+
+
 ## FAQ
 
 ### Unable to satisfy the following licenses
