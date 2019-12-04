@@ -24,7 +24,7 @@ cargo install cargo-about
 
 ```bash
 # Generates `about.toml` and `about.hbs` in your cargo project
-cargo-about init
+cargo about init
 # Generate the license information with
 cargo about generate about.hbs > license.html
 ```
