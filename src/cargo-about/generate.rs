@@ -2,7 +2,7 @@ use anyhow::{bail, Context, Error};
 use cargo_about::{licenses, Krate, Krates};
 use handlebars::Handlebars;
 use serde::Serialize;
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::BTreeMap, path::PathBuf};
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
@@ -163,9 +163,10 @@ fn generate(
     template_name: &str,
 ) -> Result<String, Error> {
     let licenses = {
-        let mut licenses = HashMap::new();
+        let mut licenses = BTreeMap::new();
         for (krate_id, license_list) in &resolved.0 {
             let krate_license = &nfos[*krate_id];
+            log::warn!("{}", krate_license.krate.name);
             let license_iter = license_list
                 .iter()
                 .filter_map(|license| match license.license {
@@ -220,7 +221,7 @@ fn generate(
             for license in license_iter {
                 let entry = licenses
                     .entry(license.name.clone())
-                    .or_insert_with(HashMap::new);
+                    .or_insert_with(BTreeMap::new);
 
                 let lic = entry.entry(license.text.clone()).or_insert_with(|| license);
                 lic.used_by.push(UsedBy {
