@@ -1,5 +1,5 @@
-use anyhow::{Context, Error};
-use std::{env, fs, path::PathBuf};
+use anyhow::Error;
+use std::fs;
 use structopt::StructOpt;
 
 static DEFAULT_CONFIG: &str = include_str!("../../resources/about.toml");
