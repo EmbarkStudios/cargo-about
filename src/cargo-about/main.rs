@@ -6,12 +6,15 @@ use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
 mod generate;
+mod init;
 
 #[derive(StructOpt, Debug)]
 enum Command {
     /// Outputs a listing of all licenses and the crates that use them
     #[structopt(name = "generate")]
     Generate(generate::Args),
+    #[structopt(name = "init")]
+    Init(init::Args),
 }
 
 fn parse_level(s: &str) -> Result<log::LevelFilter, Error> {
@@ -149,6 +152,7 @@ fn real_main() -> Result<(), Error> {
 
     match args.cmd {
         Command::Generate(gen) => generate::cmd(gen, cfg, all_crates, store),
+        Command::Init(init) => init::cmd(init),
     }
 }
 
