@@ -166,7 +166,6 @@ fn generate(
         let mut licenses = BTreeMap::new();
         for (krate_id, license_list) in &resolved.0 {
             let krate_license = &nfos[*krate_id];
-            log::warn!("{}", krate_license.krate.name);
             let license_iter = license_list
                 .iter()
                 .filter_map(|license| match license.license {
