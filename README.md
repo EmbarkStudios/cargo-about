@@ -37,7 +37,7 @@ accepted = [
     "MIT",
 ]
 ```
-### `[[DEPDENDENCY.additional]]`
+### `[[DEPENDENCY.additional]]`
 * `root` Name of the root folder
 * `license` Name of the license. Has to be parsable from SPDX, see https://spdx.org/licenses/
 * `license-file` The path to the license file where the license is specified
@@ -55,7 +55,7 @@ license-start = 3
 license-end = 28
 ```
 
-### `[[DEPDENDENCY.ignore]]`
+### `[[DEPENDENCY.ignore]]`
 Sometimes libraries include licenses for example code that you don't want to use.
 
 * `license` Name of the license that you want to ingore. Has to be parsable from SPDX, see https://spdx.org/licenses/
@@ -92,7 +92,7 @@ See [handlebars](https://handlebarsjs.com)
 
 #### `UsedBy`
 * `crate` Metadata for a cargo [package](https://docs.rs/cargo_metadata/newest/cargo_metadata/struct.Package.html)
-* `path` Optional path of the depndency that is being used by the license
+* `path` Optional path of the dependency that is being used by the license
 
 #### Example
 
