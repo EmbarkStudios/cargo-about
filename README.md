@@ -8,10 +8,6 @@
 
 Cargo plugin for generating a listing of all of the crates used by a root crate, and the terms under which they are licensed.
 
-![license](https://i.imgur.com/pvOjj06.png)
-
-You can view the full license [here](media/license.html)
-
 ## Getting started:
 
 ### Installing
@@ -20,7 +16,7 @@ You can view the full license [here](media/license.html)
 cargo install cargo-about
 ```
 
-### Generating license information for your own project
+### Generate license information for your own project
 
 ```bash
 # Generates `about.toml` and `about.hbs` in your cargo project
@@ -77,28 +73,40 @@ See [handlebars](https://handlebarsjs.com)
 
 ### Variables
 
-* `overviews` A list of `LicenseSet`
+* `overview` A list of `LicenseSet`
 * `licenses` A list of `License`
 
 ### Types
 
-* `LicenseSet`
-* * `count` The number of times the license is used
-* * `name` The name of the license
-* * `id` The `id` of the license
+#### `LicenseSet`
+* `count` The number of times the license is used
+* `name` The name of the license
+* `id` The `id` of the license
 
-* `License`
-* * `name` The full name of the license
-* * `id` The SPDX identifier
-* * `text` The license text
-* * `source_path` The path of the license
-* * `used_by` A list of `UsedBy`
+#### `License`
+* `name` The full name of the license
+* `id` The SPDX identifier
+* `text` The license text
+* `source_path` The path of the license
+* `used_by` A list of `UsedBy`
 
-* `UsedBy`
-* * `crate` Metadata for a cargo [package](https://docs.rs/cargo_metadata/newest/cargo_metadata/struct.Package.html)
-* * `path` Optional path of the depndency that is being used by the license
+#### `UsedBy`
+* `crate` Metadata for a cargo [package](https://docs.rs/cargo_metadata/newest/cargo_metadata/struct.Package.html)
+* `path` Optional path of the depndency that is being used by the license
 
+#### Example
 
+```hbs
+<ul class="licenses-overview">
+    {{#each overview}}
+    <li><a href="#{{id}}">{{name}}</a> ({{count}})</li>
+    {{/each}}
+</ul>
+```
+
+#### Preview of the default `about.hbs`
+![license](https://i.imgur.com/pvOjj06.png)
+You can view the full license [here](media/license.html)
 
 ## FAQ
 
