@@ -44,16 +44,6 @@ pub enum LicenseFileInfo {
     Header,
 }
 
-impl LicenseFileInfo {
-    fn is_addendum(&self) -> bool {
-        if let LicenseFileInfo::AddendumText(_, _) = self {
-            true
-        } else {
-            false
-        }
-    }
-}
-
 pub struct LicenseFile {
     /// The SPDX identifier for the license in the file
     pub id: LicenseId,
