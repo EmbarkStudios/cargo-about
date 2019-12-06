@@ -141,7 +141,7 @@ impl Gatherer {
                         }
                     }
                     None => {
-                        log::warn!(
+                        log::info!(
                             "crate '{}({})' doesn't have a license field",
                             krate.name,
                             krate.version,
