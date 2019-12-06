@@ -257,7 +257,7 @@ fn is_ignored(entry: &walkdir::DirEntry) -> bool {
 
 fn scan_files(
     root_dir: &Path,
-    strat: &askalono::ScanStrategy,
+    strat: &askalono::ScanStrategy<'_>,
     threshold: f32,
     krate_cfg: Option<(&config::KrateConfig, &str)>,
 ) -> Result<Vec<LicenseFile>, Error> {
@@ -463,7 +463,7 @@ enum ScanResult {
     NoLicense,
 }
 
-fn scan_text(contents: &str, strat: &askalono::ScanStrategy, threshold: f32) -> ScanResult {
+fn scan_text(contents: &str, strat: &askalono::ScanStrategy<'_>, threshold: f32) -> ScanResult {
     let text = askalono::TextData::new(&contents);
     match strat.scan(&text) {
         Ok(lic_match) => {
@@ -527,7 +527,7 @@ impl fmt::Display for ResolveError<'_> {
 pub struct DisplayList<'a, T>(pub &'a [T]);
 
 impl<T: fmt::Display> fmt::Display for DisplayList<'_, T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "[")?;
         for (id, val) in self.0.iter().enumerate() {
             write!(f, "{}", val)?;
@@ -544,7 +544,7 @@ pub struct Resolved(pub Vec<(KrateId, Vec<LicenseReq>)>);
 impl Resolved {
     /// Find the minimal required licenses for each crate.
     pub fn resolve<'a>(
-        licenses: &'a [KrateLicense],
+        licenses: &'a [KrateLicense<'_>],
         accepted: &'a [Licensee],
     ) -> Result<Resolved, Error> {
         let res: Result<Vec<_>, Error> = licenses

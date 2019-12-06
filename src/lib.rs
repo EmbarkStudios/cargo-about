@@ -1,3 +1,6 @@
+#![warn(clippy::all)]
+#![warn(rust_2018_idioms)]
+
 use anyhow::{Context, Error};
 use std::{collections::HashMap, path::Path};
 
