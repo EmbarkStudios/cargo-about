@@ -555,9 +555,9 @@ impl Resolved {
             // in the license expression
             match krate_license.lic_info {
                 LicenseInfo::Expr(ref expr) => {
-                    let req = expr.requirements().map(|expr| expr.req.clone()).find(|req| {
-                        accepted.iter().any(|licensee| licensee.satisfies(&req))
-                    })
+                    let req = accepted.iter().find_map(|licensee| {
+                        expr.requirements().find(|expr| licensee.satisfies(&expr.req))
+                    }).map(|expr| expr.req.clone())
                     .context(format!(
                         "Crate '{}': Unable to satisfy [{}], with the following accepted licenses {}", krate_license.krate.name,
                         expr, DisplayList(accepted)
