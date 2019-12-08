@@ -216,67 +216,36 @@ impl Gatherer {
     }
 }
 
-fn is_ignored(entry: &walkdir::DirEntry) -> bool {
-    entry
-        .file_name()
-        .to_str()
-        .map(|s| {
-            // Ignore hidden directories
-            if s.starts_with('.') {
-                log::debug!("ignoring hidden directory {}", entry.path().display());
-                return true;
-            }
-
-            // Include typical files
-            if entry.file_type().is_file() {
-                if s.starts_with("LICENSE") {
-                    return false;
-                }
-
-                // Filter out typical binary files
-                if let Some(ext) = entry.path().extension() {
-                    return match ext.to_string_lossy().as_ref() {
-                        // Binary artifacts
-                        "a" | "o" | "lib" | "obj" | "pyc" | "dll" | "exe" | "so" => true,
-                        // Binary sources
-                        "ttf" | "ico" | "dfa" | "rc" => true,
-                        // Test data
-                        "png" | "spv" | "vert" | "wasm" | "zip" | "gz" | "wav" | "jpg" | "bin"
-                        | "zlib" | "p8" | "deflate" => true,
-                        // Misc binary
-                        "der" | "metallib" | "pdf" => true,
-                        _ => false,
-                    };
-                }
-            }
-
-            false
-        })
-        .unwrap_or(false)
-}
-
 fn scan_files(
     root_dir: &Path,
     strat: &askalono::ScanStrategy<'_>,
     threshold: f32,
     krate_cfg: Option<(&config::KrateConfig, &str)>,
 ) -> Result<Vec<LicenseFile>, Error> {
-    use walkdir::WalkDir;
+    let types = {
+        let mut tb = ignore::types::TypesBuilder::new();
+        tb.add_defaults();
+        tb.select("all");
+        tb.build()?
+    };
 
-    let walker = WalkDir::new(root_dir).into_iter();
+    let walker = ignore::WalkBuilder::new(root_dir)
+        .standard_filters(true)
+        .follow_links(true)
+        .types(types)
+        .build();
 
-    let files: Vec<_> = walker
-        .filter_entry(|e| !is_ignored(e))
-        .filter_map(|e| e.ok())
-        .collect();
+    let files: Vec<_> = walker.filter_map(|e| e.ok()).collect();
 
     let license_files: Vec<_> = files
         .into_par_iter()
         .filter_map(|file| {
             log::trace!("scanning file {}", file.path().display());
 
-            if file.file_type().is_dir() {
-                return None;
+            if let Some(ft) = file.file_type() {
+                if ft.is_dir() {
+                    return None;
+                }
             }
 
             let mut contents = match read_file(file.path()) {
