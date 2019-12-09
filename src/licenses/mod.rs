@@ -217,13 +217,13 @@ impl Gatherer {
 }
 
 #[cfg(unix)]
-fn is_fifo(ft: &std::fs::FileType) -> bool {
+fn is_fifo(ft: std::fs::FileType) -> bool {
     use std::os::unix::fs::FileTypeExt;
     ft.is_fifo()
 }
 
 #[cfg(not(unix))]
-fn is_fifo(_ft: &std::fs::FileType) -> bool {
+fn is_fifo(_ft: std::fs::FileType) -> bool {
     false
 }
 
@@ -262,7 +262,7 @@ fn scan_files(
             // Check for pipes on unix just in case
             if cfg!(unix) {
                 if let Ok(md) = file.metadata() {
-                    if is_fifo(&md.file_type()) {
+                    if is_fifo(md.file_type()) {
                         log::error!("skipping FIFO {}", file.path().display());
                         return None;
                     }
@@ -319,87 +319,7 @@ fn scan_files(
                 None => None,
             };
 
-            let path = file.into_path();
-
-            match scan_text(&contents, strat, threshold) {
-                ScanResult::Header(ided) => {
-                    if let Some((exp_id, addendum)) = expected {
-                        if exp_id != ided.id {
-                            log::error!(
-                                "expected license '{}' in path '{}', but found '{}'",
-                                exp_id.name,
-                                path.display(),
-                                ided.id.name
-                            );
-                        } else if addendum.is_none() {
-                            log::debug!(
-                                "ignoring '{}', matched license '{}'",
-                                path.display(),
-                                ided.id.name
-                            );
-                            return None;
-                        }
-                    }
-
-                    Some(LicenseFile {
-                        id: ided.id,
-                        confidence: ided.confidence,
-                        path,
-                        info: LicenseFileInfo::Header,
-                    })
-                }
-                ScanResult::Text(ided) => {
-                    let info = if let Some((exp_id, addendum)) = expected {
-                        if exp_id != ided.id {
-                            log::error!(
-                                "expected license '{}' in path '{}', but found '{}'",
-                                exp_id.name,
-                                path.display(),
-                                ided.id.name
-                            );
-                        }
-
-                        match addendum {
-                            Some(path) => LicenseFileInfo::AddendumText(contents, path.clone()),
-                            None => {
-                                log::debug!(
-                                    "ignoring '{}', matched license '{}'",
-                                    path.display(),
-                                    ided.id.name
-                                );
-                                return None;
-                            }
-                        }
-                    } else {
-                        LicenseFileInfo::Text(contents)
-                    };
-
-                    Some(LicenseFile {
-                        id: ided.id,
-                        confidence: ided.confidence,
-                        path,
-                        info,
-                    })
-                }
-                ScanResult::UnknownId(id_str) => {
-                    log::error!(
-                        "found unknown SPDX identifier '{}' scanning '{}'",
-                        id_str,
-                        path.display()
-                    );
-                    None
-                }
-                ScanResult::LowLicenseChance(ided) => {
-                    log::debug!(
-                        "found '{}' scanning '{}' but it only has a confidence score of {}",
-                        ided.id.name,
-                        path.display(),
-                        ided.confidence
-                    );
-                    None
-                }
-                ScanResult::NoLicense => None,
-            }
+            check_is_license_file(file.into_path(), contents, strat, threshold, expected)
         })
         .collect();
 
@@ -437,6 +357,94 @@ fn snip_contents(contents: String, start: Option<usize>, end: Option<usize>) -> 
         }
 
         snipped_contents
+    }
+}
+
+fn check_is_license_file(
+    path: PathBuf,
+    contents: String,
+    strat: &askalono::ScanStrategy<'_>,
+    threshold: f32,
+    expected: Option<(spdx::LicenseId, Option<&PathBuf>)>,
+) -> Option<LicenseFile> {
+    match scan_text(&contents, strat, threshold) {
+        ScanResult::Header(ided) => {
+            if let Some((exp_id, addendum)) = expected {
+                if exp_id != ided.id {
+                    log::error!(
+                        "expected license '{}' in path '{}', but found '{}'",
+                        exp_id.name,
+                        path.display(),
+                        ided.id.name
+                    );
+                } else if addendum.is_none() {
+                    log::debug!(
+                        "ignoring '{}', matched license '{}'",
+                        path.display(),
+                        ided.id.name
+                    );
+                    return None;
+                }
+            }
+
+            Some(LicenseFile {
+                id: ided.id,
+                confidence: ided.confidence,
+                path,
+                info: LicenseFileInfo::Header,
+            })
+        }
+        ScanResult::Text(ided) => {
+            let info = if let Some((exp_id, addendum)) = expected {
+                if exp_id != ided.id {
+                    log::error!(
+                        "expected license '{}' in path '{}', but found '{}'",
+                        exp_id.name,
+                        path.display(),
+                        ided.id.name
+                    );
+                }
+
+                match addendum {
+                    Some(path) => LicenseFileInfo::AddendumText(contents, path.clone()),
+                    None => {
+                        log::debug!(
+                            "ignoring '{}', matched license '{}'",
+                            path.display(),
+                            ided.id.name
+                        );
+                        return None;
+                    }
+                }
+            } else {
+                LicenseFileInfo::Text(contents)
+            };
+
+            Some(LicenseFile {
+                id: ided.id,
+                confidence: ided.confidence,
+                path,
+                info,
+            })
+        }
+        ScanResult::UnknownId(id_str) => {
+            log::error!(
+                "found unknown SPDX identifier '{}' scanning '{}'",
+                id_str,
+                path.display()
+            );
+            None
+        }
+        ScanResult::LowLicenseChance(ided) => {
+            log::debug!(
+                "found '{}' scanning '{}' but it only has a confidence score of {}",
+                ided.id.name,
+                path.display(),
+                ided.confidence
+            );
+            None
+        }
+        ScanResult::NoLicense => None,
     }
 }
 
