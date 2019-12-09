@@ -216,17 +216,6 @@ impl Gatherer {
     }
 }
 
-#[cfg(unix)]
-fn is_fifo(ft: std::fs::FileType) -> bool {
-    use std::os::unix::fs::FileTypeExt;
-    ft.is_fifo()
-}
-
-#[cfg(not(unix))]
-fn is_fifo(_ft: std::fs::FileType) -> bool {
-    false
-}
-
 fn scan_files(
     root_dir: &Path,
     strat: &askalono::ScanStrategy<'_>,
@@ -260,9 +249,12 @@ fn scan_files(
             }
 
             // Check for pipes on unix just in case
-            if cfg!(unix) {
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::FileTypeExt;
+
                 if let Ok(md) = file.metadata() {
-                    if is_fifo(md.file_type()) {
+                    if md.file_type().is_fifo() {
                         log::error!("skipping FIFO {}", file.path().display());
                         return None;
                     }
