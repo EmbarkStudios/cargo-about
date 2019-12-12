@@ -42,7 +42,17 @@ Possible values:
 * trace"
     )]
     log_level: log::LevelFilter,
-    /// The path of the Cargo.toml to use
+    /// Space-separated list of features to activate
+    #[structopt(long)]
+    features: Option<String>,
+    /// Activate all available features
+    #[structopt(long)]
+    all_features: bool,
+    /// Do not activate the `default` feature
+    #[structopt(long)]
+    no_default_features: bool,
+    /// The path of the Cargo.toml for the root crate, defaults to the
+    /// current crate or workspace in the current working directory
     #[structopt(short, long = "manifest-path", parse(from_os_str))]
     manifest_path: Option<PathBuf>,
     #[structopt(subcommand)]
@@ -145,7 +155,12 @@ fn real_main() -> Result<(), Error> {
     let (all_crates, store) = rayon::join(
         || {
             log::info!("gathering crates for {}", manifest_path.display());
-            cargo_about::get_all_crates(&manifest_path)
+            cargo_about::get_all_crates(
+                &manifest_path,
+                args.no_default_features,
+                args.all_features,
+                args.features.as_ref().map(|s| s.as_str()),
+            )
         },
         || {
             log::info!("loading license store");
