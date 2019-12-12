@@ -16,14 +16,34 @@ pub struct Krates {
     //pub lock_file: PathBuf,
 }
 
-pub fn get_all_crates<P: AsRef<Path>>(cargo_toml: P) -> Result<Krates, Error> {
+pub fn get_all_crates<P: AsRef<Path>>(
+    cargo_toml: P,
+    no_default_features: bool,
+    all_features: bool,
+    features: Option<&str>,
+) -> Result<Krates, Error> {
     use rayon::prelude::*;
 
-    let metadata = cargo_metadata::MetadataCommand::new()
-        .manifest_path(cargo_toml)
-        .features(cargo_metadata::CargoOpt::AllFeatures)
-        .exec()
-        .context("failed to fetch metadata")?;
+    let metadata = {
+        let mut mdc = cargo_metadata::MetadataCommand::new();
+        mdc.manifest_path(cargo_toml);
+
+        // The metadata command builder is weird and only allows you to specify
+        // one of these, but really you might need to do multiple of them
+        if no_default_features {
+            mdc.other_options(["--no-default-features".to_owned()]);
+        }
+
+        if all_features {
+            mdc.other_options(["--all-features".to_owned()]);
+        }
+
+        if let Some(fts) = features {
+            mdc.other_options(["--features".to_owned(), fts.to_owned()]);
+        }
+
+        mdc.exec().context("failed to fetch metadata")?
+    };
 
     let mut krates = metadata.packages;
 
