@@ -82,9 +82,16 @@ fn load_config(manifest_path: &Path) -> Result<cargo_about::licenses::config::Co
     // cases where eg in a workspace there is a top-level about.toml
     // but the user is only getting a listing for a particular crate from it
     while let Some(p) = parent {
-        if !p.join("Cargo.toml").exists() {
-            break;
-        }
+        // We _could_ limit ourselves to only directories that also have a Cargo.toml
+        // in them, but there could be cases where someone has multiple
+        // rust projects in subdirectories with a single top level about.toml that is
+        // used across all of them, we could also introduce a metadata entry for the
+        // relative path of the about.toml to use for the crate/workspace
+
+        // if !p.join("Cargo.toml").exists() {
+        //     parent = p.parent();
+        //     continue;
+        // }
 
         let about_toml = p.join("about.toml");
 
@@ -99,6 +106,7 @@ fn load_config(manifest_path: &Path) -> Result<cargo_about::licenses::config::Co
         parent = p.parent();
     }
 
+    log::warn!("no 'about.toml' found, falling back to default configuration");
     Ok(cargo_about::licenses::config::Config::default())
 }
 
@@ -160,7 +168,7 @@ fn main() {
     match real_main() {
         Ok(_) => {}
         Err(e) => {
-            log::error!("{}", e);
+            log::error!("{:#}", e);
             std::process::exit(1);
         }
     }
