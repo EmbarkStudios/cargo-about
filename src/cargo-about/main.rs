@@ -44,7 +44,7 @@ Possible values:
     log_level: log::LevelFilter,
     /// Space-separated list of features to activate
     #[structopt(long)]
-    features: Option<String>,
+    features: Vec<String>,
     /// Activate all available features
     #[structopt(long)]
     all_features: bool,
@@ -156,10 +156,11 @@ fn real_main() -> Result<(), Error> {
         || {
             log::info!("gathering crates for {}", manifest_path.display());
             cargo_about::get_all_crates(
-                &manifest_path,
+                manifest_path,
                 args.no_default_features,
                 args.all_features,
-                args.features.as_ref().map(|s| s.as_str()),
+                args.features.clone(),
+                &cfg,
             )
         },
         || {
@@ -171,7 +172,7 @@ fn real_main() -> Result<(), Error> {
     let all_crates = all_crates?;
     let store = store?;
 
-    log::info!("gathered {} crates", all_crates.krates.len());
+    log::info!("gathered {} crates", all_crates.len());
 
     match args.cmd {
         Command::Generate(gen) => generate::cmd(gen, cfg, all_crates, store),

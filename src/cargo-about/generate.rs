@@ -1,5 +1,5 @@
 use anyhow::{bail, Context, Error};
-use cargo_about::{licenses, Krate, Krates};
+use cargo_about::{licenses, Krates};
 use handlebars::Handlebars;
 use serde::Serialize;
 use std::{collections::BTreeMap, path::PathBuf};
@@ -111,7 +111,7 @@ pub fn cmd(
 
     let summary = licenses::Gatherer::with_store(std::sync::Arc::new(store))
         .with_confidence_threshold(args.threshold)
-        .gather(&krates.krates, &cfg);
+        .gather(&krates, &cfg);
 
     let resolved = licenses::Resolved::resolve(&summary.nfos, &cfg.accepted)?;
     let output = generate(&summary.nfos, &resolved, &registry, &template)?;
@@ -124,7 +124,7 @@ pub fn cmd(
 #[derive(Clone, Serialize)]
 struct UsedBy<'a> {
     #[serde(rename = "crate")]
-    krate: &'a Krate,
+    krate: &'a krates::cm::Package,
     path: Option<PathBuf>,
 }
 
@@ -234,6 +234,11 @@ fn generate(
             .into_iter()
             .flat_map(|(_, v)| v.into_iter().map(|(_, v)| v))
             .collect::<Vec<_>>();
+
+        // Sort the used_by krates lexicographically
+        for lic in &mut licenses {
+            lic.used_by.sort_by(|a, b| a.krate.id.cmp(&b.krate.id));
+        }
 
         licenses.sort_by(|a, b| a.id.cmp(&b.id));
         licenses

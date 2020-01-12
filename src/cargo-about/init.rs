@@ -16,9 +16,7 @@ pub struct Args {
 }
 
 pub fn cmd(args: Args) -> Result<(), Error> {
-    let root_path = cargo_metadata::MetadataCommand::new()
-        .exec()?
-        .workspace_root;
+    let root_path = krates::cm::MetadataCommand::new().exec()?.workspace_root;
     let with_handlebars = !args.no_handlebars;
 
     if with_handlebars {

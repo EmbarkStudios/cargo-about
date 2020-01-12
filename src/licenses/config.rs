@@ -97,8 +97,19 @@ pub struct KrateConfig {
     pub ignore: Vec<Ignore>,
 }
 
+#[serde(rename_all = "kebab-case")]
 #[derive(Deserialize, Debug, Default)]
 pub struct Config {
+    /// Only includes dependencies that match at least
+    /// one of the specified targets
+    #[serde(default)]
+    pub targets: Vec<String>,
+    /// Ignores any build dependencies in the graph
+    #[serde(default)]
+    pub ignore_build_dependencies: bool,
+    /// Ignores any dev dependencies in the graph
+    #[serde(default)]
+    pub ignore_dev_dependencies: bool,
     /// The list of licenses we will use for all crates, in priority order
     #[serde(deserialize_with = "deserialize_licensee")]
     pub accepted: Vec<spdx::Licensee>,
