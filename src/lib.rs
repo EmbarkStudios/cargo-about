@@ -1,9 +1,9 @@
 #![warn(clippy::all)]
 #![warn(rust_2018_idioms)]
 
-use anyhow::{Context, Error};
+use anyhow::Error;
 use krates::cm;
-use std::{fmt, path::Path};
+use std::fmt;
 
 pub mod licenses;
 
@@ -44,16 +44,8 @@ pub fn get_all_crates(
     features: Vec<String>,
     cfg: &licenses::config::Config,
 ) -> Result<Krates, Error> {
-    //let mut mdc = cm::MetadataCommand::new();
-
-    // We take a manifest-path, but we use current directory, otherwise
-    // any .cargo/config the user's project might have won't be taken into
-    // account
-    // mdc.current_dir(cargo_toml.as_ref().parent().unwrap());
-    // mdc.manifest_path("Cargo.toml");
-
     let mut mdc = krates::Cmd::new();
-    mdc.manifest_path(cargo_toml.clone());
+    mdc.manifest_path(cargo_toml);
 
     // The metadata command builder is weird and only allows you to specify
     // one of these, but really you might need to do multiple of them
@@ -77,25 +69,18 @@ pub fn get_all_crates(
         builder.ignore_kind(krates::DepKind::Dev, krates::Scope::All);
     }
 
-    builder.include_targets(cfg.targets.iter().map(|triple| (triple.clone(), vec![])));
+    builder.include_targets(cfg.targets.iter().map(|triple| (triple.as_str(), vec![])));
 
-    let graph = builder.build(
-        mdc,
-        Some(|filtered: cm::Package| match filtered.source {
-            Some(src) => {
-                if src.is_crates_io() {
-                    log::debug!("filtered {} {}", filtered.name, filtered.version);
-                } else {
-                    log::debug!("filtered {} {} {}", filtered.name, filtered.version, src);
-                }
+    let graph = builder.build(mdc, |filtered: cm::Package| match filtered.source {
+        Some(src) => {
+            if src.is_crates_io() {
+                log::debug!("filtered {} {}", filtered.name, filtered.version);
+            } else {
+                log::debug!("filtered {} {} {}", filtered.name, filtered.version, src);
             }
-            None => log::debug!("filtered crate {} {}", filtered.name, filtered.version),
-        }),
-    )?;
-
-    use krates::petgraph::dot::{Config, Dot};
-
-    println!("{}", Dot::with_config(&graph.graph(), &[]));
+        }
+        None => log::debug!("filtered crate {} {}", filtered.name, filtered.version),
+    })?;
 
     Ok(graph)
 }
