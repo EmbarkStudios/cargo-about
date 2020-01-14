@@ -5,12 +5,8 @@ deny = [
     { name = "openssl-sys" },
 ]
 skip = [
-    # ignore uses an old crossbeam-channel
-    { name = "crossbeam-utils", version = "=0.6.6" },
     # crossbeam uses an old autocfg
     { name = "autocfg", version = "0.1.7" },
-    # ignore uses an old thread_local
-    { name = "thread_local", version = "0.3.6" },
 ]
 
 [licenses]
