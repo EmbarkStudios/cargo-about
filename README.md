@@ -12,7 +12,7 @@ Cargo plugin for generating a listing of all of the crates used by a root crate,
 
 ### Installing
 
-```
+```bash
 cargo install cargo-about
 ```
 
@@ -31,12 +31,42 @@ cargo about generate about.hbs > license.html
 
 Priority list of all the accepted licenses for a project. `cargo-about` will try to satisfy the licenses in the order that they are declared in this list.
 
-```toml
+```ini
 accepted = [
     "Apache-2.0",
     "MIT",
 ]
 ```
+
+### `[targets]`
+
+A list of targets that are actually building for. Crates which are only included via `cfg()` expressions that don't match one or more of the listed targets will be ignored.
+
+```ini
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "x86_64-unknown-linux-musl",
+    "x86_64-pc-windows-msvc",
+    "x86_64-apple-darwin",
+]
+```
+
+### `ignore-build-dependencies`
+
+If true, all crates that are only used as build dependencies will be ignored.
+
+```ini
+ignore-build-dependencies = true
+```
+
+### `ignore-dev-dependencies`
+
+If true, all crates that are only used as dev dependencies will be ignored.
+
+```ini
+ignore-dev-dependencies = true
+```
+
 ### `[[DEPENDENCY.additional]]`
 * `root` Name of the root folder
 * `license` Name of the license. Has to be parsable from SPDX, see https://spdx.org/licenses/
@@ -45,7 +75,7 @@ accepted = [
 * `license-end` The ending line number of the license in the specified license file
 
 
-```toml
+```ini
 # Example
 [[physx-sys.additional]]
 root = "PhysX"
@@ -61,8 +91,7 @@ Sometimes libraries include licenses for example code that you don't want to use
 * `license` Name of the license that you want to ingore. Has to be parsable from SPDX, see https://spdx.org/licenses/
 * `license-file` The path to the license file where the license is specified
 
-```toml
-# Example
+```ini
 [[imgui-sys.ignore]]
 license = "Zlib"
 license-file = "third-party/cimgui/imgui/examples/libs/glfw/COPYING.txt"
