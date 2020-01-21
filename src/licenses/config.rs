@@ -69,7 +69,7 @@ where
 }
 
 #[derive(Deserialize, Debug)]
-#[serde(rename_all = "kebab-case")]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct Additional {
     pub root: PathBuf,
     #[serde(deserialize_with = "deserialize_spdx_id")]
@@ -80,7 +80,7 @@ pub struct Additional {
 }
 
 #[derive(Deserialize, Debug)]
-#[serde(rename_all = "kebab-case")]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct Ignore {
     #[serde(deserialize_with = "deserialize_spdx_id")]
     pub license: spdx::LicenseId,
@@ -90,6 +90,7 @@ pub struct Ignore {
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct KrateConfig {
     #[serde(default)]
     pub additional: Vec<Additional>,
@@ -97,11 +98,11 @@ pub struct KrateConfig {
     pub ignore: Vec<Ignore>,
 }
 
-#[serde(rename_all = "kebab-case")]
 #[derive(Deserialize, Debug, Default)]
+#[serde(rename_all = "kebab-case")]
 pub struct Config {
-    /// Only includes dependencies that match at least
-    /// one of the specified targets
+    /// Only includes dependencies that match at least one of the specified
+    /// targets
     #[serde(default)]
     pub targets: Vec<String>,
     /// Ignores any build dependencies in the graph
@@ -114,5 +115,5 @@ pub struct Config {
     #[serde(deserialize_with = "deserialize_licensee")]
     pub accepted: Vec<spdx::Licensee>,
     #[serde(flatten)]
-    pub inner: BTreeMap<String, KrateConfig>,
+    pub crates: BTreeMap<String, KrateConfig>,
 }

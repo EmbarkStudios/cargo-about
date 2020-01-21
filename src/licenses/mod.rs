@@ -153,7 +153,7 @@ impl Gatherer {
                 };
 
                 let root_path = krate.manifest_path.parent().unwrap();
-                let krate_cfg = cfg.inner.get(&krate.name);
+                let krate_cfg = cfg.crates.get(&krate.name);
 
                 let mut license_files = match scan_files(
                     &root_path,
