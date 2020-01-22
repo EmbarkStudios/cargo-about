@@ -4,7 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+<!-- next-header -->
+## [Unreleased] - ReleaseDate
+### Added
+- `cfg()` dependendent crates can now be ignored by specifying only the `targets = []` you actually build for
+- `build` and `dev` dependencies can now be optionally ignored
+
+### Fixed
+- The `used_by` list of crates that use a particular license are now always sorted lexicographically
 
 ## [0.1.1] - 2019-12-12
 ### Fixed
@@ -18,7 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial add of the thing
 
+<!-- next-url -->
 [Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.1.1...HEAD
-[0.1.1]: https://github.com/EmbarkStudios/tame-oauth/compare/0.1.0...0.1.1
-[0.1.0]: https://github.com/EmbarkStudios/tame-oauth/compare/0.0.1...0.1.0
+[0.1.1]: https://github.com/EmbarkStudios/cargo-about/compare/0.1.0...0.1.1
+[0.1.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.0.1...0.1.0
 [0.0.1]: https://github.com/EmbarkStudios/cargo-about/releases/tag/0.0.1

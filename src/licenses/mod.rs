@@ -1,4 +1,4 @@
-use crate::Krate;
+use crate::{Krate, Krates};
 use anyhow::{bail, Context, Error};
 use rayon::prelude::*;
 use spdx::{LicenseId, LicenseItem, LicenseReq, Licensee};
@@ -100,7 +100,7 @@ impl Gatherer {
         self
     }
 
-    pub fn gather<'k>(self, krates: &'k [crate::Krate], cfg: &config::Config) -> Summary<'k> {
+    pub fn gather<'k>(self, krates: &'k Krates, cfg: &config::Config) -> Summary<'k> {
         let mut summary = Summary::new(self.store);
 
         let threshold = self.threshold;
@@ -116,9 +116,11 @@ impl Gatherer {
             .optimize(false)
             .max_passes(1);
 
-        krates
-            .par_iter()
-            .map(|krate| {
+        summary.nfos = krates
+            .krates()
+            .par_bridge()
+            .map(|kn| {
+                let krate = &kn.krate;
                 let info = match krate.license {
                     Some(ref license_field) => {
                         //. Reasons this can fail:
@@ -151,7 +153,7 @@ impl Gatherer {
                 };
 
                 let root_path = krate.manifest_path.parent().unwrap();
-                let krate_cfg = cfg.inner.get(&krate.name);
+                let krate_cfg = cfg.crates.get(&krate.name);
 
                 let mut license_files = match scan_files(
                     &root_path,
@@ -210,7 +212,7 @@ impl Gatherer {
                     license_files,
                 }
             })
-            .collect_into_vec(&mut summary.nfos);
+            .collect();
 
         summary
     }

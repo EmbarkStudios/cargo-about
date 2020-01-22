@@ -2,3 +2,11 @@ accepted = [
     "Apache-2.0",
     "MIT",
 ]
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "x86_64-unknown-linux-musl",
+    "x86_64-pc-windows-msvc",
+    "x86_64-apple-darwin",
+]
+ignore-build-dependencies = false
+ignore-dev-dependencies = false
