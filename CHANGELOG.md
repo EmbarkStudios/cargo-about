@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.2.0] - 2020-01-24
 ### Added
 - `cfg()` dependendent crates can now be ignored by specifying only the `targets = []` you actually build for
 - `build` and `dev` dependencies can now be optionally ignored
@@ -26,7 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.1.1...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.2.0...HEAD
+[0.2.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/EmbarkStudios/cargo-about/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.0.1...0.1.0
 [0.0.1]: https://github.com/EmbarkStudios/cargo-about/releases/tag/0.0.1
