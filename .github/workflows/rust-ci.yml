@@ -63,25 +63,11 @@ jobs:
 
   # Remove this check if you don't use cargo-deny in the repo
   deny-check:
-    name: cargo-deny check
+    name: cargo-deny
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
-    - name: download cargo-deny
-      shell: bash
-      env:
-        DVS: 0.3.0-beta
-        DREPO: EmbarkStudios/cargo-deny
-        TARGET: x86_64-unknown-linux-musl
-      run: |
-        temp_archive=$(mktemp --suffix=.tar.gz)
-        curl -L --output "$temp_archive" https://github.com/$DREPO/releases/download/$DVS/cargo-deny-$DVS-$TARGET.tar.gz
-
-        tar -xzvf "$temp_archive" -C . --strip-components=1 --wildcards "*/cargo-deny"
-    - name: cargo-deny check licenses
-      run: ./cargo-deny -L debug check license
-    - name: cargo-deny check bans
-      run: ./cargo-deny -L debug check ban
+      - uses: actions/checkout@v1
+      - uses: EmbarkStudios/cargo-deny-action@v0
 
   # Remove this check if you don't publish the crate(s) from this repo
   publish-check:
@@ -97,21 +83,11 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: fetch
-    - name: copy README
-      shell: bash
-      run: |
-        cp README.md lib
-        cp README.md cli
-    - name: cargo publish lib
+    - name: cargo publish check
       uses: actions-rs/cargo@v1
       with:
         command: publish
-        args: --dry-run --allow-dirty --manifest-path lib/Cargo.toml
-    - name: cargo publish cli
-      uses: actions-rs/cargo@v1
-      with:
-        command: publish
-        args: --dry-run --allow-dirty --manifest-path cli/Cargo.toml
+        args: --dry-run
 
   # Remove this job if you don't publish the crate(s) from this repo
   # You must add a crates.io API token to your GH secrets called CRATES_IO_TOKEN
