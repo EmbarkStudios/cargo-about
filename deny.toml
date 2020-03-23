@@ -7,8 +7,6 @@ deny = [
 skip = [
     # clap uses old ansi-term
     { name = "ansi_term", version = "0.11.0" },
-    # crossbeam uses an old autocfg
-    { name = "autocfg", version = "0.1.7" },
 ]
 
 [licenses]
