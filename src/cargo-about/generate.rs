@@ -47,9 +47,9 @@ pub fn cmd(
             "json",
             Box::new(
                 |h: &Helper<'_, '_>,
-                 _r: &Handlebars,
+                 _r: &Handlebars<'_>,
                  _: &Context,
-                 _rc: &mut RenderContext<'_>,
+                 _rc: &mut RenderContext<'_, '_>,
                  out: &mut dyn Output|
                  -> HelperResult {
                     let param = h
@@ -61,34 +61,6 @@ pub fn cmd(
                 },
             ),
         );
-
-        // reg.register_helper(
-        //     "sanitize-html",
-        //     Box::new(
-        //         |h: &Helper,
-        //          r: &Handlebars,
-        //          _: &Context,
-        //          rc: &mut RenderContext<'_>,
-        //          out: &mut dyn Output|
-        //          -> HelperResult {
-        //             let param = h.param(0).ok_or(RenderError::new("param not found"))?;
-
-        //             let val = param
-        //                 .value()
-        //                 .as_str()
-        //                 .ok_or_else(|| RenderError::new("expected string"))?;
-
-        //             let cleaned = ammonia::clean(val);
-
-        //             if val != cleaned {
-        //                 println!("{}", difference::Changeset::new(val, &cleaned, ""));
-        //                 //return Err(RenderError::new("HOLY CRAP WE DID IT"));
-        //             }
-        //             out.write(&cleaned)?;
-        //             Ok(())
-        //         },
-        //     ),
-        // );
 
         if args.templates.is_dir() {
             reg.register_templates_directory(".hbs", &args.templates)?;
@@ -159,7 +131,7 @@ struct Input<'a> {
 fn generate(
     nfos: &[licenses::KrateLicense<'_>],
     resolved: &licenses::Resolved,
-    hbs: &Handlebars,
+    hbs: &Handlebars<'_>,
     template_name: &str,
 ) -> Result<String, Error> {
     let licenses = {
