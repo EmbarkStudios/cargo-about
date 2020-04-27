@@ -135,7 +135,7 @@ dependencies = [
  "handlebars 3.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ignore 0.4.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "krates 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "license 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "license 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "rayon 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.106 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -427,7 +427,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "license"
-version = "1.1.0"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -985,7 +985,7 @@ dependencies = [
 "checksum krates 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "dff0fd78de1cfa4d0b751aae27181684502032ef923e9793f2ffb3ebf202ae7a"
 "checksum lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 "checksum libc 0.2.68 (registry+https://github.com/rust-lang/crates.io-index)" = "dea0c0405123bba743ee3f91f49b1c7cfb684eef0da0a50110f758ccf24cdff0"
-"checksum license 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "421d9745f0e0319dd85e06e6bd8f823a16a5c431023b2417245f88efb52b53aa"
+"checksum license 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "ae36bfdbbd31bb2251dcb3251c04fd37a46c043cda575966e163dc163593446a"
 "checksum log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)" = "14b6052be84e6b71ab17edffc2eeabf5c2c3ae1fdb464aae35ac50c67a44e1f7"
 "checksum maplit 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "3e2e65a1a2e43cfcb47a895c4c8b10d1f4a61097f9f254f183aee60cad9c651d"
 "checksum maybe-uninit 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "60302e4db3a61da70c0cb7991976248362f30319e88850c487b9b95bbf059e00"
