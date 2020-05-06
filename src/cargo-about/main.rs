@@ -8,6 +8,9 @@ use structopt::StructOpt;
 mod generate;
 mod init;
 
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 #[derive(StructOpt, Debug)]
 enum Command {
     /// Outputs a listing of all licenses and the crates that use them
