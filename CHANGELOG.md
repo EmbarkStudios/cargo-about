@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.2.1] - 2020-05-06
 ### Changed
 - [PR#83](https://github.com/EmbarkStudios/cargo-about/pull/83) changed the default allocator from the system allocator to [mimalloc](https://github.com/purpleprotocol/mimalloc_rust), which should give some performance improvements, particular when building for musl.
 
@@ -30,7 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.2.0...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.2.1...HEAD
+[0.2.1]: https://github.com/EmbarkStudios/cargo-about/compare/0.2.0...0.2.1
 [0.2.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/EmbarkStudios/cargo-about/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.0.1...0.1.0
