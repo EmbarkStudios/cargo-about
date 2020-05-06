@@ -9,7 +9,7 @@ mod generate;
 mod init;
 
 #[global_allocator]
-static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+static ALLOC: rpmalloc::RpMalloc = rpmalloc::RpMalloc;
 
 #[derive(StructOpt, Debug)]
 enum Command {
