@@ -24,7 +24,7 @@ path = "src/cargo-about/main.rs"
 
 [dependencies]
 ansi_term = "0.12.1"
-anyhow = "1.0.26"
+anyhow = "1.0.31"
 askalono = "0.4.1"
 chrono = "0.4.10"
 fern = "0.6.0"
