@@ -50,7 +50,7 @@ You can comment on the issue to let others know you're interested in working on 
 
 ### Rust
 
-You can read about our standards and recommendations for working with Rust [here](https://github.com/EmbarkStudios/rust-ecosystem/blob/master/guidelines.md).
+You can read about our standards and recommendations for working with Rust [here](https://github.com/EmbarkStudios/rust-ecosystem/blob/main/guidelines.md).
 
 ### Python
 
