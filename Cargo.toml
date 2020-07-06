@@ -31,7 +31,7 @@ fern = "0.6.0"
 handlebars = { version = "3.2.1", features = ["dir_source"] }
 ignore = "0.4.11"
 krates = "0.3.0"
-license = "1.1.0"
+license = "1.1.4"
 log = "0.4.8"
 rayon = "1.3.0"
 serde = { version = "1.0.104", features = ["derive"] }
