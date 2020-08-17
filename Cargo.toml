@@ -28,7 +28,7 @@ anyhow = "1.0.31"
 askalono = "0.4.1"
 chrono = "0.4.10"
 fern = "0.6.0"
-handlebars = { version = "3.2.1", features = ["dir_source"] }
+handlebars = { version = "3.4.0", features = ["dir_source"] }
 ignore = "0.4.11"
 krates = "0.3.0"
 license = "1.1.0"
