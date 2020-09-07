@@ -135,7 +135,7 @@ dependencies = [
  "handlebars 3.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ignore 0.4.16 (registry+https://github.com/rust-lang/crates.io-index)",
  "krates 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "license 1.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "license 1.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "rayon 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rpmalloc 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -432,7 +432,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "license"
-version = "1.1.3"
+version = "1.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -1014,7 +1014,7 @@ dependencies = [
 "checksum krates 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "3cdc6bcd1d8aa264975383e5370ff7e5d4453d2ca6a99635f8d1737790e4f7da"
 "checksum lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 "checksum libc 0.2.71 (registry+https://github.com/rust-lang/crates.io-index)" = "9457b06509d27052635f90d6466700c65095fdf75409b3fbdd903e988b886f49"
-"checksum license 1.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "a50dad3fc80bcd794365d77391fa9afb0916ec873c0769973b41b571e5f26a6f"
+"checksum license 1.1.7 (registry+https://github.com/rust-lang/crates.io-index)" = "7bebcb32cc487c1533a30ed137b9f5707229405896234fc7136f2e961dc21d0a"
 "checksum log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)" = "14b6052be84e6b71ab17edffc2eeabf5c2c3ae1fdb464aae35ac50c67a44e1f7"
 "checksum maplit 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "3e2e65a1a2e43cfcb47a895c4c8b10d1f4a61097f9f254f183aee60cad9c651d"
 "checksum maybe-uninit 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "60302e4db3a61da70c0cb7991976248362f30319e88850c487b9b95bbf059e00"
