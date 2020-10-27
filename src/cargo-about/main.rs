@@ -139,11 +139,7 @@ fn real_main() -> Result<(), Error> {
     let manifest_path = args
         .manifest_path
         .clone()
-        .or_else(|| {
-            std::env::current_dir()
-                .and_then(|cd| Ok(cd.join("Cargo.toml")))
-                .ok()
-        })
+        .or_else(|| std::env::current_dir().map(|cd| cd.join("Cargo.toml")).ok())
         .context("unable to determine manifest path")?;
 
     if !manifest_path.exists() {
