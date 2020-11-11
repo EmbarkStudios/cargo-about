@@ -1,3 +1,20 @@
+targets = [
+    { triple = "x86_64-unknown-linux-gnu" },
+    { triple = "x86_64-unknown-linux-musl" },
+    { triple = "x86_64-apple-darwin" },
+    { triple = "x86_64-pc-windows-msvc" },
+]
+
+[advisories]
+vulnerability = "deny"
+unsound = "deny"
+unmaintained = "deny"
+ignore = [
+    # failure is unsound and unmaintained, but is used by askalono
+    "RUSTSEC-2020-0036",
+    "RUSTSEC-2019-0036",
+]
+
 [bans]
 multiple-versions = "deny"
 deny = [
@@ -9,6 +26,10 @@ deny = [
 skip = [
     # clap uses old ansi-term
     { name = "ansi_term", version = "0.11.0" },
+    # Multiple crates use the pre-1.0 version
+    { name = "cfg-if", version = "=0.1.10" },
+    # ignore uses an older version
+    { name = "crossbeam-utils", version = "=0.7.2" },
 ]
 
 [licenses]
