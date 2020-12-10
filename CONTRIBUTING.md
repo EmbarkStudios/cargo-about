@@ -56,9 +56,9 @@ You can read about our standards and recommendations for working with Rust [here
 
 We recommend following [PEP8 conventions](https://www.python.org/dev/peps/pep-0008/) when working with Python modules.
 
-### JavaScript
+### JavaScript & TypeScript
 
-We follow the [AirBnB JavaScript style guide](https://github.com/airbnb/javascript). You can find the ESLint configuration in relevant repositories.
+We use [Prettier](https://prettier.io/) with the default settings to auto-format our JavaScript and TypeScript code.
 
 ## Licensing
 
