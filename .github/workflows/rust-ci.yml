@@ -21,24 +21,17 @@ jobs:
           override: true
 
       # make sure all code has been formatted with rustfmt
-      - run: rustup component add rustfmt
       - name: check rustfmt
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: -- --check --color always
+        run: |
+          rustup component add rustfmt
+          cargo fmt -- --check --color always
 
       # run clippy to verify we have no warnings
-      - run: rustup component add clippy
-      - name: cargo fetch
-        uses: actions-rs/cargo@v1
-        with:
-          command: fetch
+      - run: cargo fetch
       - name: cargo clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --lib --tests -- -D warnings
+        run: |
+          rustup component add clippy
+          cargo clippy --all-targets --all-features -- -D warnings
 
   test:
     name: Test
@@ -52,20 +45,14 @@ jobs:
         with:
           toolchain: stable
           override: true
-      - name: cargo fetch
-        uses: actions-rs/cargo@v1
-        with:
-          command: fetch
+      - run: cargo fetch
       - name: cargo test build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --tests --release
+        # Note the use of release here means longer compile time, but much
+        # faster test execution time. If you don't have any heavy tests it
+        # might be faster to take off release and just compile in debug
+        run: cargo build --tests --release
       - name: cargo test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --release
+        run: cargo test --release
 
   # TODO: Remove this check if you don't use cargo-deny in the repo
   deny-check:
@@ -85,18 +72,12 @@ jobs:
         with:
           toolchain: stable
           override: true
-      - name: cargo fetch
-        uses: actions-rs/cargo@v1
-        with:
-          command: fetch
+      - run: cargo fetch
       - name: cargo publish check
-        uses: actions-rs/cargo@v1
-        with:
-          command: publish
-          args: --dry-run
+        run: cargo publish --dry-run
 
   # TODO: Remove this job if you don't publish the crate(s) from this repo
-  # You must add a crates.io API token to your GH secrets called CRATES_IO_TOKEN
+  # You must add a crates.io API token to your GH secrets and name it CRATES_IO_TOKEN
   publish:
     name: Publish
     needs: [test, deny-check, publish-check]
@@ -108,16 +89,11 @@ jobs:
         with:
           toolchain: stable
           override: true
-      - name: cargo fetch
-        uses: actions-rs/cargo@v1
-        with:
-          command: fetch
+      - run: cargo fetch
       - name: cargo publish
-        uses: actions-rs/cargo@v1
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
-        with:
-          command: publish
+        run: cargo publish
 
   # TODO: Remove this job if you don't release binaries
   # Replace occurances of $BIN_NAME with the name of your binary
@@ -140,12 +116,12 @@ jobs:
             rust: stable
             target: x86_64-pc-windows-msvc
             bin: $BIN_NAME.exe
-            features: --features=progress
+            features: progress
           - os: macOS-latest
             rust: stable
             target: x86_64-apple-darwin
             bin: $BIN_NAME
-            features: --features=progress
+            features: progress
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install stable toolchain
@@ -156,21 +132,18 @@ jobs:
           target: ${{ matrix.target }}
       - name: Install musl tools
         if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get install -y musl-tools
+        run: sudo apt-get install -y musl-tools
       - name: Checkout
         uses: actions/checkout@v2
-      - name: cargo fetch
-        uses: actions-rs/cargo@v1
-        with:
-          command: fetch
-          args: --target ${{ matrix.target }}
+      - run: cargo fetch --target ${{ matrix.target }}
       - name: Release build
-        uses: actions-rs/cargo@v1
-        if: matrix.os != 'ubuntu-latest'
-        with:
-          command: build
-          args: --release --target ${{ matrix.target }} ${{ matrix.features }}
+        shell: bash
+        run: |
+          if [ "${{ matrix.features }}" != "" ]; then
+            cargo build --release --target ${{ matrix.target }} --features ${{ matrix.features }}
+          else
+            cargo build --release --target ${{ matrix.target }}
+          fi
       - name: Package
         shell: bash
         run: |
