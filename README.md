@@ -9,7 +9,7 @@
 
 Cargo plugin for generating a listing of all of the crates used by a root crate, and the terms under which they are licensed.
 
-_Please Note: This is a tool that we use (and like!) and it makes sense to us to release it as open source. However, we can’t take any responsibility for your use of the tool, if it will function correctly or fulfil your needs. No functionality in - or information provided by - cargo-deny constitutes legal advice._
+_Please Note: This is a tool that we use (and like!) and it makes sense to us to release it as open source. However, we can’t take any responsibility for your use of the tool, if it will function correctly or fulfil your needs. No functionality in - or information provided by - cargo-about constitutes legal advice._
 
 ## Getting started
 
