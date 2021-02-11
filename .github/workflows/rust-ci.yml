@@ -177,3 +177,41 @@ jobs:
           files: "$BIN_NAME*"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # TODO: Remove this job if you don't publish container images on each release
+  # TODO: Create a repository on DockerHub with the same name as the GitHub repo
+  # TODO: Add the new repo to the buildbot group with read & write permissions 
+  # TODO: Add the embarkbot dockerhub password to the repo secrets as DOCKERHUB_PASSWORD
+  publish-container-images:
+    name: Publish container images
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [test, deny-check]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to Dockerhub
+        uses: docker/login-action@v1 
+        with:
+          username: embarkbot
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: Docker meta
+        id: docker_meta
+        uses: crazy-max/ghaction-docker-meta@v1
+        with:
+          images: embarkstudios/${{ github.event.repository.name }}
+          tag-semver: |
+            {{version}}
+            {{major}}.{{minor}}
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          labels: ${{ steps.docker_meta.outputs.labels }}
