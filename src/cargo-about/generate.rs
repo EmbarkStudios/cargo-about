@@ -1,8 +1,8 @@
-use anyhow::{bail, Context, Error};
+use anyhow::{anyhow, bail, Context, Error};
 use cargo_about::{licenses, Krates};
 use handlebars::Handlebars;
 use serde::Serialize;
-use std::{collections::BTreeMap, path::PathBuf};
+use std::{collections::BTreeMap, path::Path, path::PathBuf};
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
@@ -23,6 +23,9 @@ pub struct Args {
     /// have at least
     #[structopt(parse(from_os_str))]
     templates: PathBuf,
+    /// A file to write the generated output to.  Typically an .html file.
+    #[structopt(short = "o", long = "output-file", parse(from_os_str))]
+    output_file: Option<PathBuf>,
 }
 
 pub fn cmd(
@@ -88,7 +91,19 @@ pub fn cmd(
     let resolved = licenses::Resolved::resolve(&summary.nfos, &cfg.accepted)?;
     let output = generate(&summary.nfos, &resolved, &registry, &template)?;
 
-    println!("{}", output);
+    match args.output_file.as_ref() {
+        None => println!("{}", output),
+        Some(path) if path == Path::new("-") => println!("{}", output),
+        Some(path) => {
+            std::fs::write(path, output).map_err(|err| {
+                anyhow!(
+                    "output file {} could not be written: {}",
+                    path.display(),
+                    err
+                )
+            })?;
+        }
+    }
 
     Ok(())
 }
