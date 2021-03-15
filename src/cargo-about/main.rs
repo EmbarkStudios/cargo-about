@@ -58,6 +58,9 @@ Possible values:
     /// current crate or workspace in the current working directory
     #[structopt(short, long = "manifest-path", parse(from_os_str))]
     manifest_path: Option<PathBuf>,
+    /// Scan licenses for the entire workspace, not just the active package
+    #[structopt(long)]
+    workspace: bool,
     #[structopt(subcommand)]
     cmd: Command,
 }
@@ -159,6 +162,7 @@ fn real_main() -> Result<(), Error> {
                 args.no_default_features,
                 args.all_features,
                 args.features.clone(),
+                args.workspace,
                 &cfg,
             )
         },
