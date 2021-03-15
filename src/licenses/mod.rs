@@ -219,7 +219,7 @@ impl Gatherer {
 }
 
 fn scan_files(
-    root_dir: &Path,
+    root_dir: &krates::Utf8Path,
     strat: &askalono::ScanStrategy<'_>,
     threshold: f32,
     krate_cfg: Option<(&config::KrateConfig, &str)>,
