@@ -4,8 +4,6 @@ Welcome! This project is created by the team at [Embark Studios](https://embark.
 
 At Embark, we aspire to empower everyone to create interactive experiences. To do this, we're exploring and pushing the boundaries of new technologies, and sharing our learnings with the open source community.
 
-If you have any difficulties getting involved or finding answers to your questions, please don't hesitate to ask your questions in our [Discord server](https://discord.com/invite/8TW9nfF).
-
 If you have ideas for collaboration, email us at opensource@embark-studios.com.
 
 We're also hiring full-time engineers to work with us in Stockholm! Check out our current job postings [here](https://www.embark-studios.com/jobs).
@@ -20,7 +18,7 @@ Feature requests will be tagged as `enhancement` and their status will be update
 
 ### Bugs
 
-When reporting a bug or unexpected behaviour in a project, make sure your issue descibes steps to reproduce the behaviour, including the platform you were using, what steps you took, and any error messages.
+When reporting a bug or unexpected behaviour in a project, make sure your issue describes steps to reproduce the behaviour, including the platform you were using, what steps you took, and any error messages.
 
 Reproducible bugs will be tagged as `bug` and their status will be updated in the comments of the issue.
 
@@ -52,20 +50,26 @@ You can comment on the issue to let others know you're interested in working on 
 
 ### Rust
 
-You can read about our standards and recommendations for working with Rust [here](https://github.com/EmbarkStudios/rust-ecosystem/blob/master/guidelines.md).
+You can read about our standards and recommendations for working with Rust [here](https://github.com/EmbarkStudios/rust-ecosystem/blob/main/guidelines.md).
 
 ### Python
 
 We recommend following [PEP8 conventions](https://www.python.org/dev/peps/pep-0008/) when working with Python modules.
 
-### JavaScript
+### JavaScript & TypeScript
 
-We follow the [AirBnB JavaScript style guide](https://github.com/airbnb/javascript). You can find the ESLint configuration in relevant repositories.
+We use [Prettier](https://prettier.io/) with the default settings to auto-format our JavaScript and TypeScript code.
 
 ## Licensing
 
-Unless otherwise specified, all Embark open source projects are licensed under a dual MIT OR Apache-2.0 license, allowing licensees to chose either at their option. You can read more in each project's respective README.
+Unless otherwise specified, all Embark open source projects shall comply with the Rust standard licensing model (MIT + Apache 2.0) and are thereby licensed under a dual license, allowing licensees to choose either MIT OR Apache-2.0 at their option.
 
-## Code of Conduct
+## Contributor Terms
 
-Please note that our projects are released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md) to ensure that they are welcoming places for everyone to contribute. By participating in any Embark open source project, you agree to abide by these terms.
+Thank you for your interest in Embark Studios’ open source project. By providing a contribution (new or modified code, other input, feedback or suggestions etc.) you agree to these Contributor Terms.
+
+You confirm that each of your contributions has been created by you and that you are the copyright owner. You also confirm that you have the right to provide the contribution to us and that you do it under the Rust dual licence model (MIT + Apache 2.0).
+
+If you want to contribute something that is not your original creation, you may submit it to Embark Studios separately from any contribution, including details of its source and of any license or other restriction (such as related patents, trademarks,  agreements etc.)
+
+Please also note that our projects are released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md) to ensure that they are welcoming places for everyone to contribute. By participating in any Embark Studios open source project, you agree to keep to the Contributor Code of Conduct.

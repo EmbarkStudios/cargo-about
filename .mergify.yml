@@ -4,13 +4,12 @@ pull_request_rules:
       - "#approved-reviews-by>=1"
       - "#review-requested=0"
       - "#changes-requested-reviews-by=0"
-      - "#commented-reviews-by=0"
       - base=main
-      - label!=work-in-progress
     actions:
       merge:
         method: squash
   - name: delete head branch after merge
-    conditions: []
+    conditions:
+      - merged
     actions:
       delete_head_branch: {}
