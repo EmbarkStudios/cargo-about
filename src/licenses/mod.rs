@@ -156,7 +156,7 @@ impl Gatherer {
                 let krate_cfg = cfg.crates.get(&krate.name);
 
                 let mut license_files = match scan_files(
-                    &root_path,
+                    root_path,
                     &strategy,
                     threshold,
                     krate_cfg.map(|kc| (kc, krate.name.as_str())),
@@ -456,12 +456,12 @@ enum ScanResult {
 }
 
 fn scan_text(contents: &str, strat: &askalono::ScanStrategy<'_>, threshold: f32) -> ScanResult {
-    let text = askalono::TextData::new(&contents);
+    let text = askalono::TextData::new(contents);
     match strat.scan(&text) {
         Ok(lic_match) => {
             match lic_match.license {
                 Some(identified) => {
-                    let lic_id = match spdx::license_id(&identified.name) {
+                    let lic_id = match spdx::license_id(identified.name) {
                         Some(id) => Identified {
                             confidence: lic_match.score,
                             id,
@@ -477,7 +477,7 @@ fn scan_text(contents: &str, strat: &askalono::ScanStrategy<'_>, threshold: f32)
                             askalono::LicenseType::Header => ScanResult::Header(lic_id),
                             askalono::LicenseType::Original => ScanResult::Text(lic_id),
                             askalono::LicenseType::Alternate => {
-                                unimplemented!("I guess askalono uses this now")
+                                panic!("Alternate license detected")
                             }
                         }
                     } else {
@@ -489,10 +489,7 @@ fn scan_text(contents: &str, strat: &askalono::ScanStrategy<'_>, threshold: f32)
         }
         Err(e) => {
             // the elimination strategy can't currently fail
-            unimplemented!(
-                "I guess askalano's elimination strategy can now fail: {}",
-                e
-            );
+            panic!("askalalono elimination strategy failed: {}", e);
         }
     }
 }
