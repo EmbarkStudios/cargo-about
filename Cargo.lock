@@ -147,6 +147,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
 
 [[package]]
+name = "camino"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2fb25ad5c4211e3c7abded8f00b480e6d1608845dcf14157e9e81d5432e9ac16"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "cargo-about"
 version = "0.2.3"
 dependencies = [
@@ -181,10 +190,11 @@ dependencies = [
 
 [[package]]
 name = "cargo_metadata"
-version = "0.12.3"
+version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7714a157da7991e23d90686b9524b9e12e0407a108647f52e9328f4b3d51ac7f"
+checksum = "081e3f0755c1f380c2d010481b6fa2e02973586d5f2b24eebb7a2a1d98b143d8"
 dependencies = [
+ "camino",
  "cargo-platform",
  "semver",
  "semver-parser",
@@ -203,9 +213,9 @@ dependencies = [
 
 [[package]]
 name = "cfg-expr"
-version = "0.5.1"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf3029692edb3cd77a7fb51dbbbdc4b550c958f7b2147cb7691e38b070f96b5d"
+checksum = "2b81b9640fc656040fbf0d3f2bafacadcf17d55f2b0dc89589c1b80b0658fd5a"
 dependencies = [
  "smallvec",
 ]
@@ -501,9 +511,9 @@ dependencies = [
 
 [[package]]
 name = "krates"
-version = "0.5.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e097391fdf5a89ca49523c9a6248ff96b8ce9f44e12eb966e27a7f93ea33914c"
+checksum = "698ad2dc883a126ce057c06783dd20150158ee58c61a228fb7f1fd5630ca5e4e"
 dependencies = [
  "cargo_metadata",
  "cfg-expr",

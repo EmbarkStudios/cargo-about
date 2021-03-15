@@ -30,7 +30,7 @@ chrono = "0.4"
 fern = "0.6"
 handlebars = { version = "3.2.1", features = ["dir_source"] }
 ignore = "0.4"
-krates = "0.5"
+krates = "0.7"
 license = "1.1"
 log = "0.4"
 rayon = "1.3"
