@@ -42,6 +42,7 @@ pub fn get_all_crates(
     no_default_features: bool,
     all_features: bool,
     features: Vec<String>,
+    workspace: bool,
     cfg: &licenses::config::Config,
 ) -> Result<Krates, Error> {
     let mut mdc = krates::Cmd::new();
@@ -60,6 +61,10 @@ pub fn get_all_crates(
     mdc.features(features);
 
     let mut builder = krates::Builder::new();
+
+    if workspace {
+        builder.workspace(true);
+    }
 
     if cfg.ignore_build_dependencies {
         builder.ignore_kind(krates::DepKind::Build, krates::Scope::All);
