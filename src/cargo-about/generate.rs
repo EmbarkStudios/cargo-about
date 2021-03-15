@@ -212,6 +212,7 @@ fn generate(
             lic.used_by.sort_by(|a, b| a.krate.id.cmp(&b.krate.id));
         }
 
+        licenses.sort_by(|a, b| a.used_by[0].krate.name.cmp(&b.used_by[0].krate.name));
         licenses.sort_by(|a, b| a.id.cmp(&b.id));
         licenses
     };
