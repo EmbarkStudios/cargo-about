@@ -73,7 +73,6 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     strategy:
       matrix:
-        os: [ubuntu-20.04, macOS-latest, windows-latest]
         include:
           - os: ubuntu-20.04
             rust: stable
