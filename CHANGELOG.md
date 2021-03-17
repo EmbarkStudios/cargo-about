@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Added
+- [PR#148](https://github.com/EmbarkStudios/cargo-about/pull/148) added the `-o, --output-file` argument to specify a file to write to. Thanks [@MaulingMonkey](https://github.com/MaulingMonkey)!
+- [PR#153](https://github.com/EmbarkStudios/cargo-about/pull/153) added the `--workspace` flag, closing [#151](https://github.com/EmbarkStudios/cargo-about/issues/151). Thanks [@MaulingMonkey](https://github.com/MaulingMonkey)!
+
+### Changed
+- [PR#157](https://github.com/EmbarkStudios/cargo-about/pull/157) returned to [`mimalloc`](https://github.com/purpleprotocol/mimalloc_rust) from `rpmalloc` to address [#137](https://github.com/EmbarkStudios/cargo-about/issues/137). The original issue with `mimalloc` relying on cmake was fixed. Thanks [@badboy](https://github.com/badboy)!
+- Crates which use the same license are also now sorted lexicographically.
+- Updated dependencies, namely `krates`.
+
 ## [0.2.3] - 2020-11-11
 ### Changed
 - Updated dependencies.
