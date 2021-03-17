@@ -18,6 +18,9 @@ jobs:
           toolchain: stable
           override: true
       - run: rustup target add aarch64-apple-darwin
+      - run: |
+          xcode-select -s "/Applications/Xcode_12.3.app"
+          rm -Rf /Library/Developer/CommandLineTools/SDKs/*
       - run: cargo fetch --target aarch64-apple-darwin
       - run: cargo build --release --target aarch64-apple-darwin
       - run: cargo run --release --target aarch64-apple-darwin -- --version
