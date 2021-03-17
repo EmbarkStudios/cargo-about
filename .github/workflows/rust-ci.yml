@@ -17,13 +17,6 @@ jobs:
         with:
           toolchain: stable
           override: true
-
-  deny-check:
-    name: cargo-deny
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v2
-      - uses: EmbarkStudios/cargo-deny-action@v1
       - run: cargo fetch --target aarch64-apple-darwin
       - run: cargo build --release --target aarch64-apple-darwin
       - run: cargo run --release --target aarch64-apple-darwin -- --version
