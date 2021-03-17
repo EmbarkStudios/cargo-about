@@ -58,7 +58,7 @@ mod generate;
 mod init;
 
 #[global_allocator]
-static ALLOC: rpmalloc::RpMalloc = rpmalloc::RpMalloc;
+static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 #[derive(StructOpt, Debug)]
 enum Command {

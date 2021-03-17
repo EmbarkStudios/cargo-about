@@ -169,8 +169,8 @@ dependencies = [
  "krates",
  "license",
  "log",
+ "mimalloc",
  "rayon",
- "rpmalloc",
  "serde",
  "serde_json",
  "smallvec",
@@ -534,6 +534,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "03b07a082330a35e43f63177cc01689da34fbffa0105e1246cf0311472cac73a"
 
 [[package]]
+name = "libmimalloc-sys"
+version = "0.1.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2396cf99d2f58611cd69f0efeee4af3d2e2c7b61bed433515029163aa567e65c"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "license"
 version = "1.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -567,6 +576,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "157b4208e3059a8f9e78d559edc658e13df41410cb3ae03979c83130067fdd87"
 dependencies = [
  "autocfg",
+]
+
+[[package]]
+name = "mimalloc"
+version = "0.1.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e7c6b11afd1e5e689ac96b6d18b1fc763398fe3d7eed99e8773426bc2033dfb"
+dependencies = [
+ "libmimalloc-sys",
 ]
 
 [[package]]
@@ -680,12 +698,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pkg-config"
-version = "0.3.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3831453b3449ceb48b6d9c7ad7c96d5ea673e9b470a1dc578c2ce6521230884c"
-
-[[package]]
 name = "proc-macro-error"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -794,26 +806,6 @@ dependencies = [
  "byteorder",
  "rmp",
  "serde",
-]
-
-[[package]]
-name = "rpmalloc"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8dae55d27fc56f399aec2583434bf22c7100fe983b2115bbc1d961ec4f7df5db"
-dependencies = [
- "rpmalloc-sys",
-]
-
-[[package]]
-name = "rpmalloc-sys"
-version = "0.2.1+1.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a3e9198b851305d2f4bf86353b98016d79b871158ea5f9d0756b84022aefb99"
-dependencies = [
- "cc",
- "libc",
- "pkg-config",
 ]
 
 [[package]]
