@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.3.0] - 2021-03-17
 ### Added
 - [PR#148](https://github.com/EmbarkStudios/cargo-about/pull/148) added the `-o, --output-file` argument to specify a file to write to. Thanks [@MaulingMonkey](https://github.com/MaulingMonkey)!
 - [PR#153](https://github.com/EmbarkStudios/cargo-about/pull/153) added the `--workspace` flag, closing [#151](https://github.com/EmbarkStudios/cargo-about/issues/151). Thanks [@MaulingMonkey](https://github.com/MaulingMonkey)!
@@ -48,7 +49,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.2.3...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.3.0...HEAD
+[0.3.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.2.3...0.3.0
 [0.2.3]: https://github.com/EmbarkStudios/cargo-about/compare/0.2.2...0.2.3
 [0.2.2]: https://github.com/EmbarkStudios/cargo-about/compare/0.2.1...0.2.2
 [0.2.1]: https://github.com/EmbarkStudios/cargo-about/compare/0.2.0...0.2.1
