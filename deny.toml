@@ -25,11 +25,7 @@ deny = [
 ]
 skip = [
     # clap uses old ansi-term
-    { name = "ansi_term", version = "0.11.0" },
-    # Multiple crates use the pre-1.0 version
-    { name = "cfg-if", version = "=0.1.10" },
-    # ignore uses an older version
-    { name = "crossbeam-utils", version = "=0.7.2" },
+    { name = "ansi_term", version = "=0.11.0" },
 ]
 
 [licenses]

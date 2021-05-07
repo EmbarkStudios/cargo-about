@@ -156,7 +156,7 @@ fn generate(
             let license_iter = license_list
                 .iter()
                 .filter_map(|license| match license.license {
-                    spdx::LicenseItem::SPDX { id, .. } => {
+                    spdx::LicenseItem::Spdx { id, .. } => {
                         let file = krate_license.license_files.iter().find_map(move |lf| {
                             if lf.id != id {
                                 return None;
