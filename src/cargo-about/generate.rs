@@ -255,7 +255,7 @@ fn generate(
     // Show the most used licenses first
     overview.sort_by(|a, b| b.count.cmp(&a.count));
 
-    let nput = Input { licenses, overview };
+    let nput = Input { overview, licenses };
 
     Ok(hbs.render(template_name, &nput)?)
 }
