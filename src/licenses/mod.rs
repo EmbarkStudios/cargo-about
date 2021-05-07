@@ -560,7 +560,7 @@ impl Resolved {
                         .iter()
                         .map(|file| {
                             LicenseReq {
-                                license: LicenseItem::SPDX {
+                                license: LicenseItem::Spdx {
                                     id: file.id,
                                     or_later: false,
                                 },

@@ -156,7 +156,7 @@ fn generate(
             let license_iter = license_list
                 .iter()
                 .filter_map(|license| match license.license {
-                    spdx::LicenseItem::SPDX { id, .. } => {
+                    spdx::LicenseItem::Spdx { id, .. } => {
                         let file = krate_license.license_files.iter().find_map(move |lf| {
                             if lf.id != id {
                                 return None;
@@ -255,7 +255,7 @@ fn generate(
     // Show the most used licenses first
     overview.sort_by(|a, b| b.count.cmp(&a.count));
 
-    let nput = Input { licenses, overview };
+    let nput = Input { overview, licenses };
 
     Ok(hbs.render(template_name, &nput)?)
 }
