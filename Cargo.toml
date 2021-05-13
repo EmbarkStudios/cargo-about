@@ -28,15 +28,15 @@ anyhow = "1.0"
 askalono = "0.4"
 chrono = "0.4"
 fern = "0.6"
-handlebars = { version = "3.2.1", features = ["dir_source"] }
+handlebars = { version = "3.5.5", features = ["dir_source"] }
 ignore = "0.4"
 krates = "0.7"
 license = "1.1"
 log = "0.4"
-rayon = "1.3"
+rayon = "1.5"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-smallvec = "1.2"
+smallvec = "1.6"
 spdx = "0.4"
 structopt = "0.3"
 toml = "0.5"
