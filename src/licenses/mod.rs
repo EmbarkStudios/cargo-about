@@ -537,56 +537,56 @@ impl Resolved {
         accepted: &'a [Licensee],
     ) -> Result<Resolved, Error> {
         let res: Result<Vec<_>, Error> = licenses
-        .par_iter()
-        .enumerate()
-        .map(move |(id, krate_license)| {
-            // Check that the licenses found by scanning the crate contents match what was stated
-            // in the license expression
-            match krate_license.lic_info {
-                LicenseInfo::Expr(ref expr) => {
-                    let req = accepted.iter().find_map(|licensee| {
-                        expr.requirements().find(|expr| licensee.satisfies(&expr.req))
-                    }).map(|expr| expr.req.clone())
-                    .context(format!(
-                        "Crate '{}': Unable to satisfy [{}], with the following accepted licenses {}", krate_license.krate.name,
-                        expr, DisplayList(accepted)
-                    ))?;
-                    Ok((id, vec![req]))
-                }
-                // If the license is unknown, we will concatenate all the licenses
-                LicenseInfo::Unknown => {
-                    let license_reqs: Vec<_> = krate_license
-                        .license_files
-                        .iter()
-                        .map(|file| {
-                            LicenseReq {
-                                license: LicenseItem::Spdx {
-                                    id: file.id,
-                                    or_later: false,
-                                },
-                                exception: None,
-                            }
-                        })
-                        .collect();
+            .par_iter()
+            .enumerate()
+            .map(move |(id, krate_license)| {
+                // Check that the licenses found by scanning the crate contents match what was stated
+                // in the license expression
+                match krate_license.lic_info {
+                    LicenseInfo::Expr(ref expr) => {
+                        let req = accepted.iter().find_map(|licensee| {
+                            expr.requirements().find(|expr| licensee.satisfies(&expr.req))
+                        }).map(|expr| expr.req.clone())
+                        .context(format!(
+                            "Crate '{}': Unable to satisfy [{}], with the following accepted licenses {}", krate_license.krate.name,
+                            expr, DisplayList(accepted)
+                        ))?;
+                        Ok((id, vec![req]))
+                    }
+                    // If the license is unknown, we will concatenate all the licenses
+                    LicenseInfo::Unknown => {
+                        let license_reqs: Vec<_> = krate_license
+                            .license_files
+                            .iter()
+                            .map(|file| {
+                                LicenseReq {
+                                    license: LicenseItem::Spdx {
+                                        id: file.id,
+                                        or_later: false,
+                                    },
+                                    exception: None,
+                                }
+                            })
+                            .collect();
 
-                    let failed_licenses: Vec<_> = license_reqs
-                        .iter()
-                        .cloned()
-                        .filter(|license| !accepted.iter().any(|a| a.satisfies(license)))
-                        .collect();
+                        let failed_licenses: Vec<_> = license_reqs
+                            .iter()
+                            .cloned()
+                            .filter(|license| !accepted.iter().any(|a| a.satisfies(license)))
+                            .collect();
 
-                    if failed_licenses.is_empty() {
-                        Ok((id, license_reqs))
-                    } else {
-                        bail!("Crate '{}': These licenses {}, could not be satisfied with the following accepted licenses {}",
-                            krate_license.krate.name,
-                            DisplayList(failed_licenses.as_slice()),
-                            DisplayList(accepted));
+                        if failed_licenses.is_empty() {
+                            Ok((id, license_reqs))
+                        } else {
+                            bail!("Crate '{}': These licenses {}, could not be satisfied with the following accepted licenses {}",
+                                krate_license.krate.name,
+                                DisplayList(failed_licenses.as_slice()),
+                                DisplayList(accepted));
+                        }
                     }
                 }
-            }
-        })
-        .collect();
+            })
+            .collect();
         Ok(Resolved(res?))
     }
 }

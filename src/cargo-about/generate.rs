@@ -1,5 +1,5 @@
-use anyhow::{anyhow, bail, Context, Error};
-use cargo_about::{licenses, Krates};
+use anyhow::{self, bail, Context as _};
+use cargo_about::licenses;
 use handlebars::Handlebars;
 use serde::Serialize;
 use std::{collections::BTreeMap, path::Path, path::PathBuf};
@@ -7,6 +7,11 @@ use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
 pub struct Args {
+    /// Path to the config to use
+    ///
+    /// Defaults to <manifest_root>/about.toml if not specified
+    #[structopt(short, long, parse(from_os_str))]
+    config: Option<PathBuf>,
     /// The confidence threshold required for license files
     /// to be positively identified: 0.0 - 1.0
     #[structopt(long, default_value = "0.8")]
@@ -26,14 +31,113 @@ pub struct Args {
     /// A file to write the generated output to.  Typically an .html file.
     #[structopt(short = "o", long = "output-file", parse(from_os_str))]
     output_file: Option<PathBuf>,
+    /// Space-separated list of features to activate
+    #[structopt(long)]
+    features: Vec<String>,
+    /// Activate all available features
+    #[structopt(long)]
+    all_features: bool,
+    /// Do not activate the `default` feature
+    #[structopt(long)]
+    no_default_features: bool,
+    /// The path of the Cargo.toml for the root crate, defaults to the
+    /// current crate or workspace in the current working directory
+    #[structopt(short, long = "manifest-path", parse(from_os_str))]
+    manifest_path: Option<PathBuf>,
+    /// Scan licenses for the entire workspace, not just the active package
+    #[structopt(long)]
+    workspace: bool,
+}
+
+fn load_config(manifest_path: &Path) -> anyhow::Result<cargo_about::licenses::config::Config> {
+    let mut parent = manifest_path.parent();
+
+    // Move up directories until we find an about.toml, to handle
+    // cases where eg in a workspace there is a top-level about.toml
+    // but the user is only getting a listing for a particular crate from it
+    while let Some(p) = parent {
+        // We _could_ limit ourselves to only directories that also have a Cargo.toml
+        // in them, but there could be cases where someone has multiple
+        // rust projects in subdirectories with a single top level about.toml that is
+        // used across all of them, we could also introduce a metadata entry for the
+        // relative path of the about.toml to use for the crate/workspace
+
+        // if !p.join("Cargo.toml").exists() {
+        //     parent = p.parent();
+        //     continue;
+        // }
+
+        let about_toml = p.join("about.toml");
+
+        if about_toml.exists() {
+            let contents = std::fs::read_to_string(&about_toml)?;
+            let cfg = toml::from_str(&contents)?;
+
+            log::info!("loaded config from {}", about_toml.display());
+            return Ok(cfg);
+        }
+
+        parent = p.parent();
+    }
+
+    log::warn!("no 'about.toml' found, falling back to default configuration");
+    Ok(cargo_about::licenses::config::Config::default())
 }
 
 pub fn cmd(
     args: Args,
-    cfg: licenses::config::Config,
-    krates: Krates,
-    store: licenses::LicenseStore,
-) -> Result<(), Error> {
+    //manifest_path: PathBuf,
+    //cfg: licenses::config::Config,
+    //krates: Krates,
+    //store: licenses::LicenseStore,
+) -> anyhow::Result<()> {
+    let manifest_path = args
+        .manifest_path
+        .clone()
+        .or_else(|| std::env::current_dir().map(|cd| cd.join("Cargo.toml")).ok())
+        .context("unable to determine manifest path")?;
+
+    if !manifest_path.exists() {
+        bail!(
+            "cargo manifest path '{}' does not exist",
+            manifest_path.display()
+        );
+    }
+
+    let cfg = match &args.config {
+        Some(cfg_path) => {
+            let cfg_str = std::fs::read_to_string(cfg_path)
+                .with_context(|| format!("unable to read {}", cfg_path.display()))?;
+            toml::from_str(&cfg_str).with_context(|| {
+                format!("unable to deserialize config from {}", cfg_path.display())
+            })?
+        }
+        None => load_config(&manifest_path)?,
+    };
+
+    let (all_crates, store) = rayon::join(
+        || {
+            log::info!("gathering crates for {}", manifest_path.display());
+            cargo_about::get_all_crates(
+                manifest_path,
+                args.no_default_features,
+                args.all_features,
+                args.features.clone(),
+                args.workspace,
+                &cfg,
+            )
+        },
+        || {
+            log::info!("loading license store");
+            cargo_about::licenses::LicenseStore::from_cache()
+        },
+    );
+
+    let krates = all_crates?;
+    let store = store?;
+
+    log::info!("gathered {} crates", krates.len());
+
     let (registry, template) = {
         let mut reg = Handlebars::new();
 
@@ -95,13 +199,8 @@ pub fn cmd(
         None => println!("{}", output),
         Some(path) if path == Path::new("-") => println!("{}", output),
         Some(path) => {
-            std::fs::write(path, output).map_err(|err| {
-                anyhow!(
-                    "output file {} could not be written: {}",
-                    path.display(),
-                    err
-                )
-            })?;
+            std::fs::write(path, output)
+                .with_context(|| format!("output file {} could not be written", path.display()))?;
         }
     }
 
@@ -148,7 +247,7 @@ fn generate(
     resolved: &licenses::Resolved,
     hbs: &Handlebars<'_>,
     template_name: &str,
-) -> Result<String, Error> {
+) -> anyhow::Result<String> {
     let licenses = {
         let mut licenses = BTreeMap::new();
         for (krate_id, license_list) in &resolved.0 {
