@@ -173,7 +173,7 @@ fn generate(
                                     };
                                     Some(license)
                                 }
-                                _ => None,
+                                licenses::LicenseFileInfo::Header => None,
                             }
                         });
                         file.or_else(|| {
@@ -194,7 +194,7 @@ fn generate(
                             license
                         })
                     }
-                    _ => {
+                    spdx::LicenseItem::Other { .. } => {
                         log::warn!(
                             "{} has no license file for crate '{}'",
                             license,
