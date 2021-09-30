@@ -23,7 +23,6 @@ pub fn cmd(args: Args) -> Result<(), Error> {
         let handlebars_path = root_path.join("about.hbs");
         let write_handlebars = !handlebars_path.is_file() || args.overwrite;
         if write_handlebars {
-            println!("WRITE");
             fs::write(handlebars_path, DEFAULT_HBS)?;
         }
     }
