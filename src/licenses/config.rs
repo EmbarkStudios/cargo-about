@@ -1,36 +1,17 @@
+use krates::Utf8PathBuf as PathBuf;
 use serde::{de, Deserialize};
-use std::{collections::BTreeMap, fmt, path::PathBuf};
+use std::{collections::BTreeMap, fmt};
 
-fn deserialize_spdx_id<'de, D>(deserializer: D) -> std::result::Result<spdx::LicenseId, D::Error>
+#[inline]
+fn deserialize_spdx_expr<'de, D>(deserializer: D) -> std::result::Result<spdx::Expression, D::Error>
 where
     D: de::Deserializer<'de>,
 {
-    struct Visitor;
-
-    impl<'de> de::Visitor<'de> for Visitor {
-        type Value = spdx::LicenseId;
-
-        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-            formatter.write_str("SPDX short-identifier")
-        }
-
-        fn visit_str<E>(self, v: &str) -> std::result::Result<Self::Value, E>
-        where
-            E: de::Error,
-        {
-            spdx::license_id(v).ok_or_else(|| {
-                E::custom(format!(
-                    "'{}' is not a valid SPDX short-identifier in v{}",
-                    v,
-                    spdx::license_version()
-                ))
-            })
-        }
-    }
-
-    deserializer.deserialize_any(Visitor)
+    <&'de str>::deserialize(deserializer)
+        .and_then(|value| spdx::Expression::parse(value).map_err(de::Error::custom))
 }
 
+#[inline]
 fn deserialize_licensee<'de, D>(
     deserializer: D,
 ) -> std::result::Result<Vec<spdx::Licensee>, D::Error>
@@ -72,8 +53,8 @@ where
 #[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct Additional {
     pub root: PathBuf,
-    #[serde(deserialize_with = "deserialize_spdx_id")]
-    pub license: spdx::LicenseId,
+    #[serde(deserialize_with = "deserialize_spdx_expr")]
+    pub license: spdx::Expression,
     pub license_file: PathBuf,
     pub license_start: Option<usize>,
     pub license_end: Option<usize>,
@@ -82,8 +63,8 @@ pub struct Additional {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct Ignore {
-    #[serde(deserialize_with = "deserialize_spdx_id")]
-    pub license: spdx::LicenseId,
+    #[serde(deserialize_with = "deserialize_spdx_expr")]
+    pub license: spdx::Expression,
     pub license_file: PathBuf,
     pub license_start: Option<usize>,
     pub license_end: Option<usize>,

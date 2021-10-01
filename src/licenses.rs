@@ -1,13 +1,12 @@
 use crate::{Krate, Krates};
 use anyhow::{bail, Context, Error};
-use cd::definitions::License;
 use rayon::prelude::*;
-use spdx::{LicenseId, LicenseItem, LicenseReq, Licensee};
+use spdx::{LicenseReq, Licensee};
 use std::{
     cmp, fmt,
-    path::{Path, PathBuf},
     sync::Arc,
 };
+use krates::{Utf8Path as Path, Utf8PathBuf as PathBuf};
 
 pub mod config;
 
@@ -34,7 +33,7 @@ pub enum LicenseInfo {
 }
 
 /// The contents of a file with license info in it
-pub enum LicenseFileInfo {
+pub enum LicenseFileKind {
     /// The license file is the canonical text of the license
     Text(String),
     /// The license file is the canonical text, and applies to
@@ -46,16 +45,46 @@ pub enum LicenseFileInfo {
 }
 
 pub struct LicenseFile {
-    /// The SPDX identifier for the license in the file
-    pub id: LicenseId,
+    /// The SPDX requirement expression detected for the file
+    pub license_expr: spdx::Expression,
     /// Full path of the file which had license data in it
     pub path: PathBuf,
     /// The confidence score for the license, the closer to the canonical
     /// license text it is, the closer it approaches 1.0
     pub confidence: f32,
     /// The contents of the file
-    pub info: LicenseFileInfo,
+    pub kind: LicenseFileKind,
 }
+
+impl Ord for LicenseFile {
+    #[inline]
+    fn cmp(&self, o: &Self) -> cmp::Ordering {
+        match self.license_expr.as_ref().cmp(o.license_expr.as_ref()) {
+            cmp::Ordering::Equal => {
+                o.confidence
+                    .partial_cmp(&self.confidence)
+                    .expect("NaN encountered comparing license confidences")
+            }
+            ord => ord,
+        }
+    }
+}
+
+impl PartialOrd for LicenseFile {
+    #[inline]
+    fn partial_cmp(&self, o: &Self) -> Option<cmp::Ordering> {
+        Some(self.cmp(o))
+    }
+}
+
+impl PartialEq for LicenseFile {
+    #[inline]
+    fn eq(&self, o: &Self) -> bool {
+        self.cmp(o) == cmp::Ordering::Equal
+    }
+}
+
+impl Eq for LicenseFile {}
 
 pub struct KrateLicense<'krate> {
     pub krate: &'krate Krate,
@@ -185,32 +214,20 @@ impl Gatherer {
 
                 // Condense each license down to the best candidate if
                 // multiple are found
+                license_files.sort();
 
-                license_files.sort_by(|a, b| {
-                    use std::cmp::Ordering as Ord;
-                    match a.id.cmp(&b.id) {
-                        Ord::Equal => {
-                            // We want the highest confidence on top
-                            b.confidence
-                                .partial_cmp(&a.confidence)
-                                .expect("uhoh looks like we've got a NaN")
-                        }
-                        o => o,
-                    }
-                });
-
-                let mut id = None;
-                license_files.retain(|lf| match id {
+                let mut expr = None;
+                license_files.retain(|lf| match &expr {
                     Some(cur) => {
-                        if cur != lf.id {
-                            id = Some(lf.id);
+                        if *cur != lf.license_expr {
+                            expr = Some(lf.license_expr.clone());
                             true
                         } else {
                             false
                         }
                     }
                     None => {
-                        id = Some(lf.id);
+                        expr = Some(lf.license_expr.clone());
                         true
                     }
                 });
@@ -238,7 +255,7 @@ impl Gatherer {
             return Vec::new();
         }
 
-        let reqs = cd::definitions::get(krates.krates().filter_map(|krate| {
+        let reqs = cd::definitions::get(10, krates.krates().filter_map(|krate| {
             // Ignore local and git sources in favor of scanning those on the local disk
             if krate
                 .krate
@@ -263,7 +280,7 @@ impl Gatherer {
 
         let mut gathered = Vec::with_capacity(krates.len() / 2);
 
-        let threshold = std::cmp::max(std::cmp::min(10, (self.threshold * 100.0) as u8), 100);
+        //let threshold = std::cmp::min(std::cmp::max(10, (self.threshold * 100.0) as u8), 100);
 
         for req in reqs {
             match self.cd_client.execute::<cd::definitions::GetResponse>(req) {
@@ -278,23 +295,26 @@ impl Gatherer {
                         // they _should_ always have a valid semver
                         let version = match &def.coordinates.revision {
                             cd::CoordVersion::Semver(vers) => vers.clone(),
-                            cd::CoordVersion::Any(_) => {
+                            cd::CoordVersion::Any(vers) => {
                                 log::warn!(
-                                    "the definition for {} does not have a valid semver",
-                                    def.coordinates
+                                    "the definition for {} does not have a valid semver '{}'",
+                                    def.coordinates,
+                                    vers,
                                 );
                                 return None;
                             }
                         };
 
                         // If the score is too low, bail
-                        if def.scores.effective < threshold {
-                            log::warn!(
-                                "the definition for {} does not have a valid semver",
-                                def.coordinates
-                            );
-                            return None;
-                        }
+                        // if def.scores.effective < threshold {
+                        //     log::warn!(
+                        //         "the definition for {} score {} is below threshold {}",
+                        //         def.coordinates,
+                        //         def.scores.effective,
+                        //         threshold,
+                        //     );
+                        //     return None;
+                        // }
 
                         match krates.krates_by_name(&def.coordinates.name).find_map(|(_, kn)| {
                             if kn.krate.version == version {
@@ -316,12 +336,18 @@ impl Gatherer {
                                     // detect all licenses if there are multiple in a single file
                                     match cd_file.license {
                                         Some(lic) => {
-                                            let id = match spdx::license_id(&lic) {
-                                                Some(id) => id,
-                                                None => {
-                                                    log::warn!("clearly defined detected license '{}' in '{}' for crate '{}', but it is not a valid SPDX identifier", lic, cd_file.path, krate);
+                                            // NOASSERTION is not yet? (https://github.com/spdx/spdx-spec/issues/50)
+                                            // a part of the SPDX spec, so we basically just treat it as a "nope"
+                                            if lic == "NOASSERTION" {
+                                                return None;
+                                            }
+
+                                            let license_expr = match spdx::Expression::parse_mode(&lic, spdx::ParseMode::Lax) {
+                                                Ok(expr) => expr,
+                                                Err(err) => {
+                                                    log::warn!("clearly defined detected license '{}' in '{}' for crate '{}', but it can't be parsed: {}", lic, cd_file.path, krate, err);
                                                     return None;
-                                                },
+                                                }
                                             };
     
                                             let lic_file_info = if cd_file.natures.iter().any(|s| s == "license") {
@@ -330,7 +356,7 @@ impl Gatherer {
                                                 match std::fs::read_to_string(&path) {
                                                     Ok(text) => {
                                                         // TODO: verify the sha256 matches
-                                                        LicenseFileInfo::Text(text)
+                                                        LicenseFileKind::Text(text)
                                                     }
                                                     Err(err) => {
                                                         log::warn!("failed to read license from '{}' for crate '{}': {}", path, krate, err);
@@ -338,14 +364,14 @@ impl Gatherer {
                                                     }
                                                 }
                                             } else {
-                                                LicenseFileInfo::Header
+                                                LicenseFileKind::Header
                                             };
     
                                             Some(LicenseFile {
-                                                id,
+                                                license_expr,
                                                 path: cd_file.path.into(),
                                                 confidence,
-                                                info: lic_file_info,
+                                                kind: lic_file_info,
                                             })
                                         }
                                         None => None,
@@ -377,7 +403,7 @@ impl Gatherer {
 }
 
 fn scan_files(
-    root_dir: &krates::Utf8Path,
+    root_dir: &Path,
     strat: &askalono::ScanStrategy<'_>,
     threshold: f32,
     krate_cfg: Option<(&config::KrateConfig, &str)>,
@@ -421,14 +447,23 @@ fn scan_files(
                 }
             }
 
-            let mut contents = match read_file(file.path()) {
+            let pb = file.into_path();
+            let path = match PathBuf::from_path_buf(pb) {
+                Ok(pb) => pb,
+                Err(e) => {
+                    log::warn!("skipping path {}, not a valid utf-8 path", e.display());
+                    return None;
+                }
+            };
+
+            let mut contents = match read_file(&path) {
                 Some(c) => c,
                 None => return None,
             };
 
             let expected = match krate_cfg {
                 Some(krate_cfg) => {
-                    let relative = match file.path().strip_prefix(root_dir) {
+                    let relative = match path.strip_prefix(root_dir) {
                         Ok(rel) => rel,
                         Err(_) => return None,
                     };
@@ -442,7 +477,7 @@ fn scan_files(
                         Some(ignore) => {
                             contents =
                                 snip_contents(contents, ignore.license_start, ignore.license_end);
-                            Some((ignore.license, None))
+                            Some((ignore.license.clone(), None))
                         }
                         None => {
                             let mut addendum = None;
@@ -456,22 +491,22 @@ fn scan_files(
                                 if relative.starts_with(&additional.root) {
                                     log::trace!(
                                         "skipping {} due to addendum for root {}",
-                                        file.path().display(),
-                                        additional.root.display()
+                                        path,
+                                        additional.root,
                                     );
                                     return None;
                                 }
                             }
 
                             addendum
-                                .map(|addendum| (addendum.license, Some(&addendum.license_file)))
+                                .map(|addendum| (addendum.license.clone(), Some(&addendum.license_file)))
                         }
                     }
                 }
                 None => None,
             };
 
-            check_is_license_file(file.into_path(), contents, strat, threshold, expected)
+            check_is_license_file(path, contents, strat, threshold, expected)
         })
         .collect();
 
@@ -483,11 +518,11 @@ fn read_file(path: &Path) -> Option<String> {
         Err(ref e) if e.kind() == std::io::ErrorKind::InvalidData => {
             // If we fail due to invaliddata, it just means the file in question was
             // probably binary and didn't have valid utf-8 data, so we can ignore it
-            log::debug!("binary file {} detected", path.display());
+            log::debug!("binary file {} detected", path);
             None
         }
         Err(e) => {
-            log::error!("failed to read '{}': {}", path.display(), e);
+            log::error!("failed to read '{}': {}", path, e);
             None
         }
         Ok(c) => Some(c),
@@ -517,73 +552,92 @@ fn check_is_license_file(
     contents: String,
     strat: &askalono::ScanStrategy<'_>,
     threshold: f32,
-    expected: Option<(spdx::LicenseId, Option<&PathBuf>)>,
+    expected: Option<(spdx::Expression, Option<&PathBuf>)>,
 ) -> Option<LicenseFile> {
     match scan_text(&contents, strat, threshold) {
         ScanResult::Header(ided) => {
-            if let Some((exp_id, addendum)) = expected {
-                if exp_id != ided.id {
+            if let Some((expected_expr, addendum)) = expected {
+                if !expected_expr.evaluate(|req| req.license.id() == Some(ided.id)) {
                     log::error!(
                         "expected license '{}' in path '{}', but found '{}'",
-                        exp_id.name,
-                        path.display(),
+                        expected_expr,
+                        path,
                         ided.id.name
                     );
                 } else if addendum.is_none() {
                     log::debug!(
                         "ignoring '{}', matched license '{}'",
-                        path.display(),
+                        path,
                         ided.id.name
                     );
                     return None;
                 }
             }
 
+            // askalono only detects single license identifiers, not license
+            // expressions, so we need to construct one from a single identifier,
+            // this should be made into in infallible function in spdx itself
+            let license_expr = match spdx::Expression::parse(ided.id.name) {
+                Ok(expr) => expr,
+                Err(err) => {
+                    log::error!("failed to parse license '{}' into a valid expression: {}", ided.id.name, err);
+                    return None;
+                }
+            };
+
             Some(LicenseFile {
-                id: ided.id,
+                license_expr,
                 confidence: ided.confidence,
                 path,
-                info: LicenseFileInfo::Header,
+                kind: LicenseFileKind::Header,
             })
         }
         ScanResult::Text(ided) => {
-            let info = if let Some((exp_id, addendum)) = expected {
-                if exp_id != ided.id {
+            let kind = if let Some((expected_expr, addendum)) = expected {
+                if !expected_expr.evaluate(|req| req.license.id() == Some(ided.id)) {
                     log::error!(
                         "expected license '{}' in path '{}', but found '{}'",
-                        exp_id.name,
-                        path.display(),
+                        expected_expr,
+                        path,
                         ided.id.name
                     );
                 }
 
                 match addendum {
-                    Some(path) => LicenseFileInfo::AddendumText(contents, path.clone()),
+                    Some(path) => LicenseFileKind::AddendumText(contents, path.clone()),
                     None => {
                         log::debug!(
                             "ignoring '{}', matched license '{}'",
-                            path.display(),
+                            path,
                             ided.id.name
                         );
                         return None;
                     }
                 }
             } else {
-                LicenseFileInfo::Text(contents)
+                LicenseFileKind::Text(contents)
+            };
+
+            let license_expr = match spdx::Expression::parse(ided.id.name) {
+                Ok(expr) => expr,
+                Err(err) => {
+                    log::error!("failed to parse license '{}' into a valid expression: {}", ided.id.name, err);
+                    return None;
+                }
             };
 
             Some(LicenseFile {
-                id: ided.id,
+                license_expr,
                 confidence: ided.confidence,
                 path,
-                info,
+                kind,
             })
         }
         ScanResult::UnknownId(id_str) => {
             log::error!(
                 "found unknown SPDX identifier '{}' scanning '{}'",
                 id_str,
-                path.display()
+                path,
             );
             None
         }
@@ -591,8 +645,8 @@ fn check_is_license_file(
             log::debug!(
                 "found '{}' scanning '{}' but it only has a confidence score of {}",
                 ided.id.name,
-                path.display(),
-                ided.confidence
+                path,
+                ided.confidence,
             );
             None
         }
@@ -716,14 +770,8 @@ impl Resolved {
                         let license_reqs: Vec<_> = krate_license
                             .license_files
                             .iter()
-                            .map(|file| {
-                                LicenseReq {
-                                    license: LicenseItem::Spdx {
-                                        id: file.id,
-                                        or_later: false,
-                                    },
-                                    exception: None,
-                                }
+                            .flat_map(|file| {
+                                file.license_expr.requirements().map(|ereq| ereq.req.clone())
                             })
                             .collect();
 

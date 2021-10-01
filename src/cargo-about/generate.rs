@@ -258,24 +258,30 @@ fn generate(
                 .filter_map(|license| match license.license {
                     spdx::LicenseItem::Spdx { id, .. } => {
                         let file = krate_license.license_files.iter().find_map(move |lf| {
-                            if lf.id != id {
+                            // Check if this is the actual license file we want
+                            if !lf
+                                .license_expr
+                                .evaluate(|ereq| ereq.license.id() == Some(id))
+                            {
                                 return None;
                             }
-                            match &lf.info {
-                                licenses::LicenseFileInfo::Text(text)
-                                | licenses::LicenseFileInfo::AddendumText(text, _) => {
+
+                            match &lf.kind {
+                                licenses::LicenseFileKind::Text(text)
+                                | licenses::LicenseFileKind::AddendumText(text, _) => {
                                     let license = License {
-                                        name: lf.id.full_name.to_owned(),
-                                        id: lf.id.name.to_owned(),
+                                        name: id.full_name.to_owned(),
+                                        id: id.name.to_owned(),
                                         text: text.clone(),
                                         source_path: None,
                                         used_by: Vec::new(),
                                     };
                                     Some(license)
                                 }
-                                licenses::LicenseFileInfo::Header => None,
+                                licenses::LicenseFileKind::Header => None,
                             }
                         });
+
                         file.or_else(|| {
                             let license = license::from_id(id.name).map(|lic| License {
                                 name: lic.name().to_string(),
@@ -286,7 +292,7 @@ fn generate(
                             });
                             if license.is_none() {
                                 log::warn!(
-                                    "No licene file or license text found for {} in crate {}",
+                                    "No license file or license text found for {} in crate {}",
                                     id.name,
                                     krate_license.krate.name
                                 );
