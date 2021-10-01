@@ -42,3 +42,8 @@ spdx = "0.6"
 structopt = "0.3"
 toml = "0.5"
 mimalloc = "0.1.25"
+
+[dependencies.cd]
+#optional = true
+path = "../clearly-defined"
+features = ["blocking", "rustls"]
