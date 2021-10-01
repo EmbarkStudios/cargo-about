@@ -15,8 +15,18 @@ _Please Note: This is a tool that we use (and like!) and it makes sense to us to
 
 ### Installing
 
+#### From crates.io
+
 ```bash
 cargo install cargo-about
+```
+
+#### From the AUR
+
+Arch Linux users can install [cargo-about](https://aur.archlinux.org/packages/?O=0&K=cargo-about) from the AUR using an [AUR helper](https://wiki.archlinux.org/index.php/AUR_helpers). For example,
+
+```bash
+paru -S cargo-about
 ```
 
 ### Generate license information for your own project
