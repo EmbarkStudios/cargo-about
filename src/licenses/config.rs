@@ -105,6 +105,10 @@ pub struct Config {
     /// targets
     #[serde(default)]
     pub targets: Vec<String>,
+    /// Disallows the use of clearlydefined.io to retrieve harvested license
+    /// information and relies purely on local file scanning
+    #[serde(default)]
+    pub disallow_clearly_defined: bool,
     /// Ignores any build dependencies in the graph
     #[serde(default)]
     pub ignore_build_dependencies: bool,

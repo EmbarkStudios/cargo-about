@@ -188,7 +188,8 @@ pub fn cmd(
         }
     };
 
-    let summary = licenses::Gatherer::with_store(std::sync::Arc::new(store))
+    let client = cd::client::Client::new();
+    let summary = licenses::Gatherer::with_store(std::sync::Arc::new(store), client)
         .with_confidence_threshold(args.threshold)
         .gather(&krates, &cfg);
 

@@ -68,13 +68,73 @@
 )]
 // END - Embark standard lints v0.4
 
-use anyhow::Error;
 use krates::cm;
-use std::fmt;
+use std::{cmp, fmt};
 
 pub mod licenses;
 
 pub struct Krate(cm::Package);
+
+impl Krate {
+    fn get_license_expression(&self) -> licenses::LicenseInfo {
+        match &self.0.license {
+            Some(license_field) => {
+                //. Reasons this can fail:
+                // * Empty! The rust crate used to validate this field has a bug
+                // https://github.com/rust-lang-nursery/license-exprs/issues/23
+                // * It also just does basic lexing, so parens, duplicate operators,
+                // unpaired exceptions etc can all fail validation
+
+                match spdx::Expression::parse(license_field) {
+                    Ok(validated) => licenses::LicenseInfo::Expr(validated),
+                    Err(err) => {
+                        log::error!(
+                            "unable to parse license expression for '{} - {}': {}",
+                            self.0.name,
+                            self.0.version,
+                            err
+                        );
+                        licenses::LicenseInfo::Unknown
+                    }
+                }
+            }
+            None => {
+                log::debug!(
+                    "crate '{}({})' doesn't have a license field",
+                    self.0.name,
+                    self.0.version,
+                );
+                licenses::LicenseInfo::Unknown
+            }
+        }
+    }
+}
+
+impl Ord for Krate {
+    #[inline]
+    fn cmp(&self, o: &Self) -> cmp::Ordering {
+        match self.0.name.cmp(&o.0.name) {
+            cmp::Ordering::Equal => self.0.version.cmp(&o.0.version),
+            o => o,
+        }
+    }
+}
+
+impl PartialOrd for Krate {
+    #[inline]
+    fn partial_cmp(&self, o: &Self) -> Option<cmp::Ordering> {
+        Some(self.cmp(o))
+    }
+}
+
+impl PartialEq for Krate {
+    #[inline]
+    fn eq(&self, o: &Self) -> bool {
+        self.cmp(o) == cmp::Ordering::Equal
+    }
+}
+
+impl Eq for Krate {}
 
 impl From<cm::Package> for Krate {
     fn from(mut pkg: cm::Package) -> Self {
@@ -85,6 +145,16 @@ impl From<cm::Package> for Krate {
         }
 
         Self(pkg)
+    }
+}
+
+impl krates::KrateDetails for Krate {
+    fn name(&self) -> &str {
+        &self.0.name
+    }
+
+    fn version(&self) -> &krates::semver::Version {
+        &self.0.version
     }
 }
 
@@ -111,7 +181,7 @@ pub fn get_all_crates(
     features: Vec<String>,
     workspace: bool,
     cfg: &licenses::config::Config,
-) -> Result<Krates, Error> {
+) -> anyhow::Result<Krates> {
     let mut mdc = krates::Cmd::new();
     mdc.manifest_path(cargo_toml);
 

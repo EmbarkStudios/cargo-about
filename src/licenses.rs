@@ -1,16 +1,17 @@
 use crate::{Krate, Krates};
 use anyhow::{bail, Context, Error};
+use cd::definitions::License;
 use rayon::prelude::*;
 use spdx::{LicenseId, LicenseItem, LicenseReq, Licensee};
-use std::fmt;
 use std::{
+    cmp, fmt,
     path::{Path, PathBuf},
     sync::Arc,
 };
 
 pub mod config;
 
-const LICENSE_CACHE: &[u8] = include_bytes!("../../spdx_cache.bin.zstd");
+const LICENSE_CACHE: &[u8] = include_bytes!("../spdx_cache.bin.zstd");
 
 pub struct LicenseStore {
     store: askalono::Store,
@@ -50,17 +51,40 @@ pub struct LicenseFile {
     /// Full path of the file which had license data in it
     pub path: PathBuf,
     /// The confidence score for the license, the closer to the canonical
-    /// license text it is, the closert it approaches 1.0
+    /// license text it is, the closer it approaches 1.0
     pub confidence: f32,
     /// The contents of the file
     pub info: LicenseFileInfo,
 }
 
-pub struct KrateLicense<'a> {
-    pub krate: &'a Krate,
+pub struct KrateLicense<'krate> {
+    pub krate: &'krate Krate,
     pub lic_info: LicenseInfo,
     pub license_files: Vec<LicenseFile>,
 }
+
+impl<'krate> Ord for KrateLicense<'krate> {
+    #[inline]
+    fn cmp(&self, o: &Self) -> cmp::Ordering {
+        self.krate.cmp(&o.krate)
+    }
+}
+
+impl<'krate> PartialOrd for KrateLicense<'krate> {
+    #[inline]
+    fn partial_cmp(&self, o: &Self) -> Option<cmp::Ordering> {
+        Some(self.cmp(o))
+    }
+}
+
+impl<'krate> PartialEq for KrateLicense<'krate> {
+    #[inline]
+    fn eq(&self, o: &Self) -> bool {
+        self.cmp(o) == cmp::Ordering::Equal
+    }
+}
+
+impl<'krate> Eq for KrateLicense<'krate> {}
 
 pub struct Summary<'a> {
     store: Arc<LicenseStore>,
@@ -78,14 +102,16 @@ impl<'a> Summary<'a> {
 
 pub struct Gatherer {
     store: Arc<LicenseStore>,
+    cd_client: cd::client::Client,
     threshold: f32,
 }
 
 impl Gatherer {
-    pub fn with_store(store: Arc<LicenseStore>) -> Self {
+    pub fn with_store(store: Arc<LicenseStore>, client: cd::client::Client) -> Self {
         Self {
             store,
             threshold: 0.8,
+            cd_client: client,
         }
     }
 
@@ -101,7 +127,7 @@ impl Gatherer {
     }
 
     pub fn gather<'k>(self, krates: &'k Krates, cfg: &config::Config) -> Summary<'k> {
-        let mut summary = Summary::new(self.store);
+        let mut summary = Summary::new(self.store.clone());
 
         let threshold = self.threshold;
         let min_threshold = threshold - 0.5;
@@ -116,41 +142,24 @@ impl Gatherer {
             .optimize(false)
             .max_passes(1);
 
-        summary.nfos = krates
+        // First attempt to gather license information from clearly-defined.io so
+        // we can get previously gathered license information + any possible
+        // curations so that we only need to fallback to scanning local crate
+        // sources if it's not already in clearly-defined
+        let mut cded = self.gather_clearly_defined(krates, cfg);
+
+        let mut gathered: Vec<_> = krates
             .krates()
             .par_bridge()
-            .map(|kn| {
+            .filter_map(|kn| {
                 let krate = &kn.krate;
-                let info = match krate.license {
-                    Some(ref license_field) => {
-                        //. Reasons this can fail:
-                        // * Empty! The rust crate used to validate this field has a bug
-                        // https://github.com/rust-lang-nursery/license-exprs/issues/23
-                        // * It also just does basic lexing, so parens, duplicate operators,
-                        // unpaired exceptions etc can all fail validation
 
-                        match spdx::Expression::parse(license_field) {
-                            Ok(validated) => LicenseInfo::Expr(validated),
-                            Err(err) => {
-                                log::error!(
-                                    "unable to parse license expression for '{} - {}': {}",
-                                    krate.name,
-                                    krate.version,
-                                    err
-                                );
-                                LicenseInfo::Unknown
-                            }
-                        }
-                    }
-                    None => {
-                        log::debug!(
-                            "crate '{}({})' doesn't have a license field",
-                            krate.name,
-                            krate.version,
-                        );
-                        LicenseInfo::Unknown
-                    }
-                };
+                // Ignore crates that we've already gathered from clearlydefined
+                if cded.binary_search_by(|cd_lic| cd_lic.krate.cmp(krate)).is_ok() {
+                    return None;
+                }
+
+                let info = krate.get_license_expression();
 
                 let root_path = krate.manifest_path.parent().unwrap();
                 let krate_cfg = cfg.crates.get(&krate.name);
@@ -206,15 +215,164 @@ impl Gatherer {
                     }
                 });
 
-                KrateLicense {
+                Some(KrateLicense {
                     krate,
                     lic_info: info,
                     license_files,
-                }
+                })
             })
             .collect();
 
+        gathered.append(&mut cded);
+        summary.nfos = gathered;
+
         summary
+    }
+
+    fn gather_clearly_defined<'k>(
+        &self,
+        krates: &'k Krates,
+        cfg: &config::Config,
+    ) -> Vec<KrateLicense<'k>> {
+        if cfg.disallow_clearly_defined {
+            return Vec::new();
+        }
+
+        let reqs = cd::definitions::get(krates.krates().filter_map(|krate| {
+            // Ignore local and git sources in favor of scanning those on the local disk
+            if krate
+                .krate
+                .source
+                .as_ref()
+                .map_or(false, |src| src.is_crates_io())
+            {
+                Some(cd::Coordinate {
+                    shape: cd::Shape::Crate,
+                    provider: cd::Provider::CratesIo,
+                    // Rust crates, at least on crates.io, don't have a namespace
+                    namespace: None,
+                    name: krate.krate.name.clone(),
+                    version: cd::CoordVersion::Semver(krate.krate.version.clone()),
+                    // TODO: maybe set this if it's overriden in the config? seems messy though
+                    curation_pr: None,
+                })
+            } else {
+                None
+            }
+        }));
+
+        let mut gathered = Vec::with_capacity(krates.len() / 2);
+
+        let threshold = std::cmp::max(std::cmp::min(10, (self.threshold * 100.0) as u8), 100);
+
+        for req in reqs {
+            match self.cd_client.execute::<cd::definitions::GetResponse>(req) {
+                Ok(response) => {
+                    gathered.extend(response.definitions.into_iter().filter_map(|def| {
+                        if def.described.is_none() {
+                            log::info!("the definition for {} has not been harvested", def.coordinates);
+                            return None;
+                        }
+
+                        // Since we only ever retrieve license information for crates on crates.io
+                        // they _should_ always have a valid semver
+                        let version = match &def.coordinates.revision {
+                            cd::CoordVersion::Semver(vers) => vers.clone(),
+                            cd::CoordVersion::Any(_) => {
+                                log::warn!(
+                                    "the definition for {} does not have a valid semver",
+                                    def.coordinates
+                                );
+                                return None;
+                            }
+                        };
+
+                        // If the score is too low, bail
+                        if def.scores.effective < threshold {
+                            log::warn!(
+                                "the definition for {} does not have a valid semver",
+                                def.coordinates
+                            );
+                            return None;
+                        }
+
+                        match krates.krates_by_name(&def.coordinates.name).find_map(|(_, kn)| {
+                            if kn.krate.version == version {
+                                Some(&kn.krate)
+                            } else {
+                                None
+                            }})
+                        {
+                            Some(krate) => {
+                                let info = krate.get_license_expression();
+
+                                // clearly defined doesn't provide per-file scores, so we just use
+                                // the overall score for the entire crate
+                                let confidence = def.scores.effective as f32 / 100.0;
+
+                                let license_files = def.files.into_iter().filter_map(|cd_file| {
+                                    // clearly defined will attach a license identifier to any file
+                                    // with a license or SPDX identifier, but like askalono it won't
+                                    // detect all licenses if there are multiple in a single file
+                                    match cd_file.license {
+                                        Some(lic) => {
+                                            let id = match spdx::license_id(&lic) {
+                                                Some(id) => id,
+                                                None => {
+                                                    log::warn!("clearly defined detected license '{}' in '{}' for crate '{}', but it is not a valid SPDX identifier", lic, cd_file.path, krate);
+                                                    return None;
+                                                },
+                                            };
+    
+                                            let lic_file_info = if cd_file.natures.iter().any(|s| s == "license") {
+                                                let root_path = krate.manifest_path.parent().unwrap();
+                                                let path = root_path.join(&cd_file.path);
+                                                match std::fs::read_to_string(&path) {
+                                                    Ok(text) => {
+                                                        // TODO: verify the sha256 matches
+                                                        LicenseFileInfo::Text(text)
+                                                    }
+                                                    Err(err) => {
+                                                        log::warn!("failed to read license from '{}' for crate '{}': {}", path, krate, err);
+                                                        return None;
+                                                    }
+                                                }
+                                            } else {
+                                                LicenseFileInfo::Header
+                                            };
+    
+                                            Some(LicenseFile {
+                                                id,
+                                                path: cd_file.path.into(),
+                                                confidence,
+                                                info: lic_file_info,
+                                            })
+                                        }
+                                        None => None,
+                                    }
+                                }).collect();
+
+                                Some(KrateLicense {
+                                    krate,
+                                    lic_info: info,
+                                    license_files,
+                                })
+                            }
+                            None => None,
+                        }
+                    }));
+                }
+                Err(err) => {
+                    log::warn!(
+                        "failed to request license information from clearly defined: {:#}",
+                        err
+                    );
+                }
+            }
+        }
+
+        gathered.sort();
+        gathered
     }
 }
 
