@@ -75,8 +75,16 @@ pub struct Ignore {
 pub struct KrateConfig {
     #[serde(default)]
     pub additional: Vec<Additional>,
+    /// A list of files that are ignored for the purposes of license retrieval,
+    /// eg. due to them being present in the source, but not actually used for
+    /// the target(s) you are building for, such as test code, or platform
+    /// specific code
     #[serde(default)]
     pub ignore: Vec<Ignore>,
+    /// The list of additional accepted licenses for this crate, again in
+    /// priority order
+    #[serde(default, deserialize_with = "deserialize_licensee")]
+    pub accepted: Vec<spdx::Licensee>,
 }
 
 #[derive(Deserialize, Debug, Default)]

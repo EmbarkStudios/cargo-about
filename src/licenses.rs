@@ -1,7 +1,7 @@
 use crate::{Krate, Krates};
 use anyhow::{bail, Context, Error};
 use rayon::prelude::*;
-use spdx::{LicenseReq, Licensee};
+use spdx::{Expression, LicenseReq, Licensee};
 use std::{
     cmp, fmt,
     sync::Arc,
@@ -336,12 +336,6 @@ impl Gatherer {
                                     // detect all licenses if there are multiple in a single file
                                     match cd_file.license {
                                         Some(lic) => {
-                                            // NOASSERTION is not yet? (https://github.com/spdx/spdx-spec/issues/50)
-                                            // a part of the SPDX spec, so we basically just treat it as a "nope"
-                                            if lic == "NOASSERTION" {
-                                                return None;
-                                            }
-
                                             let license_expr = match spdx::Expression::parse_mode(&lic, spdx::ParseMode::Lax) {
                                                 Ok(expr) => expr,
                                                 Err(err) => {
@@ -724,48 +718,114 @@ impl fmt::Display for ResolveError<'_> {
     }
 }
 
-/// Simple wrapper to display a slice of licensees
-pub struct DisplayList<'a, T>(pub &'a [T]);
+struct Accepted<'acc> {
+    global: &'acc [Licensee],
+    krate: Option<&'acc [Licensee]>,
+}
 
-impl<T: fmt::Display> fmt::Display for DisplayList<'_, T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "[")?;
-        for (id, val) in self.0.iter().enumerate() {
-            write!(f, "{}", val)?;
-            if id + 1 < self.0.len() {
-                write!(f, ", ")?;
-            }
-        }
-        write!(f, "]")
+impl<'acc> Accepted<'acc> {
+    #[inline]
+    fn satisfies(&self, req: &spdx::LicenseReq) -> bool {
+        self.iter().any(|licensee| licensee.satisfies(req))
+    }
+
+    #[inline]
+    fn iter(&'acc self) -> impl Iterator<Item = &'acc Licensee> {
+        self.global.iter().chain(self.krate.iter().flat_map(|o| o.iter()))
     }
 }
 
-pub struct Resolved(pub Vec<(KrateId, Vec<LicenseReq>)>);
+impl<'acc> fmt::Display for Accepted<'acc> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "global: [")?;
+        for (id, val) in self.global.iter().enumerate() {
+            write!(f, "{}", val)?;
+            if id + 1 < self.global.len() {
+                write!(f, ", ")?;
+            }
+        }
+        write!(f, "]")?;
+
+        if let Some(krate) = self.krate {
+            write!(f, "\ncrate: [")?;
+            for (id, val) in krate.iter().enumerate() {
+                write!(f, "{}", val)?;
+                if id + 1 < krate.len() {
+                    write!(f, ", ")?;
+                }
+            }
+            write!(f, "]")?
+        }
+
+        Ok(())
+    }
+}
+
+pub struct Resolved(pub Vec<anyhow::Result<(KrateId, Vec<LicenseReq>)>>);
 
 impl Resolved {
     /// Find the minimal required licenses for each crate.
     pub fn resolve<'a>(
         licenses: &'a [KrateLicense<'_>],
         accepted: &'a [Licensee],
-    ) -> Result<Resolved, Error> {
-        let res: Result<Vec<_>, Error> = licenses
+        krate_cfg: &std::collections::BTreeMap<String, config::KrateConfig>,
+    ) -> Resolved {
+        let mut resolved = Vec::new();
+        licenses
             .par_iter()
             .enumerate()
             .map(move |(id, krate_license)| {
                 // Check that the licenses found by scanning the crate contents match what was stated
                 // in the license expression
-                match krate_license.lic_info {
-                    LicenseInfo::Expr(ref expr) => {
-                        let req = accepted.iter().find_map(|licensee| {
-                            expr.requirements().find(|expr| licensee.satisfies(&expr.req))
-                        }).map(|expr| expr.req.clone())
-                        .context(format!(
+                let accepted = match krate_cfg.get(&krate_license.krate.name) {
+                    Some(kcfg) => {
+                        if kcfg.accepted.is_empty() {
+                            Accepted {
+                                global: accepted,
+                                krate: None,
+                            }
+                        } else {
+                            Accepted {
+                                global: accepted,
+                                krate: Some(&kcfg.accepted),
+                            }
+                        }
+                    }
+                    None => Accepted {
+                        global: accepted,
+                        krate: None,
+                    }
+                };
+
+                // Evaluates the expression against the accepted licenses to ensure it can actually be accepted
+                // according to the user's configuration, then attempts to find the minimal set of licenses needed
+                // to satisfy the license requirements, in priority order
+                let eval = |expr: &Expression| -> anyhow::Result<Vec<LicenseReq>> {
+                    if let Err(failed) = expr.evaluate_with_failures(|req| accepted.satisfies(req)) {
+                        
+                    }
+
+                    
+                };
+
+                match &krate_license.lic_info {
+                    LicenseInfo::Expr(expr) => {
+                        
+                        let req = expr.requirements().find_map(|req| {
+                            if accepted.satisfies(&req.req) {
+                                Some(req.req.clone())
+                            } else {
+                                None
+                            }
+                        }).context(format!(
                             "Crate '{}': Unable to satisfy [{}], with the following accepted licenses {}", krate_license.krate.name,
-                            expr, DisplayList(accepted)
+                            expr, accepted
                         ))?;
+                        
                         Ok((id, vec![req]))
                     }
-                    // If the license is unknown, we will concatenate all the licenses
+                    // If the license for the crate as a whole is unknown, we treat _all_ licenses encountered as
+                    // required expressions joined with an `AND` meaning they must all evaluate match
                     LicenseInfo::Unknown => {
                         let license_reqs: Vec<_> = krate_license
                             .license_files
@@ -792,7 +852,8 @@ impl Resolved {
                     }
                 }
             })
-            .collect();
-        Ok(Resolved(res?))
+            .collect_into_vec(&mut resolved);
+
+        Resolved(resolved)
     }
 }
