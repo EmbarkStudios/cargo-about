@@ -72,6 +72,7 @@
 use anyhow::Context as _;
 use structopt::StructOpt;
 
+mod clarify;
 mod generate;
 mod init;
 
@@ -81,10 +82,39 @@ static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
 #[derive(StructOpt, Debug)]
 enum Command {
     /// Outputs a listing of all licenses and the crates that use them
-    #[structopt(name = "generate")]
     Generate(generate::Args),
-    #[structopt(name = "init")]
+    /// Initializes an about.toml configuration
     Init(init::Args),
+    /// Computes a clarification for a file
+    Clarify(clarify::Args),
+}
+
+#[derive(StructOpt, Copy, Clone, Debug)]
+pub enum Color {
+    Auto,
+    Always,
+    Never,
+}
+
+impl Color {
+    fn variants() -> &'static [&'static str] {
+        &["auto", "always", "never"]
+    }
+}
+
+impl std::str::FromStr for Color {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let lower = s.to_ascii_lowercase();
+
+        Ok(match lower.as_str() {
+            "auto" => Self::Auto,
+            "always" => Self::Always,
+            "never" => Self::Never,
+            _ => anyhow::bail!("unknown color option '{}' specified", s),
+        })
+    }
 }
 
 fn parse_level(s: &str) -> anyhow::Result<log::LevelFilter> {
@@ -112,6 +142,8 @@ Possible values:
 * trace"
     )]
     log_level: log::LevelFilter,
+    #[structopt(short, long, default_value = "auto", possible_values = Color::variants())]
+    color: Color,
     #[structopt(subcommand)]
     cmd: Command,
 }
@@ -156,8 +188,9 @@ fn real_main() -> anyhow::Result<()> {
     setup_logger(args.log_level)?;
 
     match args.cmd {
-        Command::Generate(gen) => generate::cmd(gen),
+        Command::Generate(gen) => generate::cmd(gen, args.color),
         Command::Init(init) => init::cmd(init),
+        Command::Clarify(clarify) => clarify::cmd(clarify),
     }
 }
 
