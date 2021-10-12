@@ -30,9 +30,11 @@ ansi_term = "0.12"
 anyhow = "1.0"
 # License detection
 askalono = "0.4"
+# TTY detection
+atty = "0.2"
 # Datetime
 chrono = "0.4"
-# Used for diagnostic reporting
+# Diagnostic reporting
 codespan = "0.11"
 codespan-reporting = "0.11"
 # Logging helpers
@@ -43,27 +45,33 @@ handlebars = { version = "4.1", features = ["dir_source"] }
 ignore = "0.4"
 # Dependency graphing
 krates = "0.8"
-# TODO: Replace with spdx (once it has canonical license text)
-license = "1.1"
 # Logging macros
 log = "0.4"
 # brrrr
 rayon = "1.5"
+# Checksum verification (already pulled in via rustls)
+ring = "0.16"
 # Oh gee what could it be
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 # Some vecs don't need to hit the heap
 smallvec = "1.7"
 # License expression parsing and evaluation
-spdx = "0.6"
+spdx = { version = "0.6", features = ["text"] }
 # Command line parsing
 structopt = "0.3"
 # Configuration parsing
 toml = "0.5"
+# Manipulation of cargo manifests for diagnostic purposes
+toml_edit = "0.5"
 # Better heap allocator over system one (usually)
-mimalloc = "0.1.25"
+mimalloc = "0.1"
 
 # API helpers for api.clearlydefined.io
 [dependencies.cd]
 path = "../clearly-defined"
 features = ["blocking", "rustls"]
+
+[patch.crates-io]
+spdx = { path = "../spdx" }
+krates = { path = "../krates" }
