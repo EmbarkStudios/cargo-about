@@ -1,28 +1,25 @@
+pub mod resolution;
+pub mod config;
+mod workarounds;
+mod scan;
+
 use crate::{Krate, Krates};
-use anyhow::{bail, Context, Error};
+use anyhow::{Context as _};
 use rayon::prelude::*;
-use spdx::{Expression, LicenseReq, Licensee};
 use std::{
-    cmp, fmt,
+    cmp,
     sync::Arc,
 };
-use krates::{Utf8Path as Path, Utf8PathBuf as PathBuf};
-
-pub mod config;
+use krates::{Utf8PathBuf as PathBuf};
+pub use resolution::Resolved;
 
 const LICENSE_CACHE: &[u8] = include_bytes!("../spdx_cache.bin.zstd");
 
-pub struct LicenseStore {
-    store: askalono::Store,
-}
+pub type LicenseStore = askalono::Store;
 
-impl LicenseStore {
-    pub fn from_cache() -> Result<Self, Error> {
-        let store = askalono::Store::from_cache(LICENSE_CACHE)
-            .map_err(|e| anyhow::anyhow!("failed to load license store: {}", e))?;
-
-        Ok(Self { store })
-    }
+#[inline]
+pub fn store_from_cache() -> anyhow::Result<LicenseStore> {
+    askalono::Store::from_cache(LICENSE_CACHE).map_err(|e| e.compat()).context("failed to load license store")
 }
 
 #[derive(Debug)]
@@ -115,20 +112,6 @@ impl<'krate> PartialEq for KrateLicense<'krate> {
 
 impl<'krate> Eq for KrateLicense<'krate> {}
 
-pub struct Summary<'a> {
-    store: Arc<LicenseStore>,
-    pub nfos: Vec<KrateLicense<'a>>,
-}
-
-impl<'a> Summary<'a> {
-    fn new(store: Arc<LicenseStore>) -> Self {
-        Self {
-            store,
-            nfos: Vec::new(),
-        }
-    }
-}
-
 pub struct Gatherer {
     store: Arc<LicenseStore>,
     cd_client: cd::client::Client,
@@ -155,107 +138,73 @@ impl Gatherer {
         self
     }
 
-    pub fn gather<'k>(self, krates: &'k Krates, cfg: &config::Config) -> Summary<'k> {
-        let mut summary = Summary::new(self.store.clone());
+    pub fn gather<'krate>(self, krates: &'krate Krates, cfg: &config::Config) -> Vec<KrateLicense<'krate>> {
+        let mut licensed_krates = Vec::with_capacity(krates.len());
 
-        let threshold = self.threshold;
-        let min_threshold = threshold - 0.5;
+        // Workarounds are built-in to cargo-about to deal with issues that certain
+        // common crates have
+        workarounds::apply_workarounds(krates, cfg, &mut licensed_krates);
 
-        let strategy = askalono::ScanStrategy::new(&summary.store.store)
-            .mode(askalono::ScanMode::Elimination)
-            .confidence_threshold(if min_threshold < 0.1 {
-                0.1
-            } else {
-                min_threshold
-            })
-            .optimize(false)
-            .max_passes(1);
+        // Clarifications are user supplied and thus take precedence over any
+        // machine gathered data
+        self.gather_clarified(krates, cfg, &mut licensed_krates);
 
-        // First attempt to gather license information from clearly-defined.io so
-        // we can get previously gathered license information + any possible
+        // Attempt to gather license information from clearly-defined.io so we
+        // can get previously gathered license information + any possible
         // curations so that we only need to fallback to scanning local crate
         // sources if it's not already in clearly-defined
-        let mut cded = self.gather_clearly_defined(krates, cfg);
+        self.gather_clearly_defined(krates, cfg, &mut licensed_krates);
 
-        let mut gathered: Vec<_> = krates
-            .krates()
-            .par_bridge()
-            .filter_map(|kn| {
-                let krate = &kn.krate;
+        // Finally, crawl the crate sources on disk to try and determine licenses
+        self.gather_file_system(krates, cfg, &mut licensed_krates);
 
-                // Ignore crates that we've already gathered from clearlydefined
-                if cded.binary_search_by(|cd_lic| cd_lic.krate.cmp(krate)).is_ok() {
-                    return None;
+        licensed_krates.sort();
+        licensed_krates
+    }
+
+    fn gather_clarified<'k>(
+        &self,
+        krates: &'k Krates,
+        cfg: &config::Config,
+        licensed_krates: &mut Vec<KrateLicense<'k>>,
+    ) {
+        for (krate, clarification) in krates.krates().filter_map(|kn| {
+            cfg.crates.get(&kn.krate.name).and_then(|kc| kc.clarify.as_ref()).map(|cl| (&kn.krate, cl))
+        }) {
+            if let Err(i) = binary_search(&licensed_krates, krate) {
+                match apply_clarification(krate, clarification) {
+                    Ok(lic_files) => {
+                        log::info!("applying clarification expression '{}' to crate {}", clarification.license, krate);
+                        licensed_krates.insert(i, KrateLicense {
+                            krate,
+                            lic_info: LicenseInfo::Expr(clarification.license.clone()),
+                            license_files: lic_files,
+                        });
+                    }
+                    Err(e) => {
+                        log::warn!("failed to validate all files specified in clarification for crate {}: {}", krate, e);
+                    }
                 }
+            }
 
-                let info = krate.get_license_expression();
-
-                let root_path = krate.manifest_path.parent().unwrap();
-                let krate_cfg = cfg.crates.get(&krate.name);
-
-                let mut license_files = match scan_files(
-                    root_path,
-                    &strategy,
-                    threshold,
-                    krate_cfg.map(|kc| (kc, krate.name.as_str())),
-                ) {
-                    Ok(files) => files,
-                    Err(err) => {
-                        log::error!(
-                            "unable to scan for license files for crate '{} - {}': {}",
-                            krate.name,
-                            krate.version,
-                            err
-                        );
-
-                        Vec::new()
-                    }
-                };
-
-                // Condense each license down to the best candidate if
-                // multiple are found
-                license_files.sort();
-
-                let mut expr = None;
-                license_files.retain(|lf| match &expr {
-                    Some(cur) => {
-                        if *cur != lf.license_expr {
-                            expr = Some(lf.license_expr.clone());
-                            true
-                        } else {
-                            false
-                        }
-                    }
-                    None => {
-                        expr = Some(lf.license_expr.clone());
-                        true
-                    }
-                });
-
-                Some(KrateLicense {
-                    krate,
-                    lic_info: info,
-                    license_files,
-                })
-            })
-            .collect();
-
-        gathered.append(&mut cded);
-        summary.nfos = gathered;
-
-        summary
+        }
     }
 
     fn gather_clearly_defined<'k>(
         &self,
         krates: &'k Krates,
         cfg: &config::Config,
-    ) -> Vec<KrateLicense<'k>> {
+        licensed_krates: &mut Vec<KrateLicense<'k>>,
+    ) {
         if cfg.disallow_clearly_defined {
-            return Vec::new();
+            return;
         }
 
         let reqs = cd::definitions::get(10, krates.krates().filter_map(|krate| {
+            if binary_search(licensed_krates, &krate.krate).is_ok() {
+                return None;
+            }
+
             // Ignore local and git sources in favor of scanning those on the local disk
             if krate
                 .krate
@@ -278,14 +227,11 @@ impl Gatherer {
             }
         }));
 
-        let mut gathered = Vec::with_capacity(krates.len() / 2);
-
         //let threshold = std::cmp::min(std::cmp::max(10, (self.threshold * 100.0) as u8), 100);
-
-        for req in reqs {
+        let collected: Vec<_> = reqs.par_bridge().filter_map(|req| {
             match self.cd_client.execute::<cd::definitions::GetResponse>(req) {
                 Ok(response) => {
-                    gathered.extend(response.definitions.into_iter().filter_map(|def| {
+                    Some(response.definitions.into_iter().filter_map(|def| {
                         if def.described.is_none() {
                             log::info!("the definition for {} has not been harvested", def.coordinates);
                             return None;
@@ -380,480 +326,155 @@ impl Gatherer {
                             }
                             None => None,
                         }
-                    }));
+                    }).collect::<Vec<_>>())
                 }
                 Err(err) => {
                     log::warn!(
                         "failed to request license information from clearly defined: {:#}",
                         err
                     );
+                    None
                 }
             }
-        }
+        }).collect();
 
-        gathered.sort();
-        gathered
+        for mut set in collected {
+            licensed_krates.append(&mut set);
+        }
+        licensed_krates.sort();
     }
-}
 
-fn scan_files(
-    root_dir: &Path,
-    strat: &askalono::ScanStrategy<'_>,
-    threshold: f32,
-    krate_cfg: Option<(&config::KrateConfig, &str)>,
-) -> Result<Vec<LicenseFile>, Error> {
-    let types = {
-        let mut tb = ignore::types::TypesBuilder::new();
-        tb.add_defaults();
-        tb.select("all");
-        tb.build()?
-    };
+    fn gather_file_system<'k>(&self, krates: &'k Krates,
+         cfg: &config::Config,
+        licensed_krates: &mut Vec<KrateLicense<'k>>) {
+        let threshold = self.threshold;
+        let min_threshold = threshold - 0.5;
 
-    let walker = ignore::WalkBuilder::new(root_dir)
-        .standard_filters(true)
-        .follow_links(true)
-        .types(types)
-        .build();
-
-    let files: Vec<_> = walker.filter_map(|e| e.ok()).collect();
-
-    let license_files: Vec<_> = files
-        .into_par_iter()
-        .filter_map(|file| {
-            log::trace!("scanning file {}", file.path().display());
-
-            if let Some(ft) = file.file_type() {
-                if ft.is_dir() {
-                    return None;
-                }
-            }
-
-            // Check for pipes on unix just in case
-            #[cfg(unix)]
-            {
-                use std::os::unix::fs::FileTypeExt;
-
-                if let Ok(md) = file.metadata() {
-                    if md.file_type().is_fifo() {
-                        log::error!("skipping FIFO {}", file.path().display());
-                        return None;
-                    }
-                }
-            }
-
-            let pb = file.into_path();
-            let path = match PathBuf::from_path_buf(pb) {
-                Ok(pb) => pb,
-                Err(e) => {
-                    log::warn!("skipping path {}, not a valid utf-8 path", e.display());
-                    return None;
-                }
-            };
-
-            let mut contents = match read_file(&path) {
-                Some(c) => c,
-                None => return None,
-            };
-
-            let expected = match krate_cfg {
-                Some(krate_cfg) => {
-                    let relative = match path.strip_prefix(root_dir) {
-                        Ok(rel) => rel,
-                        Err(_) => return None,
-                    };
-
-                    match krate_cfg
-                        .0
-                        .ignore
-                        .iter()
-                        .find(|i| relative == i.license_file)
-                    {
-                        Some(ignore) => {
-                            contents =
-                                snip_contents(contents, ignore.license_start, ignore.license_end);
-                            Some((ignore.license.clone(), None))
-                        }
-                        None => {
-                            let mut addendum = None;
-
-                            for additional in &krate_cfg.0.additional {
-                                if relative == additional.license_file {
-                                    addendum = Some(additional);
-                                    break;
-                                }
-
-                                if relative.starts_with(&additional.root) {
-                                    log::trace!(
-                                        "skipping {} due to addendum for root {}",
-                                        path,
-                                        additional.root,
-                                    );
-                                    return None;
-                                }
-                            }
-
-                            addendum
-                                .map(|addendum| (addendum.license.clone(), Some(&addendum.license_file)))
-                        }
-                    }
-                }
-                None => None,
-            };
-
-            check_is_license_file(path, contents, strat, threshold, expected)
-        })
-        .collect();
-
-    Ok(license_files)
-}
-
-fn read_file(path: &Path) -> Option<String> {
-    match std::fs::read_to_string(path) {
-        Err(ref e) if e.kind() == std::io::ErrorKind::InvalidData => {
-            // If we fail due to invaliddata, it just means the file in question was
-            // probably binary and didn't have valid utf-8 data, so we can ignore it
-            log::debug!("binary file {} detected", path);
-            None
-        }
-        Err(e) => {
-            log::error!("failed to read '{}': {}", path, e);
-            None
-        }
-        Ok(c) => Some(c),
-    }
-}
-
-fn snip_contents(contents: String, start: Option<usize>, end: Option<usize>) -> String {
-    let rng = start.unwrap_or(0)..end.unwrap_or(std::usize::MAX);
-
-    if rng.start == 0 && rng.end == std::usize::MAX {
-        contents
-    } else {
-        let mut snipped_contents = String::with_capacity(contents.len());
-        for (i, line) in contents.lines().enumerate() {
-            if i >= rng.start && i < rng.end {
-                snipped_contents.push_str(line);
-                snipped_contents.push('\n');
-            }
-        }
-
-        snipped_contents
-    }
-}
-
-fn check_is_license_file(
-    path: PathBuf,
-    contents: String,
-    strat: &askalono::ScanStrategy<'_>,
-    threshold: f32,
-    expected: Option<(spdx::Expression, Option<&PathBuf>)>,
-) -> Option<LicenseFile> {
-    match scan_text(&contents, strat, threshold) {
-        ScanResult::Header(ided) => {
-            if let Some((expected_expr, addendum)) = expected {
-                if !expected_expr.evaluate(|req| req.license.id() == Some(ided.id)) {
-                    log::error!(
-                        "expected license '{}' in path '{}', but found '{}'",
-                        expected_expr,
-                        path,
-                        ided.id.name
-                    );
-                } else if addendum.is_none() {
-                    log::debug!(
-                        "ignoring '{}', matched license '{}'",
-                        path,
-                        ided.id.name
-                    );
-                    return None;
-                }
-            }
-
-            // askalono only detects single license identifiers, not license
-            // expressions, so we need to construct one from a single identifier,
-            // this should be made into in infallible function in spdx itself
-            let license_expr = match spdx::Expression::parse(ided.id.name) {
-                Ok(expr) => expr,
-                Err(err) => {
-                    log::error!("failed to parse license '{}' into a valid expression: {}", ided.id.name, err);
-                    return None;
-                }
-            };
-
-            Some(LicenseFile {
-                license_expr,
-                confidence: ided.confidence,
-                path,
-                kind: LicenseFileKind::Header,
-            })
-        }
-        ScanResult::Text(ided) => {
-            let kind = if let Some((expected_expr, addendum)) = expected {
-                if !expected_expr.evaluate(|req| req.license.id() == Some(ided.id)) {
-                    log::error!(
-                        "expected license '{}' in path '{}', but found '{}'",
-                        expected_expr,
-                        path,
-                        ided.id.name
-                    );
-                }
-
-                match addendum {
-                    Some(path) => LicenseFileKind::AddendumText(contents, path.clone()),
-                    None => {
-                        log::debug!(
-                            "ignoring '{}', matched license '{}'",
-                            path,
-                            ided.id.name
-                        );
-                        return None;
-                    }
-                }
+        let strategy = askalono::ScanStrategy::new(&self.store)
+            .mode(askalono::ScanMode::Elimination)
+            .confidence_threshold(if min_threshold < 0.1 {
+                0.1
             } else {
-                LicenseFileKind::Text(contents)
-            };
+                min_threshold
+            })
+            .optimize(false)
+            .max_passes(1);
 
-            let license_expr = match spdx::Expression::parse(ided.id.name) {
-                Ok(expr) => expr,
-                Err(err) => {
-                    log::error!("failed to parse license '{}' into a valid expression: {}", ided.id.name, err);
+        let mut gathered: Vec<_> = krates
+            .krates()
+            .par_bridge()
+            .filter_map(|kn| {
+                let krate = &kn.krate;
+
+                // Ignore crates that we've already gathered
+                if binary_search(&licensed_krates, krate).is_ok() {
                     return None;
                 }
-            };
 
-            Some(LicenseFile {
-                license_expr,
-                confidence: ided.confidence,
-                path,
-                kind,
-            })
-        }
-        ScanResult::UnknownId(id_str) => {
-            log::error!(
-                "found unknown SPDX identifier '{}' scanning '{}'",
-                id_str,
-                path,
-            );
-            None
-        }
-        ScanResult::LowLicenseChance(ided) => {
-            log::debug!(
-                "found '{}' scanning '{}' but it only has a confidence score of {}",
-                ided.id.name,
-                path,
-                ided.confidence,
-            );
-            None
-        }
-        ScanResult::NoLicense => None,
-    }
-}
+                let info = krate.get_license_expression();
 
-struct Identified {
-    confidence: f32,
-    id: spdx::LicenseId,
-}
+                let root_path = krate.manifest_path.parent().unwrap();
+                let krate_cfg = cfg.crates.get(&krate.name);
 
-enum ScanResult {
-    Header(Identified),
-    Text(Identified),
-    UnknownId(String),
-    LowLicenseChance(Identified),
-    NoLicense,
-}
+                let mut license_files = match scan::scan_files(
+                    root_path,
+                    &strategy,
+                    threshold,
+                    krate_cfg.map(|kc| (kc, krate.name.as_str())),
+                ) {
+                    Ok(files) => files,
+                    Err(err) => {
+                        log::error!(
+                            "unable to scan for license files for crate '{} - {}': {}",
+                            krate.name,
+                            krate.version,
+                            err
+                        );
 
-fn scan_text(contents: &str, strat: &askalono::ScanStrategy<'_>, threshold: f32) -> ScanResult {
-    let text = askalono::TextData::new(contents);
-    match strat.scan(&text) {
-        Ok(lic_match) => {
-            match lic_match.license {
-                Some(identified) => {
-                    let lic_id = match spdx::license_id(identified.name) {
-                        Some(id) => Identified {
-                            confidence: lic_match.score,
-                            id,
-                        },
-                        None => return ScanResult::UnknownId(identified.name.to_owned()),
-                    };
-
-                    // askalano doesn't report any matches below the confidence threshold
-                    // but we want to see what it thinks the license is if the confidence
-                    // is somewhat ok at least
-                    if lic_match.score >= threshold {
-                        match identified.kind {
-                            askalono::LicenseType::Header => ScanResult::Header(lic_id),
-                            askalono::LicenseType::Original => ScanResult::Text(lic_id),
-                            askalono::LicenseType::Alternate => {
-                                panic!("Alternate license detected")
-                            }
-                        }
-                    } else {
-                        ScanResult::LowLicenseChance(lic_id)
-                    }
-                }
-                None => ScanResult::NoLicense,
-            }
-        }
-        Err(e) => {
-            // the elimination strategy can't currently fail
-            panic!("askalalono elimination strategy failed: {}", e);
-        }
-    }
-}
-
-type KrateId = usize;
-
-pub struct ResolveError<'a> {
-    pub krate: &'a Krate,
-    pub required: Vec<LicenseReq>,
-}
-
-impl fmt::Display for ResolveError<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Krate '{}' requires", self.krate.name)?;
-        f.debug_list().entries(self.required.iter()).finish()?;
-        writeln!(
-            f,
-            " , which were not specified as 'accepted' licenses in the 'about.toml' file"
-        )
-    }
-}
-
-struct Accepted<'acc> {
-    global: &'acc [Licensee],
-    krate: Option<&'acc [Licensee]>,
-}
-
-impl<'acc> Accepted<'acc> {
-    #[inline]
-    fn satisfies(&self, req: &spdx::LicenseReq) -> bool {
-        self.iter().any(|licensee| licensee.satisfies(req))
-    }
-
-    #[inline]
-    fn iter(&'acc self) -> impl Iterator<Item = &'acc Licensee> {
-        self.global.iter().chain(self.krate.iter().flat_map(|o| o.iter()))
-    }
-}
-
-impl<'acc> fmt::Display for Accepted<'acc> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "global: [")?;
-        for (id, val) in self.global.iter().enumerate() {
-            write!(f, "{}", val)?;
-            if id + 1 < self.global.len() {
-                write!(f, ", ")?;
-            }
-        }
-        write!(f, "]")?;
-
-        if let Some(krate) = self.krate {
-            write!(f, "\ncrate: [")?;
-            for (id, val) in krate.iter().enumerate() {
-                write!(f, "{}", val)?;
-                if id + 1 < krate.len() {
-                    write!(f, ", ")?;
-                }
-            }
-            write!(f, "]")?
-        }
-
-        Ok(())
-    }
-}
-
-pub struct Resolved(pub Vec<anyhow::Result<(KrateId, Vec<LicenseReq>)>>);
-
-impl Resolved {
-    /// Find the minimal required licenses for each crate.
-    pub fn resolve<'a>(
-        licenses: &'a [KrateLicense<'_>],
-        accepted: &'a [Licensee],
-        krate_cfg: &std::collections::BTreeMap<String, config::KrateConfig>,
-    ) -> Resolved {
-        let mut resolved = Vec::new();
-        licenses
-            .par_iter()
-            .enumerate()
-            .map(move |(id, krate_license)| {
-                // Check that the licenses found by scanning the crate contents match what was stated
-                // in the license expression
-                let accepted = match krate_cfg.get(&krate_license.krate.name) {
-                    Some(kcfg) => {
-                        if kcfg.accepted.is_empty() {
-                            Accepted {
-                                global: accepted,
-                                krate: None,
-                            }
-                        } else {
-                            Accepted {
-                                global: accepted,
-                                krate: Some(&kcfg.accepted),
-                            }
-                        }
-                    }
-                    None => Accepted {
-                        global: accepted,
-                        krate: None,
+                        Vec::new()
                     }
                 };
 
-                // Evaluates the expression against the accepted licenses to ensure it can actually be accepted
-                // according to the user's configuration, then attempts to find the minimal set of licenses needed
-                // to satisfy the license requirements, in priority order
-                let eval = |expr: &Expression| -> anyhow::Result<Vec<LicenseReq>> {
-                    if let Err(failed) = expr.evaluate_with_failures(|req| accepted.satisfies(req)) {
-                        
-                    }
+                // Condense each license down to the best candidate if
+                // multiple are found
+                license_files.sort();
 
-                    
-                };
-
-                match &krate_license.lic_info {
-                    LicenseInfo::Expr(expr) => {
-                        
-                        let req = expr.requirements().find_map(|req| {
-                            if accepted.satisfies(&req.req) {
-                                Some(req.req.clone())
-                            } else {
-                                None
-                            }
-                        }).context(format!(
-                            "Crate '{}': Unable to satisfy [{}], with the following accepted licenses {}", krate_license.krate.name,
-                            expr, accepted
-                        ))?;
-                        
-                        Ok((id, vec![req]))
-                    }
-                    // If the license for the crate as a whole is unknown, we treat _all_ licenses encountered as
-                    // required expressions joined with an `AND` meaning they must all evaluate match
-                    LicenseInfo::Unknown => {
-                        let license_reqs: Vec<_> = krate_license
-                            .license_files
-                            .iter()
-                            .flat_map(|file| {
-                                file.license_expr.requirements().map(|ereq| ereq.req.clone())
-                            })
-                            .collect();
-
-                        let failed_licenses: Vec<_> = license_reqs
-                            .iter()
-                            .cloned()
-                            .filter(|license| !accepted.iter().any(|a| a.satisfies(license)))
-                            .collect();
-
-                        if failed_licenses.is_empty() {
-                            Ok((id, license_reqs))
+                let mut expr = None;
+                license_files.retain(|lf| match &expr {
+                    Some(cur) => {
+                        if *cur != lf.license_expr {
+                            expr = Some(lf.license_expr.clone());
+                            true
                         } else {
-                            bail!("Crate '{}': These licenses {}, could not be satisfied with the following accepted licenses {}",
-                                krate_license.krate.name,
-                                DisplayList(failed_licenses.as_slice()),
-                                DisplayList(accepted));
+                            false
                         }
                     }
-                }
-            })
-            .collect_into_vec(&mut resolved);
+                    None => {
+                        expr = Some(lf.license_expr.clone());
+                        true
+                    }
+                });
 
-        Resolved(resolved)
+                Some(KrateLicense {
+                    krate,
+                    lic_info: info,
+                    license_files,
+                })
+            })
+            .collect();
+
+        licensed_krates.append(&mut gathered);
     }
+}
+
+pub fn apply_clarification<'krate>(krate: &'krate crate::Krate, clarification: &config::Clarification, ) -> anyhow::Result<Vec<LicenseFile>> {
+    anyhow::ensure!(!clarification.files.is_empty(), "clarification for crate '{}' does not specify any valid LICENSE files to checksum", krate.id);
+
+    let root = krate.manifest_path.parent().unwrap();
+
+    let mut lic_files = Vec::with_capacity(clarification.files.len());
+
+    for file in &clarification.files {
+        let license_path = root.join(&file.path);
+
+        let file_contents = std::fs::read_to_string(&license_path).with_context(|| format!("unable to read path '{}'", license_path))?;
+
+        anyhow::ensure!(!file_contents.is_empty(), "clarification file '{}' is empty", license_path);
+
+        let start = match &file.start {
+            Some(starts) => {
+                file_contents.find(starts).with_context(|| format!("failed to find subsection starting with '{}' in {}", starts, license_path))?
+            }
+            None => 0,
+        };
+
+        let end = match &file.end {
+            Some(ends) => {
+                file_contents[start..].find(ends).with_context(|| format!("failed to find subsection ending with '{}' in {}", ends, license_path))? + start + ends.len()
+            }
+            None => file_contents.len(),
+        };
+
+        let text = &file_contents[start..end];
+
+        crate::validate_sha256(text, &file.checksum)?;
+
+        let text = text.to_owned();
+
+        lic_files.push(
+            LicenseFile {
+                path: file.path.clone(),
+                confidence: 1.0,
+                license_expr: file.license.as_ref().unwrap_or(&clarification.license).clone(),
+                kind: LicenseFileKind::Text(text),
+            }
+        );
+    }
+
+    Ok(lic_files)
+}
+
+#[inline]
+pub fn binary_search<'krate>(kl: &'krate [KrateLicense<'krate>], krate: &Krate) -> Result<(usize, &'krate KrateLicense<'krate>), usize> {
+    kl.binary_search_by(|k| k.krate.cmp(krate)).map(|i| (i, &kl[i]))
 }

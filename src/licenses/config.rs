@@ -1,14 +1,54 @@
 use krates::Utf8PathBuf as PathBuf;
-use serde::{de, Deserialize};
+use serde::{de, ser, Deserialize, Serialize};
+use spdx::Expression;
 use std::{collections::BTreeMap, fmt};
 
-#[inline]
-fn deserialize_spdx_expr<'de, D>(deserializer: D) -> std::result::Result<spdx::Expression, D::Error>
-where
-    D: de::Deserializer<'de>,
-{
-    <&'de str>::deserialize(deserializer)
-        .and_then(|value| spdx::Expression::parse(value).map_err(de::Error::custom))
+mod spdx_expr {
+    use super::*;
+
+    #[inline]
+    pub(crate) fn serialize<S>(expr: &Expression, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: ser::Serializer,
+    {
+        serializer.serialize_str(expr.as_ref())
+    }
+
+    #[inline]
+    pub(crate) fn deserialize<'de, D>(deserializer: D) -> Result<Expression, D::Error>
+    where
+        D: de::Deserializer<'de>,
+    {
+        <&'de str>::deserialize(deserializer)
+            .and_then(|value| Expression::parse(value).map_err(de::Error::custom))
+    }
+}
+mod spdx_expr_opt {
+    use super::*;
+
+    #[inline]
+    pub(crate) fn serialize<S>(expr: &Option<Expression>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: ser::Serializer,
+    {
+        match expr {
+            Some(expr) => serializer.serialize_str(expr.as_ref()),
+            None => serializer.serialize_none(),
+        }
+    }
+
+    #[inline]
+    pub(crate) fn deserialize<'de, D>(deserializer: D) -> Result<Option<Expression>, D::Error>
+    where
+        D: de::Deserializer<'de>,
+    {
+        match <Option<&'de str>>::deserialize(deserializer)? {
+            Some(value) => Ok(Some(
+                spdx::Expression::parse(value).map_err(de::Error::custom)?,
+            )),
+            None => Ok(None),
+        }
+    }
 }
 
 #[inline]
@@ -53,8 +93,8 @@ where
 #[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct Additional {
     pub root: PathBuf,
-    #[serde(deserialize_with = "deserialize_spdx_expr")]
-    pub license: spdx::Expression,
+    #[serde(with = "spdx_expr")]
+    pub license: Expression,
     pub license_file: PathBuf,
     pub license_start: Option<usize>,
     pub license_end: Option<usize>,
@@ -63,15 +103,48 @@ pub struct Additional {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct Ignore {
-    #[serde(deserialize_with = "deserialize_spdx_expr")]
-    pub license: spdx::Expression,
+    #[serde(with = "spdx_expr")]
+    pub license: Expression,
     pub license_file: PathBuf,
     pub license_start: Option<usize>,
     pub license_end: Option<usize>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct ClarificationFile {
+    /// The crate relative path to the file
+    pub path: PathBuf,
+    /// The SHA-256 checksum of the file in hex
+    pub checksum: String,
+    /// The license applied to the file. Defaults to the license of the parent
+    /// clarification if not specified.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "spdx_expr_opt"
+    )]
+    pub license: Option<Expression>,
+    /// The beginning of the text to checksum
+    pub start: Option<String>,
+    /// The end of the text to checksum
+    pub end: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct Clarification {
+    /// The full clarified license expression, as if it appeared as the `license`
+    /// in the crate's Cargo.toml manifest
+    #[serde(with = "spdx_expr")]
+    pub license: Expression,
+    /// 1 or more files that are used as the source of truth for the license
+    /// expression
+    pub files: Vec<ClarificationFile>,
+}
+
 #[derive(Deserialize, Debug)]
-#[serde(rename_all = "kebab-case", deny_unknown_fields)]
+#[serde(deny_unknown_fields)]
 pub struct KrateConfig {
     #[serde(default)]
     pub additional: Vec<Additional>,
@@ -85,6 +158,9 @@ pub struct KrateConfig {
     /// priority order
     #[serde(default, deserialize_with = "deserialize_licensee")]
     pub accepted: Vec<spdx::Licensee>,
+    /// Overrides the license expression for a crate as long as 1 or more file
+    /// checksums match
+    pub clarify: Option<Clarification>,
 }
 
 #[derive(Deserialize, Debug)]
