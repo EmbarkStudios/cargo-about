@@ -175,7 +175,7 @@ impl std::ops::Deref for Krate {
 pub type Krates = krates::Krates<Krate>;
 
 pub fn get_all_crates(
-    cargo_toml: std::path::PathBuf,
+    cargo_toml: &krates::Utf8Path,
     no_default_features: bool,
     all_features: bool,
     features: Vec<String>,
@@ -225,4 +225,64 @@ pub fn get_all_crates(
     })?;
 
     Ok(graph)
+}
+
+#[inline]
+pub fn to_hex(bytes: &[u8]) -> String {
+    let mut s = String::with_capacity(bytes.len() * 2);
+    const CHARS: &[u8] = b"0123456789abcdef";
+
+    for &byte in bytes {
+        s.push(CHARS[(byte >> 4) as usize] as char);
+        s.push(CHARS[(byte & 0xf) as usize] as char);
+    }
+
+    s
+}
+
+pub fn validate_sha256(buffer: &str, expected: &str) -> anyhow::Result<()> {
+    anyhow::ensure!(
+        expected.len() == 64,
+        "checksum '{}' length is {} instead of expected 64",
+        expected,
+        expected.len()
+    );
+
+    let mut ctx = ring::digest::Context::new(&ring::digest::SHA256);
+
+    // Ignore faulty CRLF style newlines
+    for line in buffer.split('\r') {
+        ctx.update(line.as_bytes());
+    }
+
+    let content_digest = ctx.finish();
+    let digest = content_digest.as_ref();
+
+    for (ind, exp) in expected.as_bytes().chunks(2).enumerate() {
+        let mut cur = match exp[0] {
+            b'A'..=b'F' => exp[0] - b'A' + 10,
+            b'a'..=b'f' => exp[0] - b'a' + 10,
+            b'0'..=b'9' => exp[0] - b'0',
+            c => {
+                anyhow::bail!("invalid byte in checksum '{}' @ {}: {}", expected, ind, c);
+            }
+        };
+
+        cur <<= 4;
+
+        cur |= match exp[1] {
+            b'A'..=b'F' => exp[1] - b'A' + 10,
+            b'a'..=b'f' => exp[1] - b'a' + 10,
+            b'0'..=b'9' => exp[1] - b'0',
+            c => {
+                anyhow::bail!("invalid byte in checksum '{}' @ {}: {}", expected, ind, c);
+            }
+        };
+
+        if digest[ind] != cur {
+            anyhow::bail!("checksum mismatch, expected {}", expected);
+        }
+    }
+
+    Ok(())
 }
