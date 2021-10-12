@@ -7,6 +7,16 @@ targets = [
 ]
 ignore-build-dependencies = false
 ignore-dev-dependencies = false
+workarounds = [{ name = "ring" }]
+
+[ring]
+accepted = ["ISC", "OpenSSL"]
 
 [webpki-roots]
 accepted = ["MPL-2.0"]
+
+[untrusted]
+accepted = ["ISC"]
+
+[webpki]
+accepted = ["ISC", "BSD-3-Clause"]
