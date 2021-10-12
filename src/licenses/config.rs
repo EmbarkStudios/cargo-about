@@ -87,6 +87,15 @@ pub struct KrateConfig {
     pub accepted: Vec<spdx::Licensee>,
 }
 
+#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct Workaround {
+    /// The name of the crate
+    pub name: String,
+    /// The version range the workaround applies to, defaults to all versions
+    pub version: Option<krates::semver::VersionReq>,
+}
+
 #[derive(Deserialize, Debug, Default)]
 #[serde(rename_all = "kebab-case")]
 pub struct Config {
@@ -107,6 +116,13 @@ pub struct Config {
     /// The list of licenses we will use for all crates, in priority order
     #[serde(deserialize_with = "deserialize_licensee")]
     pub accepted: Vec<spdx::Licensee>,
+    /// Some crates have extremely complicated licensing which requires tedious
+    /// configuration to actually correctly identify. Rather than require every
+    /// user of cargo-about to redo that same configuration if they happen to
+    /// use those problematic crates, they can apply workarounds instead.
+    #[serde(default)]
+    pub workarounds: Vec<Workaround>,
+    /// Crate specific configuration
     #[serde(flatten)]
     pub crates: BTreeMap<String, KrateConfig>,
 }
