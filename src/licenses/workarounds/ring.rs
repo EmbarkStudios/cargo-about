@@ -1,8 +1,10 @@
 use super::ClarificationFile;
 use anyhow::Context as _;
 
-pub fn get(krate: &crate::Krate) -> anyhow::Result<super::Clarification> {
-    debug_assert_eq!(krate.name, "ring");
+pub fn get(krate: &crate::Krate) -> anyhow::Result<Option<super::Clarification>> {
+    if krate.name != "ring" {
+        return Ok(None);
+    }
 
     // Older versions of ring tend to get yanked so instead of covering all versions
     // we just cover the current stable version
@@ -12,7 +14,7 @@ pub fn get(krate: &crate::Krate) -> anyhow::Result<super::Clarification> {
         krate.version
     );
 
-    Ok(super::Clarification {
+    Ok(Some(super::Clarification {
         license: spdx::Expression::parse("ISC AND OpenSSL AND MIT")
             .context("failed to parse license expression")?,
         files: vec![
@@ -67,5 +69,6 @@ pub fn get(krate: &crate::Krate) -> anyhow::Result<super::Clarification> {
                 end: Some("\nSOFTWARE.\n".to_owned()),
             },
         ],
-    })
+        git: Vec::new(),
+    }))
 }

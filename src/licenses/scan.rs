@@ -147,7 +147,7 @@ fn snip_contents(contents: String, start: Option<usize>, end: Option<usize>) -> 
     }
 }
 
-fn check_is_license_file(
+pub(crate) fn check_is_license_file(
     path: PathBuf,
     contents: String,
     strat: &askalono::ScanStrategy<'_>,

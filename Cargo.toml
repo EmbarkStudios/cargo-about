@@ -47,8 +47,15 @@ ignore = "0.4"
 krates = "0.8"
 # Logging macros
 log = "0.4"
+# Better locking primitives
+parking_lot = "0.11"
 # brrrr
 rayon = "1.5"
+# HTTP requests
+reqwest = { version = "0.11", default-features = false, features = [
+  "blocking",
+  "rustls-tls",
+] }
 # Checksum verification (already pulled in via rustls)
 ring = "0.16"
 # Oh gee what could it be
@@ -63,7 +70,7 @@ structopt = "0.3"
 # Configuration parsing
 toml = "0.5"
 # Manipulation of cargo manifests for diagnostic purposes
-toml_edit = "0.5"
+toml_edit = "0.6"
 # Better heap allocator over system one (usually)
 mimalloc = "0.1"
 

@@ -145,6 +145,19 @@ impl Gatherer {
         // common crates have
         workarounds::apply_workarounds(krates, cfg, &mut licensed_krates);
 
+        let threshold = self.threshold;
+        let min_threshold = threshold - 0.5;
+
+        let strategy = askalono::ScanStrategy::new(&self.store)
+            .mode(askalono::ScanMode::Elimination)
+            .confidence_threshold(if min_threshold < 0.1 {
+                0.1
+            } else {
+                min_threshold
+            })
+            .optimize(false)
+            .max_passes(1);
+
         // Clarifications are user supplied and thus take precedence over any
         // machine gathered data
         self.gather_clarified(krates, cfg, &mut licensed_krates);
@@ -153,10 +166,10 @@ impl Gatherer {
         // can get previously gathered license information + any possible
         // curations so that we only need to fallback to scanning local crate
         // sources if it's not already in clearly-defined
-        self.gather_clearly_defined(krates, cfg, &mut licensed_krates);
+        self.gather_clearly_defined(krates, cfg, &strategy, &mut licensed_krates);
 
         // Finally, crawl the crate sources on disk to try and determine licenses
-        self.gather_file_system(krates, cfg, &mut licensed_krates);
+        self.gather_file_system(krates, cfg, &strategy, &mut licensed_krates);
 
         licensed_krates.sort();
         licensed_krates
@@ -194,6 +207,7 @@ impl Gatherer {
         &self,
         krates: &'k Krates,
         cfg: &config::Config,
+        strategy: &askalono::ScanStrategy<'_>,
         licensed_krates: &mut Vec<KrateLicense<'k>>,
     ) {
         if cfg.disallow_clearly_defined {
@@ -277,44 +291,63 @@ impl Gatherer {
                                 let confidence = def.scores.effective as f32 / 100.0;
 
                                 let license_files = def.files.into_iter().filter_map(|cd_file| {
+                                    // Retrieve (and validate) the text of the file if clearlydefined thinks it is a license file
+                                    let license_text = if cd_file.natures.iter().any(|s| s == "license") {
+                                        let root_path = krate.manifest_path.parent().unwrap();
+                                        let path = root_path.join(&cd_file.path);
+                                        match std::fs::read_to_string(&path) {
+                                            Ok(text) => {
+                                                if let Some(expected) = cd_file.hashes.as_ref().and_then(|hashes| hashes.sha256.as_ref()) {
+                                                    if let Err(err) = crate::validate_sha256(&text, expected) {
+                                                        log::warn!("file '{}' for crate '{}' marked as a license but the sha256 hash could not be verified: {}", path, krate, err);
+                                                        return None;
+                                                    }
+                                                }
+
+                                                Some(text)
+                                            }
+                                            Err(err) => {
+                                                log::warn!("failed to read license from '{}' for crate '{}': {}", path, krate, err);
+                                                return None;
+                                            }
+                                        }
+                                    } else {
+                                        None
+                                    };
+
+                                    let path = cd_file.path;
+
                                     // clearly defined will attach a license identifier to any file
                                     // with a license or SPDX identifier, but like askalono it won't
                                     // detect all licenses if there are multiple in a single file
-                                    match cd_file.license {
-                                        Some(lic) => {
+                                    match (cd_file.license, license_text) {
+                                        (Some(lic), license_text) => {
                                             let license_expr = match spdx::Expression::parse_mode(&lic, spdx::ParseMode::Lax) {
                                                 Ok(expr) => expr,
                                                 Err(err) => {
-                                                    log::warn!("clearly defined detected license '{}' in '{}' for crate '{}', but it can't be parsed: {}", lic, cd_file.path, krate, err);
+                                                    log::warn!("clearlydefined detected license '{}' in '{}' for crate '{}', but it can't be parsed: {}", lic, path, krate, err);
                                                     return None;
                                                 }
                                             };
     
-                                            let lic_file_info = if cd_file.natures.iter().any(|s| s == "license") {
-                                                let root_path = krate.manifest_path.parent().unwrap();
-                                                let path = root_path.join(&cd_file.path);
-                                                match std::fs::read_to_string(&path) {
-                                                    Ok(text) => {
-                                                        // TODO: verify the sha256 matches
-                                                        LicenseFileKind::Text(text)
-                                                    }
-                                                    Err(err) => {
-                                                        log::warn!("failed to read license from '{}' for crate '{}': {}", path, krate, err);
-                                                        return None;
-                                                    }
-                                                }
-                                            } else {
-                                                LicenseFileKind::Header
-                                            };
-    
                                             Some(LicenseFile {
                                                 license_expr,
-                                                path: cd_file.path.into(),
+                                                path: path.into(),
                                                 confidence,
-                                                kind: lic_file_info,
+                                                kind: license_text.map_or(LicenseFileKind::Header, |lt| LicenseFileKind::Text(lt)),
                                             })
                                         }
-                                        None => None,
+                                        (None, Some(license_text)) => {
+                                            // For some reason, clearlydefined will correctly identify text as being a
+                                            // license but won't give it an expression, so we have to figure out what it
+                                            // is, but at least have high confidence that it will result in a match
+                                            scan::check_is_license_file(path.clone().into(), license_text, &strategy, self.threshold, None)
+                                                .or_else(|| {
+                                                    log::warn!("clearlydefined detected license in '{}' for crate '{}', but it we failed to determine what its license was", path, krate);
+                                                    None
+                                                })
+                                        }
+                                        _ => None,
                                     }
                                 }).collect();
 
@@ -345,20 +378,11 @@ impl Gatherer {
     }
 
     fn gather_file_system<'k>(&self, krates: &'k Krates,
-         cfg: &config::Config,
-        licensed_krates: &mut Vec<KrateLicense<'k>>) {
+        cfg: &config::Config,
+        strategy: &askalono::ScanStrategy<'_>,
+        licensed_krates: &mut Vec<KrateLicense<'k>>
+    ) {
         let threshold = self.threshold;
-        let min_threshold = threshold - 0.5;
-
-        let strategy = askalono::ScanStrategy::new(&self.store)
-            .mode(askalono::ScanMode::Elimination)
-            .confidence_threshold(if min_threshold < 0.1 {
-                0.1
-            } else {
-                min_threshold
-            })
-            .optimize(false)
-            .max_passes(1);
 
         let mut gathered: Vec<_> = krates
             .krates()
@@ -424,6 +448,24 @@ impl Gatherer {
             .collect();
 
         licensed_krates.append(&mut gathered);
+    }
+}
+
+use std::sync::Arc;
+
+/// Since it's often the case that the reason a license file is in source control
+/// but not in the actual published package is due to it being in the root but
+/// not copied into each sub-crate in the repository, we can just not re-retrieve
+/// the same file multiple times
+#[derive(Clone)]
+pub struct GitCache {
+    cache: Arc<parking_lot::RwLock<std::collections::HashMap<u64, Arc<String>>>>,
+    http_client: reqwest::blocking::Client,
+}
+
+impl GitCache {
+    fn retrieve(&self) -> anyhow::Result<Arc<String>> {
+        
     }
 }
 

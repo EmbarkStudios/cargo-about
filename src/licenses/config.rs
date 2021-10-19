@@ -140,7 +140,13 @@ pub struct Clarification {
     pub license: Expression,
     /// 1 or more files that are used as the source of truth for the license
     /// expression
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub files: Vec<ClarificationFile>,
+    /// 1 or more files, retrieved from the source git repository for the same
+    /// version that was published, used as the source of truth for the license
+    /// expression
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub git: Vec<ClarificationFile>,
 }
 
 #[derive(Deserialize, Debug)]

@@ -250,10 +250,12 @@ pub fn validate_sha256(buffer: &str, expected: &str) -> anyhow::Result<()> {
 
     let mut ctx = ring::digest::Context::new(&ring::digest::SHA256);
 
+    ctx.update(buffer.as_bytes());
+
     // Ignore faulty CRLF style newlines
-    for line in buffer.split('\r') {
-        ctx.update(line.as_bytes());
-    }
+    // for line in buffer.split('\r') {
+    //     ctx.update(line.as_bytes());
+    // }
 
     let content_digest = ctx.finish();
     let digest = content_digest.as_ref();

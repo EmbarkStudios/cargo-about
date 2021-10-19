@@ -88,9 +88,12 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
 
         let mut ctx = ring::digest::Context::new(&ring::digest::SHA256);
 
-        for line in subsection.split('\r') {
-            ctx.update(line.as_bytes());
-        }
+        ctx.update(subsection.as_bytes());
+
+        // TODO: Warn on carriage returns?
+        // for line in subsection.split('\r') {
+        //     ctx.update(line.as_bytes());
+        // }
 
         let checksum = ctx.finish();
 
@@ -153,6 +156,7 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
     let clarification = Clarification {
         license: overall_expression,
         files,
+        git: Vec::new(),
     };
 
     let clar_toml =
