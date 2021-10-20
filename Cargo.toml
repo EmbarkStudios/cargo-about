@@ -47,6 +47,8 @@ ignore = "0.4"
 krates = "0.8"
 # Logging macros
 log = "0.4"
+# Better heap allocator over system one (usually)
+mimalloc = "0.1"
 # Better locking primitives
 parking_lot = "0.11"
 # brrrr
@@ -71,8 +73,10 @@ structopt = "0.3"
 toml = "0.5"
 # Manipulation of cargo manifests for diagnostic purposes
 toml_edit = "0.6"
-# Better heap allocator over system one (usually)
-mimalloc = "0.1"
+# Hashing
+twox-hash = "1.6"
+# Url parsing
+url = "2.2"
 
 # API helpers for api.clearlydefined.io
 [dependencies.cd]

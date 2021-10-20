@@ -1,13 +1,15 @@
 use crate::licenses::{
     config::{Clarification, ClarificationFile, Config},
+    fetch::GitCache,
     KrateLicense,
 };
 mod ring;
 mod wasmtime;
 
-pub fn apply_workarounds<'krate>(
+pub(crate) fn apply_workarounds<'krate>(
     krates: &'krate crate::Krates,
     cfg: &Config,
+    gc: &GitCache,
     licensed_krates: &mut Vec<KrateLicense<'krate>>,
 ) {
     if cfg.workarounds.is_empty() {
@@ -39,8 +41,11 @@ pub fn apply_workarounds<'krate>(
                 if let Err(i) = super::binary_search(licensed_krates, &krate.krate) {
                     match retrieve_workaround(&krate.krate) {
                         Ok(Some(clarification)) => {
-                            match crate::licenses::apply_clarification(&krate.krate, &clarification)
-                            {
+                            match crate::licenses::apply_clarification(
+                                gc,
+                                &krate.krate,
+                                &clarification,
+                            ) {
                                 Ok(files) => {
                                     log::info!("applying workaround to '{}'", krate.krate);
 
@@ -76,7 +81,7 @@ pub fn apply_workarounds<'krate>(
                 if let Err(i) = super::binary_search(licensed_krates, &krate) {
                     match retrieve_workaround(krate) {
                         Ok(Some(clarification)) => {
-                            match crate::licenses::apply_clarification(krate, &clarification) {
+                            match crate::licenses::apply_clarification(gc, krate, &clarification) {
                                 Ok(files) => {
                                     log::info!(
                                         "applying workaround '{}' to '{}'",

@@ -1,5 +1,6 @@
 pub mod resolution;
 pub mod config;
+mod fetch;
 mod workarounds;
 mod scan;
 
@@ -141,10 +142,6 @@ impl Gatherer {
     pub fn gather<'krate>(self, krates: &'krate Krates, cfg: &config::Config) -> Vec<KrateLicense<'krate>> {
         let mut licensed_krates = Vec::with_capacity(krates.len());
 
-        // Workarounds are built-in to cargo-about to deal with issues that certain
-        // common crates have
-        workarounds::apply_workarounds(krates, cfg, &mut licensed_krates);
-
         let threshold = self.threshold;
         let min_threshold = threshold - 0.5;
 
@@ -158,9 +155,15 @@ impl Gatherer {
             .optimize(false)
             .max_passes(1);
 
+        let git_cache = fetch::GitCache::new();
+
+        // Workarounds are built-in to cargo-about to deal with issues that certain
+        // common crates have
+        workarounds::apply_workarounds(krates, cfg, &git_cache, &mut licensed_krates);
+
         // Clarifications are user supplied and thus take precedence over any
         // machine gathered data
-        self.gather_clarified(krates, cfg, &mut licensed_krates);
+        self.gather_clarified(krates, cfg, &git_cache, &mut licensed_krates);
 
         // Attempt to gather license information from clearly-defined.io so we
         // can get previously gathered license information + any possible
@@ -179,13 +182,14 @@ impl Gatherer {
         &self,
         krates: &'k Krates,
         cfg: &config::Config,
+        gc: &fetch::GitCache,
         licensed_krates: &mut Vec<KrateLicense<'k>>,
     ) {
         for (krate, clarification) in krates.krates().filter_map(|kn| {
             cfg.crates.get(&kn.krate.name).and_then(|kc| kc.clarify.as_ref()).map(|cl| (&kn.krate, cl))
         }) {
             if let Err(i) = binary_search(&licensed_krates, krate) {
-                match apply_clarification(krate, clarification) {
+                match apply_clarification(gc, krate, clarification) {
                     Ok(lic_files) => {
                         log::info!("applying clarification expression '{}' to crate {}", clarification.license, krate);
                         licensed_krates.insert(i, KrateLicense {
@@ -451,66 +455,61 @@ impl Gatherer {
     }
 }
 
-use std::sync::Arc;
-
-/// Since it's often the case that the reason a license file is in source control
-/// but not in the actual published package is due to it being in the root but
-/// not copied into each sub-crate in the repository, we can just not re-retrieve
-/// the same file multiple times
-#[derive(Clone)]
-pub struct GitCache {
-    cache: Arc<parking_lot::RwLock<std::collections::HashMap<u64, Arc<String>>>>,
-    http_client: reqwest::blocking::Client,
-}
-
-impl GitCache {
-    fn retrieve(&self) -> anyhow::Result<Arc<String>> {
-        
-    }
-}
-
-pub fn apply_clarification<'krate>(krate: &'krate crate::Krate, clarification: &config::Clarification, ) -> anyhow::Result<Vec<LicenseFile>> {
-    anyhow::ensure!(!clarification.files.is_empty(), "clarification for crate '{}' does not specify any valid LICENSE files to checksum", krate.id);
+pub(crate) fn apply_clarification<'krate>(git_cache: &fetch::GitCache, krate: &'krate crate::Krate, clarification: &config::Clarification, ) -> anyhow::Result<Vec<LicenseFile>> {
+    anyhow::ensure!(!clarification.files.is_empty() || !clarification.git.is_empty(), "clarification for crate '{}' does not specify any valid LICENSE files to checksum", krate.id);
 
     let root = krate.manifest_path.parent().unwrap();
 
-    let mut lic_files = Vec::with_capacity(clarification.files.len());
+    let mut lic_files = Vec::with_capacity(clarification.files.len() + clarification.git.len());
 
-    for file in &clarification.files {
-        let license_path = root.join(&file.path);
+    let mut push = |contents: &str, cf: &config::ClarificationFile, license_path| {
+        anyhow::ensure!(!contents.is_empty(), "clarification file '{}' is empty", license_path);
 
-        let file_contents = std::fs::read_to_string(&license_path).with_context(|| format!("unable to read path '{}'", license_path))?;
-
-        anyhow::ensure!(!file_contents.is_empty(), "clarification file '{}' is empty", license_path);
-
-        let start = match &file.start {
+        let start = match &cf.start {
             Some(starts) => {
-                file_contents.find(starts).with_context(|| format!("failed to find subsection starting with '{}' in {}", starts, license_path))?
+                contents.find(starts).with_context(|| format!("failed to find subsection starting with '{}' in {}", starts, license_path))?
             }
             None => 0,
         };
 
-        let end = match &file.end {
+        let end = match &cf.end {
             Some(ends) => {
-                file_contents[start..].find(ends).with_context(|| format!("failed to find subsection ending with '{}' in {}", ends, license_path))? + start + ends.len()
+                contents[start..].find(ends).with_context(|| format!("failed to find subsection ending with '{}' in {}", ends, license_path))? + start + ends.len()
             }
-            None => file_contents.len(),
+            None => contents.len(),
         };
 
-        let text = &file_contents[start..end];
+        let text = &contents[start..end];
 
-        crate::validate_sha256(text, &file.checksum)?;
+        crate::validate_sha256(text, &cf.checksum)?;
 
         let text = text.to_owned();
 
         lic_files.push(
             LicenseFile {
-                path: file.path.clone(),
+                path: cf.path.clone(),
                 confidence: 1.0,
-                license_expr: file.license.as_ref().unwrap_or(&clarification.license).clone(),
+                license_expr: cf.license.as_ref().unwrap_or(&clarification.license).clone(),
                 kind: LicenseFileKind::Text(text),
             }
         );
+
+        Ok(())
+    };
+
+    for file in &clarification.files {
+        let license_path = root.join(&file.path);
+        let file_contents = std::fs::read_to_string(&license_path).with_context(|| format!("unable to read path '{}'", license_path))?;
+
+        push(&file_contents, file, license_path)?;
+    }
+
+    for file in &clarification.git {
+        let license_path = &file.path;
+
+        let contents = git_cache.retrieve(krate, file).with_context(|| format!("unable to retrieve '{}' for crate '{}' from remote git host", license_path, krate))?;
+
+        push(&contents, file, license_path.clone())?;
     }
 
     Ok(lic_files)
