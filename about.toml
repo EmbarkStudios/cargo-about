@@ -23,6 +23,13 @@ license = "Apache-2.0"
 path = "LICENSE"
 checksum = "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
 
+[failure_derive.clarify]
+license = "Apache-2.0 OR MIT"
+
+[[failure_derive.clarify.git]]
+path = "LICENSE"
+checksum = "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+
 [instant]
 accepted = ["BSD-3-Clause"]
 
