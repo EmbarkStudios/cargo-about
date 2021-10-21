@@ -3,7 +3,10 @@ use crate::licenses::{
     fetch::GitCache,
     KrateLicense,
 };
+
+mod chrono;
 mod ring;
+mod rustls;
 mod wasmtime;
 
 pub(crate) fn apply_workarounds<'krate>(
@@ -131,6 +134,8 @@ const WORKAROUNDS: &[(
     bool,
     &dyn Fn(&crate::Krate) -> anyhow::Result<Option<Clarification>>,
 )] = &[
+    ("chrono", true, &self::chrono::get),
     ("ring", true, &self::ring::get),
+    ("rustls", true, &self::rustls::get),
     ("wasmtime", false, &self::wasmtime::get),
 ];
