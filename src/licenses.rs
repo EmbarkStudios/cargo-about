@@ -1,18 +1,15 @@
-pub mod resolution;
 pub mod config;
 pub mod fetch;
-mod workarounds;
+pub mod resolution;
 mod scan;
+mod workarounds;
 
 use crate::{Krate, Krates};
-use anyhow::{Context as _};
+use anyhow::Context as _;
+use krates::Utf8PathBuf as PathBuf;
 use rayon::prelude::*;
-use std::{
-    cmp,
-    sync::Arc,
-};
-use krates::{Utf8PathBuf as PathBuf};
 pub use resolution::Resolved;
+use std::{cmp, sync::Arc};
 
 const LICENSE_CACHE: &[u8] = include_bytes!("../spdx_cache.bin.zstd");
 
@@ -20,7 +17,9 @@ pub type LicenseStore = askalono::Store;
 
 #[inline]
 pub fn store_from_cache() -> anyhow::Result<LicenseStore> {
-    askalono::Store::from_cache(LICENSE_CACHE).map_err(|e| e.compat()).context("failed to load license store")
+    askalono::Store::from_cache(LICENSE_CACHE)
+        .map_err(|e| e.compat())
+        .context("failed to load license store")
 }
 
 #[derive(Debug)]
@@ -58,11 +57,10 @@ impl Ord for LicenseFile {
     #[inline]
     fn cmp(&self, o: &Self) -> cmp::Ordering {
         match self.license_expr.as_ref().cmp(o.license_expr.as_ref()) {
-            cmp::Ordering::Equal => {
-                o.confidence
-                    .partial_cmp(&self.confidence)
-                    .expect("NaN encountered comparing license confidences")
-            }
+            cmp::Ordering::Equal => o
+                .confidence
+                .partial_cmp(&self.confidence)
+                .expect("NaN encountered comparing license confidences"),
             ord => ord,
         }
     }
@@ -139,7 +137,11 @@ impl Gatherer {
         self
     }
 
-    pub fn gather<'krate>(self, krates: &'krate Krates, cfg: &config::Config) -> Vec<KrateLicense<'krate>> {
+    pub fn gather<'krate>(
+        self,
+        krates: &'krate Krates,
+        cfg: &config::Config,
+    ) -> Vec<KrateLicense<'krate>> {
         let mut licensed_krates = Vec::with_capacity(krates.len());
 
         let threshold = self.threshold;
@@ -187,24 +189,33 @@ impl Gatherer {
         licensed_krates: &mut Vec<KrateLicense<'k>>,
     ) {
         for (krate, clarification) in krates.krates().filter_map(|kn| {
-            cfg.crates.get(&kn.krate.name).and_then(|kc| kc.clarify.as_ref()).map(|cl| (&kn.krate, cl))
+            cfg.crates
+                .get(&kn.krate.name)
+                .and_then(|kc| kc.clarify.as_ref())
+                .map(|cl| (&kn.krate, cl))
         }) {
             if let Err(i) = binary_search(licensed_krates, krate) {
                 match apply_clarification(gc, krate, clarification) {
                     Ok(lic_files) => {
-                        log::debug!("applying clarification expression '{}' to crate {}", clarification.license, krate);
-                        licensed_krates.insert(i, KrateLicense {
-                            krate,
-                            lic_info: LicenseInfo::Expr(clarification.license.clone()),
-                            license_files: lic_files,
-                        });
+                        log::debug!(
+                            "applying clarification expression '{}' to crate {}",
+                            clarification.license,
+                            krate
+                        );
+                        licensed_krates.insert(
+                            i,
+                            KrateLicense {
+                                krate,
+                                lic_info: LicenseInfo::Expr(clarification.license.clone()),
+                                license_files: lic_files,
+                            },
+                        );
                     }
                     Err(e) => {
                         log::warn!("failed to validate all files specified in clarification for crate {}: {}", krate, e);
                     }
                 }
             }
-
         }
     }
 
@@ -219,32 +230,35 @@ impl Gatherer {
             return;
         }
 
-        let reqs = cd::definitions::get(10, krates.krates().filter_map(|krate| {
-            if binary_search(licensed_krates, &krate.krate).is_ok() {
-                return None;
-            }
+        let reqs = cd::definitions::get(
+            10,
+            krates.krates().filter_map(|krate| {
+                if binary_search(licensed_krates, &krate.krate).is_ok() {
+                    return None;
+                }
 
-            // Ignore local and git sources in favor of scanning those on the local disk
-            if krate
-                .krate
-                .source
-                .as_ref()
-                .map_or(false, |src| src.is_crates_io())
-            {
-                Some(cd::Coordinate {
-                    shape: cd::Shape::Crate,
-                    provider: cd::Provider::CratesIo,
-                    // Rust crates, at least on crates.io, don't have a namespace
-                    namespace: None,
-                    name: krate.krate.name.clone(),
-                    version: cd::CoordVersion::Semver(krate.krate.version.clone()),
-                    // TODO: maybe set this if it's overriden in the config? seems messy though
-                    curation_pr: None,
-                })
-            } else {
-                None
-            }
-        }));
+                // Ignore local and git sources in favor of scanning those on the local disk
+                if krate
+                    .krate
+                    .source
+                    .as_ref()
+                    .map_or(false, |src| src.is_crates_io())
+                {
+                    Some(cd::Coordinate {
+                        shape: cd::Shape::Crate,
+                        provider: cd::Provider::CratesIo,
+                        // Rust crates, at least on crates.io, don't have a namespace
+                        namespace: None,
+                        name: krate.krate.name.clone(),
+                        version: cd::CoordVersion::Semver(krate.krate.version.clone()),
+                        // TODO: maybe set this if it's overriden in the config? seems messy though
+                        curation_pr: None,
+                    })
+                } else {
+                    None
+                }
+            }),
+        );
 
         //let threshold = std::cmp::min(std::cmp::max(10, (self.threshold * 100.0) as u8), 100);
         let collected: Vec<_> = reqs.par_bridge().filter_map(|req| {
@@ -334,7 +348,7 @@ impl Gatherer {
                                                     return None;
                                                 }
                                             };
-    
+
                                             Some(LicenseFile {
                                                 license_expr,
                                                 path,
@@ -382,10 +396,12 @@ impl Gatherer {
         licensed_krates.sort();
     }
 
-    fn gather_file_system<'k>(&self, krates: &'k Krates,
+    fn gather_file_system<'k>(
+        &self,
+        krates: &'k Krates,
         cfg: &config::Config,
         strategy: &askalono::ScanStrategy<'_>,
-        licensed_krates: &mut Vec<KrateLicense<'k>>
+        licensed_krates: &mut Vec<KrateLicense<'k>>,
     ) {
         let threshold = self.threshold;
 
@@ -456,26 +472,47 @@ impl Gatherer {
     }
 }
 
-pub(crate) fn apply_clarification<'krate>(git_cache: &fetch::GitCache, krate: &'krate crate::Krate, clarification: &config::Clarification, ) -> anyhow::Result<Vec<LicenseFile>> {
-    anyhow::ensure!(!clarification.files.is_empty() || !clarification.git.is_empty(), "clarification for crate '{}' does not specify any valid LICENSE files to checksum", krate.id);
+pub(crate) fn apply_clarification<'krate>(
+    git_cache: &fetch::GitCache,
+    krate: &'krate crate::Krate,
+    clarification: &config::Clarification,
+) -> anyhow::Result<Vec<LicenseFile>> {
+    anyhow::ensure!(
+        !clarification.files.is_empty() || !clarification.git.is_empty(),
+        "clarification for crate '{}' does not specify any valid LICENSE files to checksum",
+        krate.id
+    );
 
     let root = krate.manifest_path.parent().unwrap();
 
     let mut lic_files = Vec::with_capacity(clarification.files.len() + clarification.git.len());
 
     let mut push = |contents: &str, cf: &config::ClarificationFile, license_path| {
-        anyhow::ensure!(!contents.is_empty(), "clarification file '{}' is empty", license_path);
+        anyhow::ensure!(
+            !contents.is_empty(),
+            "clarification file '{}' is empty",
+            license_path
+        );
 
         let start = match &cf.start {
-            Some(starts) => {
-                contents.find(starts).with_context(|| format!("failed to find subsection starting with '{}' in {}", starts, license_path))?
-            }
+            Some(starts) => contents.find(starts).with_context(|| {
+                format!(
+                    "failed to find subsection starting with '{}' in {}",
+                    starts, license_path
+                )
+            })?,
             None => 0,
         };
 
         let end = match &cf.end {
             Some(ends) => {
-                contents[start..].find(ends).with_context(|| format!("failed to find subsection ending with '{}' in {}", ends, license_path))? + start + ends.len()
+                contents[start..].find(ends).with_context(|| {
+                    format!(
+                        "failed to find subsection ending with '{}' in {}",
+                        ends, license_path
+                    )
+                })? + start
+                    + ends.len()
             }
             None => contents.len(),
         };
@@ -486,21 +523,24 @@ pub(crate) fn apply_clarification<'krate>(git_cache: &fetch::GitCache, krate: &'
 
         let text = text.to_owned();
 
-        lic_files.push(
-            LicenseFile {
-                path: cf.path.clone(),
-                confidence: 1.0,
-                license_expr: cf.license.as_ref().unwrap_or(&clarification.license).clone(),
-                kind: LicenseFileKind::Text(text),
-            }
-        );
+        lic_files.push(LicenseFile {
+            path: cf.path.clone(),
+            confidence: 1.0,
+            license_expr: cf
+                .license
+                .as_ref()
+                .unwrap_or(&clarification.license)
+                .clone(),
+            kind: LicenseFileKind::Text(text),
+        });
 
         Ok(())
     };
 
     for file in &clarification.files {
         let license_path = root.join(&file.path);
-        let file_contents = std::fs::read_to_string(&license_path).with_context(|| format!("unable to read path '{}'", license_path))?;
+        let file_contents = std::fs::read_to_string(&license_path)
+            .with_context(|| format!("unable to read path '{}'", license_path))?;
 
         push(&file_contents, file, license_path)?;
     }
@@ -508,7 +548,14 @@ pub(crate) fn apply_clarification<'krate>(git_cache: &fetch::GitCache, krate: &'
     for file in &clarification.git {
         let license_path = &file.path;
 
-        let contents = git_cache.retrieve(krate, file, &clarification.override_git_commit).with_context(|| format!("unable to retrieve '{}' for crate '{}' from remote git host", license_path, krate))?;
+        let contents = git_cache
+            .retrieve(krate, file, &clarification.override_git_commit)
+            .with_context(|| {
+                format!(
+                    "unable to retrieve '{}' for crate '{}' from remote git host",
+                    license_path, krate
+                )
+            })?;
 
         push(&contents, file, license_path.clone())?;
     }
@@ -517,6 +564,10 @@ pub(crate) fn apply_clarification<'krate>(git_cache: &fetch::GitCache, krate: &'
 }
 
 #[inline]
-pub fn binary_search<'krate>(kl: &'krate [KrateLicense<'krate>], krate: &Krate) -> Result<(usize, &'krate KrateLicense<'krate>), usize> {
-    kl.binary_search_by(|k| k.krate.cmp(krate)).map(|i| (i, &kl[i]))
+pub fn binary_search<'krate>(
+    kl: &'krate [KrateLicense<'krate>],
+    krate: &Krate,
+) -> Result<(usize, &'krate KrateLicense<'krate>), usize> {
+    kl.binary_search_by(|k| k.krate.cmp(krate))
+        .map(|i| (i, &kl[i]))
 }
