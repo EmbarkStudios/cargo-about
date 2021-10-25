@@ -4,9 +4,15 @@ use crate::licenses::{
     KrateLicense,
 };
 
+mod bitvec;
 mod chrono;
+mod clap;
+mod cocoa;
+mod gtk;
 mod ring;
 mod rustls;
+mod tonic;
+mod tract;
 mod wasmtime;
 
 pub(crate) fn apply_workarounds<'krate>(
@@ -134,8 +140,14 @@ const WORKAROUNDS: &[(
     bool,
     &dyn Fn(&crate::Krate) -> anyhow::Result<Option<Clarification>>,
 )] = &[
+    ("bitvec", false, &self::bitvec::get),
     ("chrono", true, &self::chrono::get),
+    ("clap", false, &self::clap::get),
+    ("cocoa", false, &self::cocoa::get),
+    ("gtk", false, &self::gtk::get),
     ("ring", true, &self::ring::get),
     ("rustls", true, &self::rustls::get),
+    ("tonic", false, &self::tonic::get),
+    ("tract", false, &self::tract::get),
     ("wasmtime", false, &self::wasmtime::get),
 ];

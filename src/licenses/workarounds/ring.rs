@@ -17,6 +17,7 @@ pub fn get(krate: &crate::Krate) -> anyhow::Result<Option<super::Clarification>>
     Ok(Some(super::Clarification {
         license: spdx::Expression::parse("ISC AND OpenSSL AND MIT")
             .context("failed to parse license expression")?,
+        override_git_commit: None,
         files: vec![
             // This is the ISC license that actually applies to most/all of the rust code
             ClarificationFile {

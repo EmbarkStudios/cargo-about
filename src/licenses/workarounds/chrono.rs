@@ -11,6 +11,7 @@ pub fn get(krate: &crate::Krate) -> anyhow::Result<Option<super::Clarification>>
     Ok(Some(super::Clarification {
         license: spdx::Expression::parse("Apache-2.0 OR MIT")
             .context("failed to parse license expression")?,
+        override_git_commit: None,
         files: vec![
             ClarificationFile {
                 path: "LICENSE.txt".into(),

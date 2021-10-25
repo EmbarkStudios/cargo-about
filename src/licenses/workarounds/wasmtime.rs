@@ -11,14 +11,22 @@ pub fn get(krate: &crate::Krate) -> anyhow::Result<Option<super::Clarification>>
         "cranelift-frontend",
         "cranelift-native",
         "cranelift-wasm",
+        // This is actually in the bytecodealliance/regalloc.rs repo, but still
+        // has the same license as the core wasmtime repo
+        "regalloc",
         "wasi-cap-std-sync",
         "wasi-common",
+        // This is actually in the bytecodealliance/wasm-tools repo, but still
+        // has the same license as the core wasmtime repo
+        "wasmparser",
         "wasmtime",
         "wasmtime-environ",
         "wasmtime-jit",
         "wasmtime-runtime",
         "wasmtime-types",
         "wasmtime-wasi",
+        // This is actually in the bytecodealliance/wasm-tools repo, but still
+        // has the same license as the core wasmtime repo
         "wast",
         "wiggle",
         "wiggle-generate",
@@ -32,10 +40,11 @@ pub fn get(krate: &crate::Krate) -> anyhow::Result<Option<super::Clarification>>
 
     // fixed in https://github.com/bytecodealliance/wasmtime/commit/b5e289d319b2788bb4b6133792546007f7900443#diff-42013ab1aca14e65a6a2b70d5808c75ea3dd331e7436e2cd8b756fa6b96c3296,
     // but at the time of writing, unreleased
-    if krate.name == "wasmtime-types" {
+    if krate.name == "wasmparser" || krate.name == "wasmtime-types" || krate.name == "wast" {
         Ok(Some(super::Clarification {
             license: spdx::Expression::parse("Apache-2.0 WITH LLVM-exception")
                 .context("failed to parse license expression")?,
+            override_git_commit: None,
             git: vec![ClarificationFile {
                 path: "LICENSE".into(),
                 license: None,
@@ -50,6 +59,7 @@ pub fn get(krate: &crate::Krate) -> anyhow::Result<Option<super::Clarification>>
         Ok(Some(super::Clarification {
             license: spdx::Expression::parse("Apache-2.0 WITH LLVM-exception")
                 .context("failed to parse license expression")?,
+            override_git_commit: None,
             files: vec![
                 // Both clearlydefined and askalono don't handle license exceptions it seems, so we need to clarify
                 // the file otherwise we will think we won't find the license we expected

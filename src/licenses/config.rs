@@ -138,6 +138,18 @@ pub struct Clarification {
     /// in the crate's Cargo.toml manifest
     #[serde(with = "spdx_expr")]
     pub license: Expression,
+    /// Normally, if clarifying a file via git, the file in question is retrieved
+    /// from the same commit the package was built with, which is retrieved via
+    /// the `.cargo_vcs_info.json` file included in the package. However, this
+    /// file may not be present, notably if the crate is published with the
+    /// `--allow-dirty` flag due to file system modifications that aren't commited
+    /// to source control. In this case, the revision must be specified manually
+    /// and used instead. This option should absolutely only be used in such a
+    /// case, as otherwise it is possible for a drift between the license as it
+    /// was at the time of the actual publish of the crate, and the revision
+    /// specified here.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub override_git_commit: Option<String>,
     /// 1 or more files that are used as the source of truth for the license
     /// expression
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

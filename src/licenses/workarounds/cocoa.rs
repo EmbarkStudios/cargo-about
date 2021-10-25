@@ -2,14 +2,33 @@ use super::ClarificationFile;
 use anyhow::Context as _;
 
 pub fn get(krate: &crate::Krate) -> anyhow::Result<Option<super::Clarification>> {
-    if krate.name != "rustls" {
+    // The other crates in this repo are correct
+    // "cocoa", "core-graphics", "core-text"
+
+    if ![
+        "cocoa-foundation",
+        "core-foundation",
+        "core-foundation-sys",
+        "core-graphics-types",
+    ]
+    .contains(&krate.name.as_str())
+    {
         return Ok(None);
     }
 
+    // It seems core-graphics-types was published from a branch and the commit
+    // was nuked, so we override the git commit to the current HEAD in that case
+    // for now, until it is hopefully fixed
+    let override_git_commit = if krate.name == "core-graphics-types" {
+        Some("3841d2bb3aa76dec2ea6319e757603fb923b5a50".to_owned())
+    } else {
+        None
+    };
+
     Ok(Some(super::Clarification {
-        license: spdx::Expression::parse("Apache-2.0 OR MIT OR ISC")
+        license: spdx::Expression::parse("MIT OR Apache-2.0")
             .context("failed to parse license expression")?,
-        override_git_commit: None,
+        override_git_commit,
         git: vec![
             ClarificationFile {
                 path: "LICENSE-APACHE".into(),
@@ -27,17 +46,7 @@ pub fn get(krate: &crate::Krate) -> anyhow::Result<Option<super::Clarification>>
                 license: Some(
                     spdx::Expression::parse("MIT").context("failed to parse license expression")?,
                 ),
-                checksum: "709e3175b4212f7b13aa93971c9f62ff8c69ec45ad8c6532a7e0c41d7a7d6f8c"
-                    .to_owned(),
-                start: None,
-                end: None,
-            },
-            ClarificationFile {
-                path: "LICENSE-ISC".into(),
-                license: Some(
-                    spdx::Expression::parse("ISC").context("failed to parse license expression")?,
-                ),
-                checksum: "7cfafc877eccc46c0e346ccbaa5c51bb6b894d2b818e617d970211e232785ad4"
+                checksum: "62065228e42caebca7e7d7db1204cbb867033de5982ca4009928915e4095f3a3"
                     .to_owned(),
                 start: None,
                 end: None,

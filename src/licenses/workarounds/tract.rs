@@ -2,12 +2,12 @@ use super::ClarificationFile;
 use anyhow::Context as _;
 
 pub fn get(krate: &crate::Krate) -> anyhow::Result<Option<super::Clarification>> {
-    if krate.name != "rustls" {
+    if !krate.name.starts_with("tract-") {
         return Ok(None);
     }
 
     Ok(Some(super::Clarification {
-        license: spdx::Expression::parse("Apache-2.0 OR MIT OR ISC")
+        license: spdx::Expression::parse("Apache-2.0 OR MIT")
             .context("failed to parse license expression")?,
         override_git_commit: None,
         git: vec![
@@ -27,17 +27,7 @@ pub fn get(krate: &crate::Krate) -> anyhow::Result<Option<super::Clarification>>
                 license: Some(
                     spdx::Expression::parse("MIT").context("failed to parse license expression")?,
                 ),
-                checksum: "709e3175b4212f7b13aa93971c9f62ff8c69ec45ad8c6532a7e0c41d7a7d6f8c"
-                    .to_owned(),
-                start: None,
-                end: None,
-            },
-            ClarificationFile {
-                path: "LICENSE-ISC".into(),
-                license: Some(
-                    spdx::Expression::parse("ISC").context("failed to parse license expression")?,
-                ),
-                checksum: "7cfafc877eccc46c0e346ccbaa5c51bb6b894d2b818e617d970211e232785ad4"
+                checksum: "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
                     .to_owned(),
                 start: None,
                 end: None,
