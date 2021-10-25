@@ -816,7 +816,9 @@ dependencies = [
 
 [[package]]
 name = "krates"
-version = "0.8.1"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8549dc44b3c544e5326df8e032191977519cbec37a2de2650d14024bcf2ee70a"
 dependencies = [
  "cargo_metadata",
  "cfg-expr",
@@ -1467,7 +1469,9 @@ dependencies = [
 
 [[package]]
 name = "spdx"
-version = "0.6.1"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e1bff9c842210e48eb85ce4c24983b34a481af4ba4b6140b41737e432f4030b"
 dependencies = [
  "smallvec",
 ]

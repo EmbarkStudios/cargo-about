@@ -44,7 +44,7 @@ handlebars = { version = "4.1", features = ["dir_source"] }
 # Directory walking
 ignore = "0.4"
 # Dependency graphing
-krates = "0.8"
+krates = "0.9"
 # Logging macros
 log = "0.4"
 # Better heap allocator over system one (usually)
@@ -82,7 +82,3 @@ url = "2.2"
 [dependencies.cd]
 path = "../clearly-defined"
 features = ["blocking", "rustls"]
-
-[patch.crates-io]
-spdx = { path = "../spdx" }
-krates = { path = "../krates" }
