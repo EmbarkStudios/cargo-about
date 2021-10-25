@@ -284,7 +284,7 @@ fn generate(
                         num_errors += 1;
                     }
 
-                    term::emit(&mut streaml, &diag_cfg, files, &diag)?;
+                    term::emit(&mut streaml, &diag_cfg, files, diag)?;
                 }
             }
 

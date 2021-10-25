@@ -93,7 +93,7 @@ pub struct KrateLicense<'krate> {
 impl<'krate> Ord for KrateLicense<'krate> {
     #[inline]
     fn cmp(&self, o: &Self) -> cmp::Ordering {
-        self.krate.cmp(&o.krate)
+        self.krate.cmp(o.krate)
     }
 }
 
@@ -155,7 +155,7 @@ impl Gatherer {
             .optimize(false)
             .max_passes(1);
 
-        let git_cache = fetch::GitCache::new();
+        let git_cache = fetch::GitCache::default();
 
         // Workarounds are built-in to cargo-about to deal with issues that certain
         // common crates have
@@ -178,6 +178,7 @@ impl Gatherer {
         licensed_krates
     }
 
+    #[allow(clippy::unused_self)]
     fn gather_clarified<'k>(
         &self,
         krates: &'k Krates,
@@ -188,7 +189,7 @@ impl Gatherer {
         for (krate, clarification) in krates.krates().filter_map(|kn| {
             cfg.crates.get(&kn.krate.name).and_then(|kc| kc.clarify.as_ref()).map(|cl| (&kn.krate, cl))
         }) {
-            if let Err(i) = binary_search(&licensed_krates, krate) {
+            if let Err(i) = binary_search(licensed_krates, krate) {
                 match apply_clarification(gc, krate, clarification) {
                     Ok(lic_files) => {
                         log::debug!("applying clarification expression '{}' to crate {}", clarification.license, krate);
@@ -336,16 +337,16 @@ impl Gatherer {
     
                                             Some(LicenseFile {
                                                 license_expr,
-                                                path: path.into(),
+                                                path,
                                                 confidence,
-                                                kind: license_text.map_or(LicenseFileKind::Header, |lt| LicenseFileKind::Text(lt)),
+                                                kind: license_text.map_or(LicenseFileKind::Header, LicenseFileKind::Text),
                                             })
                                         }
                                         (None, Some(license_text)) => {
                                             // For some reason, clearlydefined will correctly identify text as being a
                                             // license but won't give it an expression, so we have to figure out what it
                                             // is, but at least have high confidence that it will result in a match
-                                            scan::check_is_license_file(path.clone().into(), license_text, &strategy, self.threshold, None)
+                                            scan::check_is_license_file(path.clone(), license_text, strategy, self.threshold, None)
                                                 .or_else(|| {
                                                     log::warn!("clearlydefined detected license in '{}' for crate '{}', but it we failed to determine what its license was", path, krate);
                                                     None
@@ -395,7 +396,7 @@ impl Gatherer {
                 let krate = &kn.krate;
 
                 // Ignore crates that we've already gathered
-                if binary_search(&licensed_krates, krate).is_ok() {
+                if binary_search(licensed_krates, krate).is_ok() {
                     return None;
                 }
 
@@ -406,7 +407,7 @@ impl Gatherer {
 
                 let mut license_files = match scan::scan_files(
                     root_path,
-                    &strategy,
+                    strategy,
                     threshold,
                     krate_cfg.map(|kc| (kc, krate.name.as_str())),
                 ) {

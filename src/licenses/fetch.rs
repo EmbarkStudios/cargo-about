@@ -95,20 +95,14 @@ impl GitHostFlavor {
 /// but not in the actual published package is due to it being in the root but
 /// not copied into each sub-crate in the repository, we can just not re-retrieve
 /// the same file multiple times
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct GitCache {
     cache: Arc<parking_lot::RwLock<std::collections::HashMap<u64, Arc<String>>>>,
     http_client: Client,
 }
 
 impl GitCache {
-    pub fn new() -> Self {
-        Self {
-            cache: Arc::new(parking_lot::RwLock::new(std::collections::HashMap::new())),
-            http_client: Client::new(),
-        }
-    }
-
+    #[allow(clippy::unused_self)]
     fn retrieve_local(
         &self,
         krate: &Krate,
@@ -262,7 +256,7 @@ impl GitCache {
                         return Ok(text.clone());
                     }
 
-                    let contents = Arc::new(self.retrieve_remote(&repo, &sha1, &file.path)?);
+                    let contents = Arc::new(self.retrieve_remote(repo, &sha1, &file.path)?);
 
                     self.cache.write().insert(hash, contents.clone());
 
@@ -296,7 +290,7 @@ mod test {
                 &Client::new(),
                 &Url::parse("https://github.com/EmbarkStudios/cargo-about").unwrap(),
                 "6f0d247ee7f7b6842abc180c2e4e96581e454ca8", /* 0.3.0 commit */
-                &Path::new("LICENSE-MIT"),
+                Path::new("LICENSE-MIT"),
             )
             .unwrap();
 
@@ -315,7 +309,7 @@ mod test {
                 &Client::new(),
                 &Url::parse("https://gitlab.com/veloren/veloren").unwrap(),
                 "f92c6fbd49269b6e2cad04ae229d3405a6656053",
-                &Path::new("LICENSE"),
+                Path::new("LICENSE"),
             )
             .unwrap();
 
@@ -334,7 +328,7 @@ mod test {
                 &Client::new(),
                 &Url::parse("https://bitbucket.org/atlassian/pipelines-examples-rust/").unwrap(),
                 "581100fe400cd0cfb17f54c2aa26121181f82646",
-                &Path::new("README.md"),
+                Path::new("README.md"),
             )
             .unwrap();
 

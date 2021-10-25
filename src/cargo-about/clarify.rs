@@ -5,8 +5,8 @@ use structopt::StructOpt;
 
 fn parse_subsection(s: &str) -> anyhow::Result<(Option<String>, Option<String>)> {
     let pos = s
-        .find("!")
-        .with_context(|| format!("unable to find '!' in {}", s))?;
+        .find("!!")
+        .with_context(|| format!("unable to find '!!' in {}", s))?;
 
     let start = &s[..pos];
     let end = &s[pos + 1..];
@@ -30,7 +30,8 @@ pub enum Subcommand {
 
 #[derive(StructOpt, Debug)]
 pub struct Args {
-    /// One or more subsections in the file which is itself its own license
+    /// One or more subsections in the file which is itself its own license.
+    /// Uses `!!` as the separator between the start and end of the subsection
     #[structopt(long, short, parse(try_from_str = parse_subsection))]
     subsections: Vec<(Option<String>, Option<String>)>,
     /// The minimum confidence score a license must have
@@ -50,7 +51,7 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
                 .with_context(|| format!("unable to read file '{}'", full_path))?
         }
         Subcommand::Repo { rev, repo } => {
-            let gc = GitCache::new();
+            let gc = GitCache::default();
 
             gc.retrieve_remote(repo.as_str(), &rev, &args.path)
                 .context("failed to retrieve remote file")?
@@ -84,7 +85,7 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
             let pkg: MinPkg =
                 toml::from_str(&manifest).context("failed to deserialize Cargo.toml")?;
 
-            let gc = GitCache::new();
+            let gc = GitCache::default();
             let sha1 = GitCache::parse_vcs_info(&crate_path.join(".cargo_vcs_info.json"))
                 .context("failed to read sha1")?;
 
@@ -167,7 +168,7 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
         let found_license = scan_result.license.with_context(|| {
             format!("failed to discern license for subsection:\n{}", subsection)
         })?;
-        let license = spdx::license_id(&found_license.name).with_context(|| {
+        let license = spdx::license_id(found_license.name).with_context(|| {
             format!(
                 "detected license '{}' which is not a valid SPDX identifier",
                 found_license.name

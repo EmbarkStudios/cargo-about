@@ -87,7 +87,7 @@ pub(crate) fn apply_workarounds<'krate>(
             }
         } else {
             for krate in krates.krates().map(|kn| &kn.krate) {
-                if let Err(i) = super::binary_search(licensed_krates, &krate) {
+                if let Err(i) = super::binary_search(licensed_krates, krate) {
                     match retrieve_workaround(krate) {
                         Ok(Some(clarification)) => {
                             match crate::licenses::apply_clarification(gc, krate, &clarification) {
@@ -135,6 +135,7 @@ pub(crate) fn apply_workarounds<'krate>(
     }
 }
 
+#[allow(clippy::type_complexity)]
 const WORKAROUNDS: &[(
     &str,
     bool,

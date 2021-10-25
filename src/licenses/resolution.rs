@@ -49,7 +49,7 @@ impl<'acc> fmt::Display for Accepted<'acc> {
                     write!(f, ", ")?;
                 }
             }
-            write!(f, "]")?
+            write!(f, "]")?;
         }
 
         Ok(())
@@ -200,9 +200,9 @@ pub fn resolve(
                         })
                         .ok();
 
-                    synthesize_manifest(&kl.krate, doc, &expr)
+                    synthesize_manifest(kl.krate, doc, &expr)
                 }
-                _ => synthesize_manifest(&kl.krate, None, &expr),
+                _ => synthesize_manifest(kl.krate, None, &expr),
             };
 
             // Retrieve additional crate specific licenses
