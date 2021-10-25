@@ -243,10 +243,13 @@ dependencies = [
 
 [[package]]
 name = "cd"
-version = "0.1.0"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3570da7d65f710c8d632c0b3408e82900ebaaef83a99228084e34f4d8447a242"
 dependencies = [
  "anyhow",
  "bytes",
+ "camino",
  "chrono",
  "http",
  "reqwest",

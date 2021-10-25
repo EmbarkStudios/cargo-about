@@ -32,6 +32,8 @@ anyhow = "1.0"
 askalono = "0.4"
 # TTY detection
 atty = "0.2"
+# API helpers for api.clearlydefined.io
+cd = { version = "0.2", features = ["blocking", "rustls"] }
 # Datetime
 chrono = "0.4"
 # Diagnostic reporting
@@ -79,8 +81,3 @@ toml_edit = "0.6"
 twox-hash = "1.6"
 # Url parsing
 url = "2.2"
-
-# API helpers for api.clearlydefined.io
-[dependencies.cd]
-path = "../clearly-defined"
-features = ["blocking", "rustls"]
