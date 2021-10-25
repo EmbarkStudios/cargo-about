@@ -50,7 +50,7 @@ pub(crate) fn apply_workarounds<'krate>(
                                 &clarification,
                             ) {
                                 Ok(files) => {
-                                    log::info!("applying workaround to '{}'", krate.krate);
+                                    log::debug!("applying workaround to '{}'", krate.krate);
 
                                     licensed_krates.insert(
                                         i,
@@ -86,7 +86,7 @@ pub(crate) fn apply_workarounds<'krate>(
                         Ok(Some(clarification)) => {
                             match crate::licenses::apply_clarification(gc, krate, &clarification) {
                                 Ok(files) => {
-                                    log::info!(
+                                    log::debug!(
                                         "applying workaround '{}' to '{}'",
                                         workaround_cfg.name,
                                         krate

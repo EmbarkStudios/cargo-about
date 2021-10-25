@@ -88,22 +88,13 @@ impl Krate {
                 match spdx::Expression::parse(license_field) {
                     Ok(validated) => licenses::LicenseInfo::Expr(validated),
                     Err(err) => {
-                        log::error!(
-                            "unable to parse license expression for '{} - {}': {}",
-                            self.0.name,
-                            self.0.version,
-                            err
-                        );
+                        log::error!("unable to parse license expression for '{}': {}", self, err);
                         licenses::LicenseInfo::Unknown
                     }
                 }
             }
             None => {
-                log::debug!(
-                    "crate '{}({})' doesn't have a license field",
-                    self.0.name,
-                    self.0.version,
-                );
+                log::warn!("crate '{}' doesn't have a license field", self);
                 licenses::LicenseInfo::Unknown
             }
         }
