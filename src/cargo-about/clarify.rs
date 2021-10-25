@@ -1,4 +1,5 @@
 use anyhow::Context as _;
+use cargo_about::licenses::fetch::GitCache;
 use krates::Utf8PathBuf as PathBuf;
 use structopt::StructOpt;
 
@@ -17,6 +18,17 @@ fn parse_subsection(s: &str) -> anyhow::Result<(Option<String>, Option<String>)>
 }
 
 #[derive(StructOpt, Debug)]
+pub enum Subcommand {
+    /// The path of the file to clarify
+    Path { root: PathBuf },
+    /// Pulls the file from a git repository rather than the file system
+    Repo { rev: String, repo: url::Url },
+    /// Retrieves the file from the git repository and commit associated with
+    /// the specified crate and version
+    Crate { spec: String },
+}
+
+#[derive(StructOpt, Debug)]
 pub struct Args {
     /// One or more subsections in the file which is itself its own license
     #[structopt(long, short, parse(try_from_str = parse_subsection))]
@@ -24,13 +36,62 @@ pub struct Args {
     /// The minimum confidence score a license must have
     #[structopt(long, default_value = "0.8")]
     threshold: f32,
-    /// The path of the file to clarify
+    /// The relative file path from the root of the source
     path: PathBuf,
+    #[structopt(subcommand)]
+    cmd: Subcommand,
 }
 
 pub fn cmd(args: Args) -> anyhow::Result<()> {
-    let contents = std::fs::read_to_string(&args.path)
-        .with_context(|| format!("unable to read file '{}'", args.path))?;
+    let contents = match args.cmd {
+        Subcommand::Path { root } => {
+            let full_path = root.join(&args.path);
+            std::fs::read_to_string(&full_path)
+                .with_context(|| format!("unable to read file '{}'", full_path))?
+        }
+        Subcommand::Repo { rev, repo } => {
+            let gc = GitCache::new();
+
+            gc.retrieve_remote(repo.as_str(), &rev, &args.path)
+                .context("failed to retrieve remote file")?
+        }
+        Subcommand::Crate { spec } => {
+            // Just hardcoding to the typical because I can't be bothered
+            let root = PathBuf::from_path_buf(
+                home::cargo_home()
+                    .context("unable to find CARGO_HOME directory")?
+                    .join("registry/src/github.com-1ecc6299db9ec823"),
+            )
+            .map_err(|_e| anyhow::anyhow!("CARGO_HOME directory is not utf-8"))?;
+
+            let crate_path = root.join(spec);
+
+            anyhow::ensure!(crate_path.exists(), "unable to find crate source");
+
+            let manifest = std::fs::read_to_string(crate_path.join("Cargo.toml"))
+                .context("failed to read Cargo.toml")?;
+
+            #[derive(serde::Deserialize)]
+            struct Pkg {
+                repository: String,
+            }
+
+            #[derive(serde::Deserialize)]
+            struct MinPkg {
+                package: Pkg,
+            }
+
+            let pkg: MinPkg =
+                toml::from_str(&manifest).context("failed to deserialize Cargo.toml")?;
+
+            let gc = GitCache::new();
+            let sha1 = GitCache::parse_vcs_info(&crate_path.join(".cargo_vcs_info.json"))
+                .context("failed to read sha1")?;
+
+            gc.retrieve_remote(&pkg.package.repository, &sha1, &args.path)
+                .context("failed to retrieve remote file")?
+        }
+    };
 
     let subsections = if args.subsections.is_empty() {
         vec![(0..contents.len(), (None, None))]
@@ -155,6 +216,7 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
 
     let clarification = Clarification {
         license: overall_expression,
+        override_git_commit: None,
         files,
         git: Vec::new(),
     };

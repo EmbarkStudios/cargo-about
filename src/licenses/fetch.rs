@@ -14,6 +14,19 @@ enum GitHostFlavor {
 }
 
 impl GitHostFlavor {
+    fn from_repo(repo: &Url) -> anyhow::Result<Self> {
+        Ok(match repo.domain() {
+            Some("github.com") => Self::Github,
+            Some("gitlab.com") => Self::Gitlab,
+            Some("bitbucket.org") => Self::Bitbucket,
+            Some(unsupported) => anyhow::bail!(
+                "the git host '{}' is not supported at this time",
+                unsupported
+            ),
+            None => anyhow::bail!("the repo url is malformed and does not contain a domain"),
+        })
+    }
+
     /// Fetches the file contents of a path from the specific repository via
     /// a third party site for now until I can find a better solution, that still
     /// doesn't mean requiring access tokens or cloning the entire repository
@@ -22,6 +35,16 @@ impl GitHostFlavor {
             .path()
             .strip_prefix('/')
             .context("repo url does not have valid path")?;
+
+        // Some crates in repos with a workspace will try and be nice and give
+        // a subpath as the repo, which is friendly to users, but screws up
+        // things here, so we just chop off excess path parameters
+        let first = project.find('/').context("expected an <org/repo> path")?;
+
+        let project = match project[first + 1..].find('/') {
+            Some(second) => &project[..first + second + 1],
+            None => project,
+        };
 
         let req = match self {
             Self::Github => {
@@ -73,7 +96,7 @@ impl GitHostFlavor {
 /// not copied into each sub-crate in the repository, we can just not re-retrieve
 /// the same file multiple times
 #[derive(Clone)]
-pub(crate) struct GitCache {
+pub struct GitCache {
     cache: Arc<parking_lot::RwLock<std::collections::HashMap<u64, Arc<String>>>>,
     http_client: Client,
 }
@@ -138,7 +161,7 @@ impl GitCache {
         Ok(contents)
     }
 
-    fn retrieve_remote(&self, repo: &str, rev: &str, path: &Path) -> anyhow::Result<String> {
+    pub fn retrieve_remote(&self, repo: &str, rev: &str, path: &Path) -> anyhow::Result<String> {
         let repo_url = url::Url::parse(repo)
             .with_context(|| format!("unable to parse repository url '{}'", repo))?;
 
@@ -149,16 +172,7 @@ impl GitCache {
         // hosts we can support at the moment. I consider this fine for now
         // though, as this is only used as a fallback when a crate is not
         // packaged properly with the license(s) included
-        let flavor = match repo_url.domain() {
-            Some("github.com") => GitHostFlavor::Github,
-            Some("gitlab.com") => GitHostFlavor::Gitlab,
-            Some("bitbucket.org") => GitHostFlavor::Bitbucket,
-            Some(unsupported) => anyhow::bail!(
-                "the git host '{}' is not supported at this time",
-                unsupported
-            ),
-            None => anyhow::bail!("the repo url is malformed and does not contain a domain"),
-        };
+        let flavor = GitHostFlavor::from_repo(&repo_url)?;
 
         flavor
             .fetch(&self.http_client, &repo_url, rev, path)
@@ -170,10 +184,35 @@ impl GitCache {
             })
     }
 
+    /// Parses a `.cargo_vcs_info.json` located in the root of a packaged crate
+    /// and returns the sha1 commit the package was built from
+    pub fn parse_vcs_info(vcs_info_path: &Path) -> anyhow::Result<String> {
+        let vcs_info = std::fs::read_to_string(vcs_info_path)
+            .with_context(|| format!("unable to read '{}'", vcs_info_path))?;
+
+        #[derive(serde::Deserialize)]
+        #[serde(deny_unknown_fields)]
+        struct GitInfo {
+            sha1: String,
+        }
+
+        #[derive(serde::Deserialize)]
+        #[serde(deny_unknown_fields)]
+        struct VcsInfo {
+            git: GitInfo,
+        }
+
+        let vcs_info: VcsInfo = serde_json::from_str(&vcs_info)
+            .with_context(|| format!("failed to deserialize '{}'", vcs_info_path))?;
+
+        Ok(vcs_info.git.sha1)
+    }
+
     pub(crate) fn retrieve(
         &self,
         krate: &Krate,
         file: &config::ClarificationFile,
+        commit_override: &Option<String>,
     ) -> anyhow::Result<Arc<String>> {
         match &krate.source {
             Some(src) => {
@@ -192,35 +231,28 @@ impl GitCache {
                         )
                     })?;
 
-                    let vcs_info_path = krate
-                        .manifest_path
-                        .parent()
-                        .unwrap()
-                        .join(".cargo_vcs_info.json");
-                    let vcs_info = std::fs::read_to_string(&vcs_info_path)
-                        .with_context(|| format!("unable to read '{}'", vcs_info_path))?;
+                    let sha1 = match commit_override {
+                        Some(co) => {
+                            log::debug!("using commit override '{}' for crate '{}'", co, krate);
+                            co.clone()
+                        }
+                        None => {
+                            let vcs_info_path = krate
+                                .manifest_path
+                                .parent()
+                                .unwrap()
+                                .join(".cargo_vcs_info.json");
 
-                    #[derive(serde::Deserialize)]
-                    #[serde(deny_unknown_fields)]
-                    struct GitInfo {
-                        sha1: String,
-                    }
-
-                    #[derive(serde::Deserialize)]
-                    #[serde(deny_unknown_fields)]
-                    struct VcsInfo {
-                        git: GitInfo,
-                    }
-
-                    let vcs_info: VcsInfo = serde_json::from_str(&vcs_info)
-                        .with_context(|| format!("failed to deserialize '{}'", vcs_info_path))?;
+                            Self::parse_vcs_info(&vcs_info_path)?
+                        }
+                    };
 
                     let hash = {
                         use std::hash::Hasher;
                         let mut hasher = twox_hash::XxHash64::default();
 
                         hasher.write(repo.as_bytes());
-                        hasher.write(vcs_info.git.sha1.as_bytes());
+                        hasher.write(sha1.as_bytes());
                         hasher.write(file.path.as_str().as_bytes());
 
                         hasher.finish()
@@ -230,8 +262,7 @@ impl GitCache {
                         return Ok(text.clone());
                     }
 
-                    let contents =
-                        Arc::new(self.retrieve_remote(&repo, &vcs_info.git.sha1, &file.path)?);
+                    let contents = Arc::new(self.retrieve_remote(&repo, &sha1, &file.path)?);
 
                     self.cache.write().insert(hash, contents.clone());
 

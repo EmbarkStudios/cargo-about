@@ -1,6 +1,6 @@
 pub mod resolution;
 pub mod config;
-mod fetch;
+pub mod fetch;
 mod workarounds;
 mod scan;
 
@@ -191,7 +191,7 @@ impl Gatherer {
             if let Err(i) = binary_search(&licensed_krates, krate) {
                 match apply_clarification(gc, krate, clarification) {
                     Ok(lic_files) => {
-                        log::info!("applying clarification expression '{}' to crate {}", clarification.license, krate);
+                        log::debug!("applying clarification expression '{}' to crate {}", clarification.license, krate);
                         licensed_krates.insert(i, KrateLicense {
                             krate,
                             lic_info: LicenseInfo::Expr(clarification.license.clone()),
@@ -251,7 +251,7 @@ impl Gatherer {
                 Ok(response) => {
                     Some(response.definitions.into_iter().filter_map(|def| {
                         if def.described.is_none() {
-                            log::info!("the definition for {} has not been harvested", def.coordinates);
+                            log::warn!("the definition for {} has not been harvested", def.coordinates);
                             return None;
                         }
 
@@ -507,7 +507,7 @@ pub(crate) fn apply_clarification<'krate>(git_cache: &fetch::GitCache, krate: &'
     for file in &clarification.git {
         let license_path = &file.path;
 
-        let contents = git_cache.retrieve(krate, file).with_context(|| format!("unable to retrieve '{}' for crate '{}' from remote git host", license_path, krate))?;
+        let contents = git_cache.retrieve(krate, file, &clarification.override_git_commit).with_context(|| format!("unable to retrieve '{}' for crate '{}' from remote git host", license_path, krate))?;
 
         push(&contents, file, license_path.clone())?;
     }
