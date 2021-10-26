@@ -1,7 +1,4 @@
-accepted = [
-    "Apache-2.0",
-    "MIT",
-]
+accepted = ["Apache-2.0", "MIT"]
 targets = [
     "x86_64-unknown-linux-gnu",
     "x86_64-unknown-linux-musl",
@@ -10,3 +7,40 @@ targets = [
 ]
 ignore-build-dependencies = false
 ignore-dev-dependencies = false
+workarounds = [{ name = "ring" }, { name = "chrono" }, { name = "rustls" }]
+
+[codespan.clarify]
+license = "Apache-2.0"
+
+[[codespan.clarify.git]]
+path = "LICENSE"
+checksum = "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+
+[codespan-reporting.clarify]
+license = "Apache-2.0"
+
+[[codespan-reporting.clarify.git]]
+path = "LICENSE"
+checksum = "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+
+[failure_derive.clarify]
+license = "Apache-2.0 OR MIT"
+
+[[failure_derive.clarify.git]]
+path = "LICENSE"
+checksum = "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+
+[instant]
+accepted = ["BSD-3-Clause"]
+
+[ring]
+accepted = ["ISC", "OpenSSL"]
+
+[untrusted]
+accepted = ["ISC"]
+
+[webpki]
+accepted = ["ISC", "BSD-3-Clause"]
+
+[webpki-roots]
+accepted = ["MPL-2.0"]

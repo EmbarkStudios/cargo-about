@@ -1,36 +1,57 @@
-use serde::{de, Deserialize};
-use std::{collections::BTreeMap, fmt, path::PathBuf};
+use krates::Utf8PathBuf as PathBuf;
+use serde::{de, ser, Deserialize, Serialize};
+use spdx::Expression;
+use std::{collections::BTreeMap, fmt};
 
-fn deserialize_spdx_id<'de, D>(deserializer: D) -> std::result::Result<spdx::LicenseId, D::Error>
-where
-    D: de::Deserializer<'de>,
-{
-    struct Visitor;
+mod spdx_expr {
+    use super::*;
 
-    impl<'de> de::Visitor<'de> for Visitor {
-        type Value = spdx::LicenseId;
+    #[inline]
+    pub(crate) fn serialize<S>(expr: &Expression, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: ser::Serializer,
+    {
+        serializer.serialize_str(expr.as_ref())
+    }
 
-        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-            formatter.write_str("SPDX short-identifier")
-        }
+    #[inline]
+    pub(crate) fn deserialize<'de, D>(deserializer: D) -> Result<Expression, D::Error>
+    where
+        D: de::Deserializer<'de>,
+    {
+        <&'de str>::deserialize(deserializer)
+            .and_then(|value| Expression::parse(value).map_err(de::Error::custom))
+    }
+}
+mod spdx_expr_opt {
+    use super::*;
 
-        fn visit_str<E>(self, v: &str) -> std::result::Result<Self::Value, E>
-        where
-            E: de::Error,
-        {
-            spdx::license_id(v).ok_or_else(|| {
-                E::custom(format!(
-                    "'{}' is not a valid SPDX short-identifier in v{}",
-                    v,
-                    spdx::license_version()
-                ))
-            })
+    #[inline]
+    pub(crate) fn serialize<S>(expr: &Option<Expression>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: ser::Serializer,
+    {
+        match expr {
+            Some(expr) => serializer.serialize_str(expr.as_ref()),
+            None => serializer.serialize_none(),
         }
     }
 
-    deserializer.deserialize_any(Visitor)
+    #[inline]
+    pub(crate) fn deserialize<'de, D>(deserializer: D) -> Result<Option<Expression>, D::Error>
+    where
+        D: de::Deserializer<'de>,
+    {
+        match <Option<&'de str>>::deserialize(deserializer)? {
+            Some(value) => Ok(Some(
+                spdx::Expression::parse(value).map_err(de::Error::custom)?,
+            )),
+            None => Ok(None),
+        }
+    }
 }
 
+#[inline]
 fn deserialize_licensee<'de, D>(
     deserializer: D,
 ) -> std::result::Result<Vec<spdx::Licensee>, D::Error>
@@ -72,8 +93,8 @@ where
 #[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct Additional {
     pub root: PathBuf,
-    #[serde(deserialize_with = "deserialize_spdx_id")]
-    pub license: spdx::LicenseId,
+    #[serde(with = "spdx_expr")]
+    pub license: Expression,
     pub license_file: PathBuf,
     pub license_start: Option<usize>,
     pub license_end: Option<usize>,
@@ -82,20 +103,91 @@ pub struct Additional {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct Ignore {
-    #[serde(deserialize_with = "deserialize_spdx_id")]
-    pub license: spdx::LicenseId,
+    #[serde(with = "spdx_expr")]
+    pub license: Expression,
     pub license_file: PathBuf,
     pub license_start: Option<usize>,
     pub license_end: Option<usize>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct ClarificationFile {
+    /// The crate relative path to the file
+    pub path: PathBuf,
+    /// The SHA-256 checksum of the file in hex
+    pub checksum: String,
+    /// The license applied to the file. Defaults to the license of the parent
+    /// clarification if not specified.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "spdx_expr_opt"
+    )]
+    pub license: Option<Expression>,
+    /// The beginning of the text to checksum
+    pub start: Option<String>,
+    /// The end of the text to checksum
+    pub end: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct Clarification {
+    /// The full clarified license expression, as if it appeared as the `license`
+    /// in the crate's Cargo.toml manifest
+    #[serde(with = "spdx_expr")]
+    pub license: Expression,
+    /// Normally, if clarifying a file via git, the file in question is retrieved
+    /// from the same commit the package was built with, which is retrieved via
+    /// the `.cargo_vcs_info.json` file included in the package. However, this
+    /// file may not be present, notably if the crate is published with the
+    /// `--allow-dirty` flag due to file system modifications that aren't commited
+    /// to source control. In this case, the revision must be specified manually
+    /// and used instead. This option should absolutely only be used in such a
+    /// case, as otherwise it is possible for a drift between the license as it
+    /// was at the time of the actual publish of the crate, and the revision
+    /// specified here.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub override_git_commit: Option<String>,
+    /// 1 or more files that are used as the source of truth for the license
+    /// expression
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub files: Vec<ClarificationFile>,
+    /// 1 or more files, retrieved from the source git repository for the same
+    /// version that was published, used as the source of truth for the license
+    /// expression
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub git: Vec<ClarificationFile>,
+}
+
 #[derive(Deserialize, Debug)]
-#[serde(rename_all = "kebab-case", deny_unknown_fields)]
+#[serde(deny_unknown_fields)]
 pub struct KrateConfig {
     #[serde(default)]
     pub additional: Vec<Additional>,
+    /// A list of files that are ignored for the purposes of license retrieval,
+    /// eg. due to them being present in the source, but not actually used for
+    /// the target(s) you are building for, such as test code, or platform
+    /// specific code
     #[serde(default)]
     pub ignore: Vec<Ignore>,
+    /// The list of additional accepted licenses for this crate, again in
+    /// priority order
+    #[serde(default, deserialize_with = "deserialize_licensee")]
+    pub accepted: Vec<spdx::Licensee>,
+    /// Overrides the license expression for a crate as long as 1 or more file
+    /// checksums match
+    pub clarify: Option<Clarification>,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct Workaround {
+    /// The name of the crate
+    pub name: String,
+    /// The version range the workaround applies to, defaults to all versions
+    pub version: Option<krates::semver::VersionReq>,
 }
 
 #[derive(Deserialize, Debug, Default)]
@@ -105,6 +197,10 @@ pub struct Config {
     /// targets
     #[serde(default)]
     pub targets: Vec<String>,
+    /// Disallows the use of clearlydefined.io to retrieve harvested license
+    /// information and relies purely on local file scanning
+    #[serde(default)]
+    pub disallow_clearly_defined: bool,
     /// Ignores any build dependencies in the graph
     #[serde(default)]
     pub ignore_build_dependencies: bool,
@@ -114,6 +210,13 @@ pub struct Config {
     /// The list of licenses we will use for all crates, in priority order
     #[serde(deserialize_with = "deserialize_licensee")]
     pub accepted: Vec<spdx::Licensee>,
+    /// Some crates have extremely complicated licensing which requires tedious
+    /// configuration to actually correctly identify. Rather than require every
+    /// user of cargo-about to redo that same configuration if they happen to
+    /// use those problematic crates, they can apply workarounds instead.
+    #[serde(default)]
+    pub workarounds: Vec<Workaround>,
+    /// Crate specific configuration
     #[serde(flatten)]
     pub crates: BTreeMap<String, KrateConfig>,
 }

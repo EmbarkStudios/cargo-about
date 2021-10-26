@@ -24,21 +24,60 @@ name = "cargo-about"
 path = "src/cargo-about/main.rs"
 
 [dependencies]
+# Colorization
 ansi_term = "0.12"
+# Error facilities
 anyhow = "1.0"
+# License detection
 askalono = "0.4"
+# TTY detection
+atty = "0.2"
+# API helpers for api.clearlydefined.io
+cd = { version = "0.2", features = ["blocking", "rustls"] }
+# Datetime
 chrono = "0.4"
+# Diagnostic reporting
+codespan = "0.11"
+codespan-reporting = "0.11"
+# Logging helpers
 fern = "0.6"
+# Template engine for output
 handlebars = { version = "4.1", features = ["dir_source"] }
+# $HOME retrieval
+home = "0.5"
+# Directory walking
 ignore = "0.4"
-krates = "0.8"
-license = "1.1"
+# Dependency graphing
+krates = "0.9"
+# Logging macros
 log = "0.4"
+# Better heap allocator over system one (usually)
+mimalloc = "0.1"
+# Better locking primitives
+parking_lot = "0.11"
+# brrrr
 rayon = "1.5"
+# HTTP requests
+reqwest = { version = "0.11", default-features = false, features = [
+  "blocking",
+  "rustls-tls",
+] }
+# Checksum verification (already pulled in via rustls)
+ring = "0.16"
+# Oh gee what could it be
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-smallvec = "1.6"
-spdx = "0.6"
+# Some vecs don't need to hit the heap
+smallvec = "1.7"
+# License expression parsing and evaluation
+spdx = { version = "0.6", features = ["text"] }
+# Command line parsing
 structopt = "0.3"
+# Configuration parsing
 toml = "0.5"
-mimalloc = "0.1.25"
+# Manipulation of cargo manifests for diagnostic purposes
+toml_edit = "0.6"
+# Hashing
+twox-hash = "1.6"
+# Url parsing
+url = "2.2"

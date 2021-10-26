@@ -1,4 +1,3 @@
-use anyhow::Error;
 use std::fs;
 use structopt::StructOpt;
 
@@ -15,7 +14,7 @@ pub struct Args {
     overwrite: bool,
 }
 
-pub fn cmd(args: Args) -> Result<(), Error> {
+pub fn cmd(args: Args) -> anyhow::Result<()> {
     let root_path = krates::cm::MetadataCommand::new().exec()?.workspace_root;
     let with_handlebars = !args.no_handlebars;
 

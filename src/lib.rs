@@ -68,13 +68,64 @@
 )]
 // END - Embark standard lints v0.4
 
-use anyhow::Error;
 use krates::cm;
-use std::fmt;
+use std::{cmp, fmt};
 
 pub mod licenses;
 
 pub struct Krate(cm::Package);
+
+impl Krate {
+    fn get_license_expression(&self) -> licenses::LicenseInfo {
+        match &self.0.license {
+            Some(license_field) => {
+                //. Reasons this can fail:
+                // * Empty! The rust crate used to validate this field has a bug
+                // https://github.com/rust-lang-nursery/license-exprs/issues/23
+                // * It also just does basic lexing, so parens, duplicate operators,
+                // unpaired exceptions etc can all fail validation
+
+                match spdx::Expression::parse(license_field) {
+                    Ok(validated) => licenses::LicenseInfo::Expr(validated),
+                    Err(err) => {
+                        log::error!("unable to parse license expression for '{}': {}", self, err);
+                        licenses::LicenseInfo::Unknown
+                    }
+                }
+            }
+            None => {
+                log::warn!("crate '{}' doesn't have a license field", self);
+                licenses::LicenseInfo::Unknown
+            }
+        }
+    }
+}
+
+impl Ord for Krate {
+    #[inline]
+    fn cmp(&self, o: &Self) -> cmp::Ordering {
+        match self.0.name.cmp(&o.0.name) {
+            cmp::Ordering::Equal => self.0.version.cmp(&o.0.version),
+            o => o,
+        }
+    }
+}
+
+impl PartialOrd for Krate {
+    #[inline]
+    fn partial_cmp(&self, o: &Self) -> Option<cmp::Ordering> {
+        Some(self.cmp(o))
+    }
+}
+
+impl PartialEq for Krate {
+    #[inline]
+    fn eq(&self, o: &Self) -> bool {
+        self.cmp(o) == cmp::Ordering::Equal
+    }
+}
+
+impl Eq for Krate {}
 
 impl From<cm::Package> for Krate {
     fn from(mut pkg: cm::Package) -> Self {
@@ -85,6 +136,16 @@ impl From<cm::Package> for Krate {
         }
 
         Self(pkg)
+    }
+}
+
+impl krates::KrateDetails for Krate {
+    fn name(&self) -> &str {
+        &self.0.name
+    }
+
+    fn version(&self) -> &krates::semver::Version {
+        &self.0.version
     }
 }
 
@@ -105,13 +166,13 @@ impl std::ops::Deref for Krate {
 pub type Krates = krates::Krates<Krate>;
 
 pub fn get_all_crates(
-    cargo_toml: std::path::PathBuf,
+    cargo_toml: &krates::Utf8Path,
     no_default_features: bool,
     all_features: bool,
     features: Vec<String>,
     workspace: bool,
     cfg: &licenses::config::Config,
-) -> Result<Krates, Error> {
+) -> anyhow::Result<Krates> {
     let mut mdc = krates::Cmd::new();
     mdc.manifest_path(cargo_toml);
 
@@ -155,4 +216,66 @@ pub fn get_all_crates(
     })?;
 
     Ok(graph)
+}
+
+#[inline]
+pub fn to_hex(bytes: &[u8]) -> String {
+    let mut s = String::with_capacity(bytes.len() * 2);
+    const CHARS: &[u8] = b"0123456789abcdef";
+
+    for &byte in bytes {
+        s.push(CHARS[(byte >> 4) as usize] as char);
+        s.push(CHARS[(byte & 0xf) as usize] as char);
+    }
+
+    s
+}
+
+pub fn validate_sha256(buffer: &str, expected: &str) -> anyhow::Result<()> {
+    anyhow::ensure!(
+        expected.len() == 64,
+        "checksum '{}' length is {} instead of expected 64",
+        expected,
+        expected.len()
+    );
+
+    let mut ctx = ring::digest::Context::new(&ring::digest::SHA256);
+
+    ctx.update(buffer.as_bytes());
+
+    // Ignore faulty CRLF style newlines
+    // for line in buffer.split('\r') {
+    //     ctx.update(line.as_bytes());
+    // }
+
+    let content_digest = ctx.finish();
+    let digest = content_digest.as_ref();
+
+    for (ind, exp) in expected.as_bytes().chunks(2).enumerate() {
+        let mut cur = match exp[0] {
+            b'A'..=b'F' => exp[0] - b'A' + 10,
+            b'a'..=b'f' => exp[0] - b'a' + 10,
+            b'0'..=b'9' => exp[0] - b'0',
+            c => {
+                anyhow::bail!("invalid byte in checksum '{}' @ {}: {}", expected, ind, c);
+            }
+        };
+
+        cur <<= 4;
+
+        cur |= match exp[1] {
+            b'A'..=b'F' => exp[1] - b'A' + 10,
+            b'a'..=b'f' => exp[1] - b'a' + 10,
+            b'0'..=b'9' => exp[1] - b'0',
+            c => {
+                anyhow::bail!("invalid byte in checksum '{}' @ {}: {}", expected, ind, c);
+            }
+        };
+
+        if digest[ind] != cur {
+            anyhow::bail!("checksum mismatch, expected {}", expected);
+        }
+    }
+
+    Ok(())
 }

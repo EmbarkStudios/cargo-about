@@ -1,8 +1,10 @@
 use anyhow::{self, bail, Context as _};
 use cargo_about::licenses;
+use codespan_reporting::term;
 use handlebars::Handlebars;
+use krates::{Utf8Path as Path, Utf8PathBuf as PathBuf};
 use serde::Serialize;
-use std::{collections::BTreeMap, path::Path, path::PathBuf};
+use std::collections::BTreeMap;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
@@ -10,7 +12,7 @@ pub struct Args {
     /// Path to the config to use
     ///
     /// Defaults to <manifest_root>/about.toml if not specified
-    #[structopt(short, long, parse(from_os_str))]
+    #[structopt(short, long)]
     config: Option<PathBuf>,
     /// The confidence threshold required for license files
     /// to be positively identified: 0.0 - 1.0
@@ -26,10 +28,9 @@ pub struct Args {
     name: Option<String>,
     /// The template or template directory to use. Must either be a .hbs or
     /// have at least
-    #[structopt(parse(from_os_str))]
     templates: PathBuf,
     /// A file to write the generated output to.  Typically an .html file.
-    #[structopt(short = "o", long = "output-file", parse(from_os_str))]
+    #[structopt(short = "o", long = "output-file")]
     output_file: Option<PathBuf>,
     /// Space-separated list of features to activate
     #[structopt(long)]
@@ -42,7 +43,7 @@ pub struct Args {
     no_default_features: bool,
     /// The path of the Cargo.toml for the root crate, defaults to the
     /// current crate or workspace in the current working directory
-    #[structopt(short, long = "manifest-path", parse(from_os_str))]
+    #[structopt(short, long = "manifest-path")]
     manifest_path: Option<PathBuf>,
     /// Scan licenses for the entire workspace, not just the active package
     #[structopt(long)]
@@ -73,7 +74,7 @@ fn load_config(manifest_path: &Path) -> anyhow::Result<cargo_about::licenses::co
             let contents = std::fs::read_to_string(&about_toml)?;
             let cfg = toml::from_str(&contents)?;
 
-            log::info!("loaded config from {}", about_toml.display());
+            log::info!("loaded config from {}", about_toml);
             return Ok(cfg);
         }
 
@@ -84,42 +85,43 @@ fn load_config(manifest_path: &Path) -> anyhow::Result<cargo_about::licenses::co
     Ok(cargo_about::licenses::config::Config::default())
 }
 
-pub fn cmd(
-    args: Args,
-    //manifest_path: PathBuf,
-    //cfg: licenses::config::Config,
-    //krates: Krates,
-    //store: licenses::LicenseStore,
-) -> anyhow::Result<()> {
-    let manifest_path = args
-        .manifest_path
-        .clone()
-        .or_else(|| std::env::current_dir().map(|cd| cd.join("Cargo.toml")).ok())
-        .context("unable to determine manifest path")?;
+pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
+    let manifest_path = match args.manifest_path.clone() {
+        Some(mp) => mp,
+        None => {
+            let cwd =
+                std::env::current_dir().context("unable to determine current working directory")?;
+            let mut cwd = PathBuf::from_path_buf(cwd).map_err(|pb| {
+                anyhow::anyhow!(
+                    "current working directory '{}' is not a utf-8 path",
+                    pb.display()
+                )
+            })?;
+
+            cwd.push("Cargo.toml");
+            cwd
+        }
+    };
 
     if !manifest_path.exists() {
-        bail!(
-            "cargo manifest path '{}' does not exist",
-            manifest_path.display()
-        );
+        bail!("cargo manifest path '{}' does not exist", manifest_path);
     }
 
     let cfg = match &args.config {
         Some(cfg_path) => {
             let cfg_str = std::fs::read_to_string(cfg_path)
-                .with_context(|| format!("unable to read {}", cfg_path.display()))?;
-            toml::from_str(&cfg_str).with_context(|| {
-                format!("unable to deserialize config from {}", cfg_path.display())
-            })?
+                .with_context(|| format!("unable to read {}", cfg_path))?;
+            toml::from_str(&cfg_str)
+                .with_context(|| format!("unable to deserialize config from {}", cfg_path))?
         }
         None => load_config(&manifest_path)?,
     };
 
     let (all_crates, store) = rayon::join(
         || {
-            log::info!("gathering crates for {}", manifest_path.display());
+            log::info!("gathering crates for {}", manifest_path);
             cargo_about::get_all_crates(
-                manifest_path,
+                &manifest_path,
                 args.no_default_features,
                 args.all_features,
                 args.features.clone(),
@@ -129,7 +131,7 @@ pub fn cmd(
         },
         || {
             log::info!("loading license store");
-            cargo_about::licenses::LicenseStore::from_cache()
+            cargo_about::licenses::store_from_cache()
         },
     );
 
@@ -142,10 +144,7 @@ pub fn cmd(
         let mut reg = Handlebars::new();
 
         if !args.templates.exists() {
-            bail!(
-                "template(s) path {} does not exist",
-                args.templates.display()
-            );
+            bail!("template(s) path {} does not exist", args.templates);
         }
 
         use handlebars::*;
@@ -175,7 +174,7 @@ pub fn cmd(
             if reg.get_templates().is_empty() {
                 bail!(
                     "template path {} did not contain any hbs files",
-                    args.templates.display()
+                    args.templates
                 );
             }
 
@@ -188,19 +187,37 @@ pub fn cmd(
         }
     };
 
-    let summary = licenses::Gatherer::with_store(std::sync::Arc::new(store))
+    let client = cd::client::Client::new();
+    let summary = licenses::Gatherer::with_store(std::sync::Arc::new(store), client)
         .with_confidence_threshold(args.threshold)
         .gather(&krates, &cfg);
 
-    let resolved = licenses::Resolved::resolve(&summary.nfos, &cfg.accepted)?;
-    let output = generate(&summary.nfos, &resolved, &registry, &template)?;
+    let (files, resolved) = licenses::resolution::resolve(&summary, &cfg.accepted, &cfg.crates);
+
+    use term::termcolor::ColorChoice;
+
+    let stream = term::termcolor::StandardStream::stderr(match color {
+        crate::Color::Auto => {
+            // The termcolor crate doesn't check the stream to see if it's a TTY
+            // which doesn't really fit with how the rest of the coloring works
+            if atty::is(atty::Stream::Stderr) {
+                ColorChoice::Auto
+            } else {
+                ColorChoice::Never
+            }
+        }
+        crate::Color::Always => ColorChoice::Always,
+        crate::Color::Never => ColorChoice::Never,
+    });
+
+    let output = generate(&summary, &resolved, &files, stream, &registry, &template)?;
 
     match args.output_file.as_ref() {
         None => println!("{}", output),
         Some(path) if path == Path::new("-") => println!("{}", output),
         Some(path) => {
             std::fs::write(path, output)
-                .with_context(|| format!("output file {} could not be written", path.display()))?;
+                .with_context(|| format!("output file {} could not be written", path))?;
         }
     }
 
@@ -244,64 +261,97 @@ struct Input<'a> {
 
 fn generate(
     nfos: &[licenses::KrateLicense<'_>],
-    resolved: &licenses::Resolved,
+    resolved: &[licenses::Resolved],
+    files: &licenses::resolution::Files,
+    stream: term::termcolor::StandardStream,
     hbs: &Handlebars<'_>,
     template_name: &str,
 ) -> anyhow::Result<String> {
+    use cargo_about::licenses::resolution::Severity;
+
+    let mut num_errors = 0;
+
+    let diag_cfg = term::Config::default();
+
     let licenses = {
         let mut licenses = BTreeMap::new();
-        for (krate_id, license_list) in &resolved.0 {
-            let krate_license = &nfos[*krate_id];
-            let license_iter = license_list
-                .iter()
-                .filter_map(|license| match license.license {
+        for (krate_license, resolved) in nfos.iter().zip(resolved.iter()) {
+            if !resolved.diagnostics.is_empty() {
+                let mut streaml = stream.lock();
+
+                for diag in &resolved.diagnostics {
+                    if diag.severity >= Severity::Error {
+                        num_errors += 1;
+                    }
+
+                    term::emit(&mut streaml, &diag_cfg, files, diag)?;
+                }
+            }
+
+            let license_iter = resolved.licenses.iter().flat_map(|license| {
+                let mut license_texts = Vec::new();
+                match license.license {
                     spdx::LicenseItem::Spdx { id, .. } => {
-                        let file = krate_license.license_files.iter().find_map(move |lf| {
-                            if lf.id != id {
-                                return None;
-                            }
-                            match &lf.info {
-                                licenses::LicenseFileInfo::Text(text)
-                                | licenses::LicenseFileInfo::AddendumText(text, _) => {
-                                    let license = License {
-                                        name: lf.id.full_name.to_owned(),
-                                        id: lf.id.name.to_owned(),
-                                        text: text.clone(),
-                                        source_path: None,
-                                        used_by: Vec::new(),
-                                    };
-                                    Some(license)
+                        // Attempt to retrieve the actual license file from the crate, note that in some cases
+                        // _sigh_ there are actually multiple license texts for the same license with different
+                        // copyright holders/authors/attribution so we can't just return 1
+                        license_texts.extend(krate_license
+                            .license_files
+                            .iter()
+                            .filter_map(|lf| {
+                                // Check if this is the actual license file we want
+                                if !lf
+                                    .license_expr
+                                    .evaluate(|ereq| ereq.license.id() == Some(id))
+                                {
+                                    return None;
                                 }
-                                licenses::LicenseFileInfo::Header => None,
-                            }
-                        });
-                        file.or_else(|| {
-                            let license = license::from_id(id.name).map(|lic| License {
-                                name: lic.name().to_string(),
-                                id: lic.id().to_string(),
-                                text: lic.text().to_string(),
+
+                                match &lf.kind {
+                                    licenses::LicenseFileKind::Text(text)
+                                    | licenses::LicenseFileKind::AddendumText(text, _) => {
+                                        let license = License {
+                                            name: id.full_name.to_owned(),
+                                            id: id.name.to_owned(),
+                                            text: text.clone(),
+                                            source_path: Some(lf.path.clone()),
+                                            used_by: Vec::new(),
+                                        };
+                                        Some(license)
+                                    }
+                                    licenses::LicenseFileKind::Header => None,
+                                }
+                            }));
+
+                        if license_texts.is_empty() {
+                            log::warn!(
+                                "unable to find text for license '{}' for crate '{}', falling back to canonical text",
+                                license,
+                                krate_license.krate
+                            );
+
+                            // If the crate doesn't have the actual license file,
+                            // fallback to the canonical license text and emit a warning
+                            license_texts.push(License {
+                                name: id.full_name.to_owned(),
+                                id: id.name.to_owned(),
+                                text: id.text().to_owned(),
                                 source_path: None,
                                 used_by: Vec::new(),
                             });
-                            if license.is_none() {
-                                log::warn!(
-                                    "No licene file or license text found for {} in crate {}",
-                                    id.name,
-                                    krate_license.krate.name
-                                );
-                            }
-                            license
-                        })
+                        }
                     }
                     spdx::LicenseItem::Other { .. } => {
                         log::warn!(
                             "{} has no license file for crate '{}'",
                             license,
-                            krate_license.krate.name
+                            krate_license.krate
                         );
-                        None
                     }
-                });
+                }
+
+                license_texts
+            });
 
             for license in license_iter {
                 let entry = licenses
@@ -316,20 +366,26 @@ fn generate(
             }
         }
 
-        let mut licenses = licenses
+        let mut licenses: Vec<_> = licenses
             .into_iter()
             .flat_map(|(_, v)| v.into_iter().map(|(_, v)| v))
-            .collect::<Vec<_>>();
+            .collect();
 
-        // Sort the used_by krates lexicographically
+        // Sort the krates that use a license lexicographically
         for lic in &mut licenses {
             lic.used_by.sort_by(|a, b| a.krate.id.cmp(&b.krate.id));
         }
 
-        licenses.sort_by(|a, b| a.used_by[0].krate.id.cmp(&b.used_by[0].krate.id));
         licenses.sort_by(|a, b| a.id.cmp(&b.id));
         licenses
     };
+
+    if num_errors > 0 {
+        anyhow::bail!(
+            "encountered {} errors resolving licenses, unable to generate output",
+            num_errors
+        );
+    }
 
     let mut overview: Vec<LicenseSet> = Vec::with_capacity(256);
 
