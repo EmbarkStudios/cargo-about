@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.4.0] - 2021-10-28
 ### Added
 - [PR#168](https://github.com/EmbarkStudios/cargo-about/pull/168) added the ability to retrieve harvested license data from [clearlydefined.io](https://clearlydefined.io/about), which generally has superior machine harvested data to the old of approach of relying completely on askalono and local file scanning. This gathering is enabled by default, but can be turned off with the `no-clearly-defined` option in the config.
 - [PR#168](https://github.com/EmbarkStudios/cargo-about/pull/168) added the concept of clarifications, which are essentially user specified overrides for the license for a crate, using 1 or more sources of truth to ensure there is no drift between the clarification and the crate license over time.
@@ -63,7 +64,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.3.0...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.0...HEAD
+[0.4.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.2.3...0.3.0
 [0.2.3]: https://github.com/EmbarkStudios/cargo-about/compare/0.2.2...0.2.3
 [0.2.2]: https://github.com/EmbarkStudios/cargo-about/compare/0.2.1...0.2.2
