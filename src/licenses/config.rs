@@ -164,14 +164,6 @@ pub struct Clarification {
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct KrateConfig {
-    #[serde(default)]
-    pub additional: Vec<Additional>,
-    /// A list of files that are ignored for the purposes of license retrieval,
-    /// eg. due to them being present in the source, but not actually used for
-    /// the target(s) you are building for, such as test code, or platform
-    /// specific code
-    #[serde(default)]
-    pub ignore: Vec<Ignore>,
     /// The list of additional accepted licenses for this crate, again in
     /// priority order
     #[serde(default, deserialize_with = "deserialize_licensee")]
@@ -179,15 +171,6 @@ pub struct KrateConfig {
     /// Overrides the license expression for a crate as long as 1 or more file
     /// checksums match
     pub clarify: Option<Clarification>,
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
-pub struct Workaround {
-    /// The name of the crate
-    pub name: String,
-    /// The version range the workaround applies to, defaults to all versions
-    pub version: Option<krates::semver::VersionReq>,
 }
 
 #[derive(Deserialize, Debug, Default)]
@@ -198,9 +181,9 @@ pub struct Config {
     #[serde(default)]
     pub targets: Vec<String>,
     /// Disallows the use of clearlydefined.io to retrieve harvested license
-    /// information and relies purely on local file scanning
+    /// information and relies purely on local file scanning and clarifications
     #[serde(default)]
-    pub disallow_clearly_defined: bool,
+    pub no_clearly_defined: bool,
     /// Ignores any build dependencies in the graph
     #[serde(default)]
     pub ignore_build_dependencies: bool,
@@ -215,7 +198,7 @@ pub struct Config {
     /// user of cargo-about to redo that same configuration if they happen to
     /// use those problematic crates, they can apply workarounds instead.
     #[serde(default)]
-    pub workarounds: Vec<Workaround>,
+    pub workarounds: Vec<String>,
     /// Crate specific configuration
     #[serde(flatten)]
     pub crates: BTreeMap<String, KrateConfig>,

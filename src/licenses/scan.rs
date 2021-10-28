@@ -1,4 +1,4 @@
-use super::{config, LicenseFile, LicenseFileKind};
+use super::{LicenseFile, LicenseFileKind};
 use krates::{Utf8Path as Path, Utf8PathBuf as PathBuf};
 use rayon::prelude::*;
 
@@ -6,7 +6,6 @@ pub(crate) fn scan_files(
     root_dir: &Path,
     strat: &askalono::ScanStrategy<'_>,
     threshold: f32,
-    krate_cfg: Option<(&config::KrateConfig, &str)>,
 ) -> anyhow::Result<Vec<LicenseFile>> {
     let types = {
         let mut tb = ignore::types::TypesBuilder::new();
@@ -55,58 +54,9 @@ pub(crate) fn scan_files(
                 }
             };
 
-            let mut contents = match read_file(&path) {
-                Some(c) => c,
-                None => return None,
-            };
+            let contents = read_file(&path)?;
 
-            let expected = match krate_cfg {
-                Some(krate_cfg) => {
-                    let relative = match path.strip_prefix(root_dir) {
-                        Ok(rel) => rel,
-                        Err(_) => return None,
-                    };
-
-                    match krate_cfg
-                        .0
-                        .ignore
-                        .iter()
-                        .find(|i| relative == i.license_file)
-                    {
-                        Some(ignore) => {
-                            contents =
-                                snip_contents(contents, ignore.license_start, ignore.license_end);
-                            Some((ignore.license.clone(), None))
-                        }
-                        None => {
-                            let mut addendum = None;
-
-                            for additional in &krate_cfg.0.additional {
-                                if relative == additional.license_file {
-                                    addendum = Some(additional);
-                                    break;
-                                }
-
-                                if relative.starts_with(&additional.root) {
-                                    log::trace!(
-                                        "skipping {} due to addendum for root {}",
-                                        path,
-                                        additional.root,
-                                    );
-                                    return None;
-                                }
-                            }
-
-                            addendum.map(|addendum| {
-                                (addendum.license.clone(), Some(&addendum.license_file))
-                            })
-                        }
-                    }
-                }
-                None => None,
-            };
-
-            check_is_license_file(path, contents, strat, threshold, expected)
+            check_is_license_file(path, contents, strat, threshold)
         })
         .collect();
 
@@ -129,47 +79,14 @@ fn read_file(path: &Path) -> Option<String> {
     }
 }
 
-fn snip_contents(contents: String, start: Option<usize>, end: Option<usize>) -> String {
-    let rng = start.unwrap_or(0)..end.unwrap_or(std::usize::MAX);
-
-    if rng.start == 0 && rng.end == std::usize::MAX {
-        contents
-    } else {
-        let mut snipped_contents = String::with_capacity(contents.len());
-        for (i, line) in contents.lines().enumerate() {
-            if i >= rng.start && i < rng.end {
-                snipped_contents.push_str(line);
-                snipped_contents.push('\n');
-            }
-        }
-
-        snipped_contents
-    }
-}
-
 pub(crate) fn check_is_license_file(
     path: PathBuf,
     contents: String,
     strat: &askalono::ScanStrategy<'_>,
     threshold: f32,
-    expected: Option<(spdx::Expression, Option<&PathBuf>)>,
 ) -> Option<LicenseFile> {
     match scan_text(&contents, strat, threshold) {
         ScanResult::Header(ided) => {
-            if let Some((expected_expr, addendum)) = expected {
-                if !expected_expr.evaluate(|req| req.license.id() == Some(ided.id)) {
-                    log::error!(
-                        "expected license '{}' in path '{}', but found '{}'",
-                        expected_expr,
-                        path,
-                        ided.id.name
-                    );
-                } else if addendum.is_none() {
-                    log::debug!("ignoring '{}', matched license '{}'", path, ided.id.name);
-                    return None;
-                }
-            }
-
             // askalono only detects single license identifiers, not license
             // expressions, so we need to construct one from a single identifier,
             // this should be made into in infallible function in spdx itself
@@ -193,27 +110,6 @@ pub(crate) fn check_is_license_file(
             })
         }
         ScanResult::Text(ided) => {
-            let kind = if let Some((expected_expr, addendum)) = expected {
-                if !expected_expr.evaluate(|req| req.license.id() == Some(ided.id)) {
-                    log::error!(
-                        "expected license '{}' in path '{}', but found '{}'",
-                        expected_expr,
-                        path,
-                        ided.id.name
-                    );
-                }
-
-                match addendum {
-                    Some(path) => LicenseFileKind::AddendumText(contents, path.clone()),
-                    None => {
-                        log::debug!("ignoring '{}', matched license '{}'", path, ided.id.name);
-                        return None;
-                    }
-                }
-            } else {
-                LicenseFileKind::Text(contents)
-            };
-
             let license_expr = match spdx::Expression::parse(ided.id.name) {
                 Ok(expr) => expr,
                 Err(err) => {
@@ -230,7 +126,7 @@ pub(crate) fn check_is_license_file(
                 license_expr,
                 confidence: ided.confidence,
                 path,
-                kind,
+                kind: LicenseFileKind::Text(contents),
             })
         }
         ScanResult::UnknownId(id_str) => {
@@ -242,7 +138,7 @@ pub(crate) fn check_is_license_file(
             None
         }
         ScanResult::LowLicenseChance(ided) => {
-            log::trace!(
+            log::debug!(
                 "found '{}' scanning '{}' but it only has a confidence score of {}",
                 ided.id.name,
                 path,
