@@ -26,9 +26,6 @@ pub struct Args {
     /// single template file to `templates` this is not used.
     #[structopt(short, long)]
     name: Option<String>,
-    /// The template or template directory to use. Must either be a .hbs or
-    /// have at least
-    templates: PathBuf,
     /// A file to write the generated output to.  Typically an .html file.
     #[structopt(short = "o", long = "output-file")]
     output_file: Option<PathBuf>,
@@ -48,6 +45,9 @@ pub struct Args {
     /// Scan licenses for the entire workspace, not just the active package
     #[structopt(long)]
     workspace: bool,
+    /// The template(s) or template directory to use. Must either be a `.hbs`
+    /// file, or have at least one `.hbs` file in it if it is a directory
+    templates: PathBuf,
 }
 
 fn load_config(manifest_path: &Path) -> anyhow::Result<cargo_about::licenses::config::Config> {

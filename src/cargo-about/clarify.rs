@@ -19,13 +19,24 @@ fn parse_subsection(s: &str) -> anyhow::Result<(Option<String>, Option<String>)>
 
 #[derive(StructOpt, Debug)]
 pub enum Subcommand {
-    /// The path of the file to clarify
-    Path { root: PathBuf },
-    /// Pulls the file from a git repository rather than the file system
-    Repo { rev: String, repo: url::Url },
+    /// Reads the license information from a path on disk
+    Path {
+        /// The path root
+        root: PathBuf,
+    },
+    /// Pulls the file from a git repository
+    Repo {
+        /// The git revision to retrieve. Can either be a commit hash or a tag.
+        rev: String,
+        /// The full URL to the git repo. Only `github.com`, `gitlab.com`, and `bitbucket.org` are currently supported.
+        repo: url::Url,
+    },
     /// Retrieves the file from the git repository and commit associated with
     /// the specified crate and version
-    Crate { spec: String },
+    Crate {
+        /// The crate's `<name>-<version>` spec to retrieve. The crate source must already be downloaded.
+        spec: String,
+    },
 }
 
 #[derive(StructOpt, Debug)]

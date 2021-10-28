@@ -174,7 +174,7 @@ impl Gatherer {
         self.gather_clearly_defined(krates, cfg, &strategy, &mut licensed_krates);
 
         // Finally, crawl the crate sources on disk to try and determine licenses
-        self.gather_file_system(krates, cfg, &strategy, &mut licensed_krates);
+        self.gather_file_system(krates, &strategy, &mut licensed_krates);
 
         licensed_krates.sort();
         licensed_krates
@@ -226,7 +226,7 @@ impl Gatherer {
         strategy: &askalono::ScanStrategy<'_>,
         licensed_krates: &mut Vec<KrateLicense<'k>>,
     ) {
-        if cfg.disallow_clearly_defined {
+        if cfg.no_clearly_defined {
             return;
         }
 
@@ -283,17 +283,6 @@ impl Gatherer {
                                 return None;
                             }
                         };
-
-                        // If the score is too low, bail
-                        // if def.scores.effective < threshold {
-                        //     log::warn!(
-                        //         "the definition for {} score {} is below threshold {}",
-                        //         def.coordinates,
-                        //         def.scores.effective,
-                        //         threshold,
-                        //     );
-                        //     return None;
-                        // }
 
                         match krates.krates_by_name(&def.coordinates.name).find_map(|(_, kn)| {
                             if kn.krate.version == version {
@@ -360,7 +349,7 @@ impl Gatherer {
                                             // For some reason, clearlydefined will correctly identify text as being a
                                             // license but won't give it an expression, so we have to figure out what it
                                             // is, but at least have high confidence that it will result in a match
-                                            scan::check_is_license_file(path.clone(), license_text, strategy, self.threshold, None)
+                                            scan::check_is_license_file(path.clone(), license_text, strategy, self.threshold)
                                                 .or_else(|| {
                                                     log::warn!("clearlydefined detected license in '{}' for crate '{}', but it we failed to determine what its license was", path, krate);
                                                     None
@@ -399,7 +388,6 @@ impl Gatherer {
     fn gather_file_system<'k>(
         &self,
         krates: &'k Krates,
-        cfg: &config::Config,
         strategy: &askalono::ScanStrategy<'_>,
         licensed_krates: &mut Vec<KrateLicense<'k>>,
     ) {
@@ -419,14 +407,8 @@ impl Gatherer {
                 let info = krate.get_license_expression();
 
                 let root_path = krate.manifest_path.parent().unwrap();
-                let krate_cfg = cfg.crates.get(&krate.name);
 
-                let mut license_files = match scan::scan_files(
-                    root_path,
-                    strategy,
-                    threshold,
-                    krate_cfg.map(|kc| (kc, krate.name.as_str())),
-                ) {
+                let mut license_files = match scan::scan_files(root_path, strategy, threshold) {
                     Ok(files) => files,
                     Err(err) => {
                         log::error!(

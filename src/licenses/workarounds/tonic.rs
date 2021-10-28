@@ -2,7 +2,7 @@ use super::ClarificationFile;
 use anyhow::Context as _;
 
 pub fn get(krate: &crate::Krate) -> anyhow::Result<Option<super::Clarification>> {
-    if krate.name != "tonic" && krate.name != "tonic-build" {
+    if krate.name != "tonic" && !krate.name.starts_with("tonic-") {
         return Ok(None);
     }
 
