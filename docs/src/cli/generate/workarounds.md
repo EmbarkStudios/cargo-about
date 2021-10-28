@@ -37,6 +37,15 @@ The various `gtk` crates don't include the license text in older versions, thoug
 - [`gobject-sys`](https://crates.io/crates/gobject-sys)
 - [`gtk-sys`](https://crates.io/crates/gtk-sys)
 
+## `prost`
+
+The various `prost` crates don't include the license text in the published crates.
+
+- [`prost`](https://crates.io/crates/prost)
+- [`prost-build`](https://crates.io/crates/prost-build)
+- [`prost-derive`](https://crates.io/crates/prost-derive)
+- [`prost-types`](https://crates.io/crates/prost-types)
+
 ## `ring`
 
 The `ring` crate puts puts 4 different licenses in a single file which confuses tools and also doesn't declare its expression in the Cargo.toml manifest.
