@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Added
+- [PR#168](https://github.com/EmbarkStudios/cargo-about/pull/168) added the ability to retrieve harvested license data from [clearlydefined.io](https://clearlydefined.io/about), which generally has superior machine harvested data to the old of approach of relying completely on askalono and local file scanning. This gathering is enabled by default, but can be turned off with the `no-clearly-defined` option in the config.
+- [PR#168](https://github.com/EmbarkStudios/cargo-about/pull/168) added the concept of clarifications, which are essentially user specified overrides for the license for a crate, using 1 or more sources of truth to ensure there is no drift between the clarification and the crate license over time.
+- [PR#168](https://github.com/EmbarkStudios/cargo-about/pull/168) added built-in `workarounds`, which are just opt-in clarifications that are built-in to `cargo-about` itself so that users of `cargo-about` don't have to repeat the same clarification process for various popular crates in the ecosystem.
+- [PR#168](https://github.com/EmbarkStudios/cargo-about/pull/168) added the `clarify` subcommand, which can be used to help you clarify particular crates.
+- [PR#168](https://github.com/EmbarkStudios/cargo-about/pull/168) added support for `accepted` licenses on a per-crate basis in addition to the global `accepted` licenses.
+- [PR#169](https://github.com/EmbarkStudios/cargo-about/pull/169) added an mdbook at <https://embarkstudios.github.io/cargo-about/> to give improved documentation over the previous README.md only approach.
+
+### Changed
+- [PR#168](https://github.com/EmbarkStudios/cargo-about/pull/168) moved to [Rust 1.56.0 as well as the 2021 edition](https://blog.rust-lang.org/2021/10/21/Rust-1.56.0.html).
+
+### Removed
+- [PR#169](https://github.com/EmbarkStudios/cargo-about/pull/169) removed the `additional` and `ignore` crate configuration in favor of clarifications and/or the better harvested content from clearlydefined.io.
+
 ## [0.3.0] - 2021-03-17
 ### Added
 - [PR#148](https://github.com/EmbarkStudios/cargo-about/pull/148) added the `-o, --output-file` argument to specify a file to write to. Thanks [@MaulingMonkey](https://github.com/MaulingMonkey)!
