@@ -2,7 +2,7 @@ use super::ClarificationFile;
 use anyhow::Context as _;
 
 pub fn get(krate: &crate::Krate) -> anyhow::Result<Option<super::Clarification>> {
-    if !krate.name.starts_with("sentry-") {
+    if !krate.name.starts_with("sentry-") && krate.name != "sentry" {
         return Ok(None);
     }
 
