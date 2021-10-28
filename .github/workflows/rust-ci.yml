@@ -46,6 +46,22 @@ jobs:
         run: cargo build --tests --release
       - name: cargo test
         run: cargo test --release
+    
+  build-aarch64-apple-darwin:
+    name: Build aarch64-apple-darwin
+    strategy:
+      matrix:
+        os: [macOS-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - run: rustup target add aarch64-apple-darwin
+      - run: cargo fetch --target aarch64-apple-darwin
+      - run: cargo build --release --target aarch64-apple-darwin
 
   deny-check:
     name: cargo-deny
