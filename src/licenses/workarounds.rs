@@ -9,6 +9,7 @@ mod chrono;
 mod clap;
 mod cocoa;
 mod gtk;
+mod prost;
 mod ring;
 mod rustls;
 mod sentry;
@@ -90,6 +91,7 @@ const WORKAROUNDS: &[(
     ("clap", &self::clap::get),
     ("cocoa", &self::cocoa::get),
     ("gtk", &self::gtk::get),
+    ("prost", &self::prost::get),
     ("ring", &self::ring::get),
     ("rustls", &self::rustls::get),
     ("sentry", &self::sentry::get),

@@ -14,6 +14,7 @@ pub fn get(krate: &crate::Krate) -> anyhow::Result<Option<super::Clarification>>
         // This is actually in the bytecodealliance/regalloc.rs repo, but still
         // has the same license as the core wasmtime repo
         "regalloc",
+        "target-lexicon",
         "wasi-cap-std-sync",
         "wasi-common",
         // This is actually in the bytecodealliance/wasm-tools repo, but still
