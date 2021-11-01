@@ -1,3 +1,5 @@
+<!-- markdownlint-disable blanks-around-headings blanks-around-lists no-duplicate-heading -->
+
 # Changelog
 All notable changes to this project will be documented in this file.
 
@@ -6,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Added
+- [PR#172](https://github.com/EmbarkStudios/cargo-about/pull/172) resolved [#171](https://github.com/EmbarkStudios/cargo-about/issues/171) by adding support for ignoring private workspace crates.
+
 ## [0.4.0] - 2021-10-28
 ### Added
 - [PR#168](https://github.com/EmbarkStudios/cargo-about/pull/168) added the ability to retrieve harvested license data from [clearlydefined.io](https://clearlydefined.io/about), which generally has superior machine harvested data to the old of approach of relying completely on askalono and local file scanning. This gathering is enabled by default, but can be turned off with the `no-clearly-defined` option in the config.
