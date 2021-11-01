@@ -173,6 +173,21 @@ pub struct KrateConfig {
     pub clarify: Option<Clarification>,
 }
 
+/// Configures how private crates are handled and detected
+#[derive(Deserialize, Default, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct Private {
+    /// If enabled, ignores workspace crates that aren't published, or are
+    /// only published to private registries
+    #[serde(default)]
+    pub ignore: bool,
+    /// One or more private registries that you might publish crates to, if
+    /// a crate is only published to private registries, and `ignore` is true,
+    /// the crate will not have its license checked
+    #[serde(default)]
+    pub registries: Vec<String>,
+}
+
 #[derive(Deserialize, Debug, Default)]
 #[serde(rename_all = "kebab-case")]
 pub struct Config {
@@ -180,6 +195,9 @@ pub struct Config {
     /// targets
     #[serde(default)]
     pub targets: Vec<String>,
+    /// Configures how private crates are handled and detected
+    #[serde(default)]
+    pub private: Private,
     /// Disallows the use of clearlydefined.io to retrieve harvested license
     /// information and relies purely on local file scanning and clarifications
     #[serde(default)]

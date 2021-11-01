@@ -27,6 +27,7 @@ pub fn store_from_cache() -> anyhow::Result<LicenseStore> {
 pub enum LicenseInfo {
     Expr(spdx::Expression),
     Unknown,
+    Ignore,
 }
 
 /// The contents of a file with license info in it
@@ -158,6 +159,29 @@ impl Gatherer {
             .max_passes(1);
 
         let git_cache = fetch::GitCache::default();
+
+        // If we're ignoring workspace crates that are private, just add them
+        // to the list so all of the following gathers ignore them
+        if cfg.private.ignore {
+            for wm in krates.workspace_members() {
+                if let Some(publish) = &wm.krate.publish {
+                    if publish.is_empty()
+                        || publish
+                            .iter()
+                            .all(|reg| cfg.private.registries.contains(reg))
+                    {
+                        log::debug!("ignoring private workspace crate '{}'", wm.krate);
+                        licensed_krates.push(KrateLicense {
+                            krate: &wm.krate,
+                            lic_info: LicenseInfo::Ignore,
+                            license_files: Vec::new(),
+                        });
+                    }
+                }
+            }
+
+            licensed_krates.sort();
+        }
 
         // Workarounds are built-in to cargo-about to deal with issues that certain
         // common crates have
