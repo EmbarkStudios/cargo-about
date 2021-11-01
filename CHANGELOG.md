@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.4.1] - 2021-11-01
 ### Added
 - [PR#172](https://github.com/EmbarkStudios/cargo-about/pull/172) resolved [#171](https://github.com/EmbarkStudios/cargo-about/issues/171) by adding support for ignoring private workspace crates.
 
@@ -69,7 +70,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.0...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.1...HEAD
+[0.4.1]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.2.3...0.3.0
 [0.2.3]: https://github.com/EmbarkStudios/cargo-about/compare/0.2.2...0.2.3
