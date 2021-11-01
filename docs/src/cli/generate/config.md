@@ -59,6 +59,48 @@ workarounds = [
 ]
 ```
 
+## The `private` field (optional)
+
+It's often not useful or wanted to check for licenses in your own private workspace crates. So the private field allows you to do so.
+
+### The `ignore` field
+
+If `true`, workspace members will not have their license expression checked, _if_ they are not published.
+
+```ini
+# Cargo.toml
+[package]
+name = "sekret"
+license = "¯\_(ツ)_/¯"
+publish = false # "private"!
+```
+
+```ini
+# about.toml
+[licenses]
+# The sekret package would be ignored now
+private = { ignore = true }
+```
+
+### The `registries` field
+
+A list of private registries you may publish your workspace crates to. If a workspace member **only** publishes to private registries, it will also be ignored if `private.ignore = true`
+
+```ini
+# Cargo.toml
+[package]
+name = "sekret"
+license = "¯\_(ツ)_/¯"
+publish = ["sauce"]
+```
+
+```ini
+# about.toml
+[licenses]
+# Still ignored!
+private = { ignore = true, registries = ["sauce"] }
+```
+
 ## Crate configuration
 
 Along with the global options, crates can be individually configured as well, using the name of the crate as the key.

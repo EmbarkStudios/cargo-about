@@ -105,7 +105,7 @@ pub fn resolve(
 
     let resolved = licenses
         .iter()
-        .map(|kl| {
+        .filter_map(|kl| {
             let mut resolved = Resolved {
                 licenses: Vec::new(),
                 diagnostics: Vec::new(),
@@ -125,10 +125,18 @@ pub fn resolve(
 
             let expr = match &kl.lic_info {
                 LicenseInfo::Expr(expr) => std::borrow::Cow::Borrowed(expr),
+                LicenseInfo::Ignore => {
+                    return None;
+                }
                 LicenseInfo::Unknown => {
                     // Find all of the unique license expressions that were discovered
                     // and concatenate them together
                     let mut unique_exprs = Vec::new();
+
+                    if kl.license_files.is_empty() {
+                        log::warn!("unable to synthesize license expression for '{}': no `license` specified, and no license files were found", kl.krate);
+                        return Some(resolved);
+                    }
 
                     for file in &kl.license_files {
                         if let Err(i) = unique_exprs.binary_search_by(|expr: &String| {
@@ -169,7 +177,7 @@ pub fn resolve(
                                     .with_message(reason.to_string())]),
                             );
 
-                            return resolved;
+                            return Some(resolved);
                         }
                     }
                 }
@@ -246,7 +254,7 @@ pub fn resolve(
                         ),
                 );
 
-                return resolved;
+                return Some(resolved);
             }
 
             // Attempt to  find the minimal set of licenses needed to satisfy the
@@ -260,7 +268,7 @@ pub fn resolve(
                 }
             }
 
-            resolved
+            Some(resolved)
         })
         .collect();
 
