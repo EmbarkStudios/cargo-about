@@ -201,7 +201,6 @@ dependencies = [
  "ring",
  "serde",
  "serde_json",
- "smallvec",
  "spdx",
  "structopt",
  "toml",
