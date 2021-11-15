@@ -68,8 +68,6 @@ ring = "0.16"
 # Oh gee what could it be
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-# Some vecs don't need to hit the heap
-smallvec = "1.7"
 # License expression parsing and evaluation
 spdx = { version = "0.6", features = ["text"] }
 # Command line parsing
