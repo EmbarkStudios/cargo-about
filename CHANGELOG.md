@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.4.2] - 2021-11-21
 ### Changed
 - [PR#174](https://github.com/EmbarkStudios/cargo-about/pull/174) updated dependencies, including `tokio` to fix an [advisory](https://rustsec.org/advisories/RUSTSEC-2021-0124).
 
@@ -73,7 +74,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.1...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.2...HEAD
+[0.4.2]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.1...0.4.2
 [0.4.1]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.2.3...0.3.0
