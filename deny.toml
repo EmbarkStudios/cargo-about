@@ -10,9 +10,6 @@ vulnerability = "deny"
 unsound = "deny"
 unmaintained = "deny"
 ignore = [
-    # failure is unsound and unmaintained, but is used by askalono
-    "RUSTSEC-2020-0036",
-    "RUSTSEC-2019-0036",
     # chrono/time only used for datetime parsing
     "RUSTSEC-2020-0159",
     "RUSTSEC-2020-0071",
@@ -29,8 +26,6 @@ deny = [
 skip = [
     # clap uses old ansi-term
     { name = "ansi_term", version = "=0.11.0" },
-    # old itertools from really old zstd from askalono, build only
-    { name = "itertools", version = "=0.9.0" },
 ]
 
 [licenses]
