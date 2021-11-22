@@ -173,7 +173,6 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
         let text = askalono::TextData::new(subsection);
         let scan_result = strategy
             .scan(&text)
-            .map_err(|e| e.compat())
             .with_context(|| format!("failed to scan subsection for license:\n{}", subsection))?;
 
         let found_license = scan_result.license.with_context(|| {

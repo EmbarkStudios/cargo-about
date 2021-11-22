@@ -17,9 +17,7 @@ pub type LicenseStore = askalono::Store;
 
 #[inline]
 pub fn store_from_cache() -> anyhow::Result<LicenseStore> {
-    askalono::Store::from_cache(LICENSE_CACHE)
-        .map_err(|e| e.compat())
-        .context("failed to load license store")
+    askalono::Store::from_cache(LICENSE_CACHE).context("failed to load license store")
 }
 
 #[derive(Debug)]
