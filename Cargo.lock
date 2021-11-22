@@ -154,7 +154,7 @@ dependencies = [
 
 [[package]]
 name = "cargo-about"
-version = "0.4.2"
+version = "0.4.3"
 dependencies = [
  "ansi_term 0.12.1",
  "anyhow",

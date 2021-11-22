@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.4.3] - 2021-11-22
 ### Fixed
 - [PR#176](https://github.com/EmbarkStudios/cargo-about/pull/176) fixed [#175](https://github.com/EmbarkStudios/cargo-about/issues/175) by updating `askalono` which was causing `cargo install` failures due to `cargo install`'s default behavior of not using the `Cargo.lock` file. This got rid of the `failure` dependency as well, which was pulling in a lot of additional crates that are now gone.
 
@@ -77,7 +78,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.2...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.3...HEAD
+[0.4.3]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.2...0.4.3
 [0.4.2]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.1...0.4.2
 [0.4.1]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.3.0...0.4.0
