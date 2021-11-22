@@ -25,7 +25,7 @@ _Please Note: This is a tool that we use (and like!) and it makes sense to us to
 #### From crates.io
 
 ```bash
-cargo install cargo-about
+cargo install --locked cargo-about
 ```
 
 #### From the AUR
