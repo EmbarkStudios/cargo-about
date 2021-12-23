@@ -18,10 +18,6 @@ pub struct Args {
     /// to be positively identified: 0.0 - 1.0
     #[structopt(long, default_value = "0.8")]
     threshold: f32,
-    /// Include local crates beneath one or more directories, local crates
-    /// are disregarded by default
-    #[structopt(short, long)]
-    include_local: Vec<PathBuf>,
     /// The name of the template to use when rendering. If only passing a
     /// single template file to `templates` this is not used.
     #[structopt(short, long)]
