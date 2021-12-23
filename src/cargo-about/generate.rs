@@ -320,7 +320,7 @@ fn generate(
                             }));
 
                         if license_texts.is_empty() {
-                            log::warn!(
+                            log::debug!(
                                 "unable to find text for license '{}' for crate '{}', falling back to canonical text",
                                 license,
                                 krate_license.krate
