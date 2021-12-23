@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Fixed
+- [PR#177](https://github.com/EmbarkStudios/cargo-about/pull/177) updated the structure for the `.cargo_vcs_info.json` file since it now contains the path in the repo of the crate.
+
+### Changed
+- [PR#177](https://github.com/EmbarkStudios/cargo-about/pull/177) updated dependencies
+
 ## [0.4.3] - 2021-11-22
 ### Fixed
 - [PR#176](https://github.com/EmbarkStudios/cargo-about/pull/176) fixed [#175](https://github.com/EmbarkStudios/cargo-about/issues/175) by updating `askalono` which was causing `cargo install` failures due to `cargo install`'s default behavior of not using the `Cargo.lock` file. This got rid of the `failure` dependency as well, which was pulling in a lot of additional crates that are now gone.
