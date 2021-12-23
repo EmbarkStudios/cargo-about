@@ -24,8 +24,8 @@ deny = [
     { name = "cmake" },
 ]
 skip = [
-    # clap uses old ansi-term
-    { name = "ansi_term", version = "=0.11.0" },
+    # pre-1.0 version still used by http/hyper etc
+    { name = "itoa", version = "=0.4.8" },
 ]
 
 [licenses]
@@ -64,3 +64,8 @@ license-files = [{ path = "LICENSE", hash = 0xbd0eed23 }]
 name = "webpki"
 expression = "ISC"
 license-files = [{ path = "LICENSE", hash = 0x001c7e6c }]
+
+[[licenses.clarify]]
+name = "encoding_rs"
+expression = "(Apache-2.0 OR MIT) AND BSD-3-Clause"
+license-files = [{ path = "COPYRIGHT", hash = 0x39f8ad31 }]

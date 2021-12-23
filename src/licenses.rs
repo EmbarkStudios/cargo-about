@@ -352,7 +352,7 @@ impl Gatherer {
                                     // detect all licenses if there are multiple in a single file
                                     match (cd_file.license, license_text) {
                                         (Some(lic), license_text) => {
-                                            let license_expr = match spdx::Expression::parse_mode(&lic, spdx::ParseMode::Lax) {
+                                            let license_expr = match spdx::Expression::parse_mode(&lic, spdx::ParseMode::LAX) {
                                                 Ok(expr) => expr,
                                                 Err(err) => {
                                                     log::warn!("clearlydefined detected license '{}' in '{}' for crate '{}', but it can't be parsed: {}", lic, path, krate, err);

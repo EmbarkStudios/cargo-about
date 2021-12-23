@@ -91,6 +91,21 @@ impl GitHostFlavor {
     }
 }
 
+/// The information for the git commit when a crate was published
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GitInfo {
+    pub sha1: String,
+}
+
+/// The structure of a `.cargo_vs_info` file
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct VcsInfo {
+    pub git: GitInfo,
+    pub path_in_vcs: Option<krates::Utf8PathBuf>,
+}
+
 /// Since it's often the case that the reason a license file is in source control
 /// but not in the actual published package is due to it being in the root but
 /// not copied into each sub-crate in the repository, we can just not re-retrieve
@@ -180,26 +195,14 @@ impl GitCache {
 
     /// Parses a `.cargo_vcs_info.json` located in the root of a packaged crate
     /// and returns the sha1 commit the package was built from
-    pub fn parse_vcs_info(vcs_info_path: &Path) -> anyhow::Result<String> {
+    pub fn parse_vcs_info(vcs_info_path: &Path) -> anyhow::Result<VcsInfo> {
         let vcs_info = std::fs::read_to_string(vcs_info_path)
             .with_context(|| format!("unable to read '{}'", vcs_info_path))?;
-
-        #[derive(serde::Deserialize)]
-        #[serde(deny_unknown_fields)]
-        struct GitInfo {
-            sha1: String,
-        }
-
-        #[derive(serde::Deserialize)]
-        #[serde(deny_unknown_fields)]
-        struct VcsInfo {
-            git: GitInfo,
-        }
 
         let vcs_info: VcsInfo = serde_json::from_str(&vcs_info)
             .with_context(|| format!("failed to deserialize '{}'", vcs_info_path))?;
 
-        Ok(vcs_info.git.sha1)
+        Ok(vcs_info)
     }
 
     pub(crate) fn retrieve(
@@ -237,7 +240,7 @@ impl GitCache {
                                 .unwrap()
                                 .join(".cargo_vcs_info.json");
 
-                            Self::parse_vcs_info(&vcs_info_path)?
+                            Self::parse_vcs_info(&vcs_info_path)?.git.sha1
                         }
                     };
 
