@@ -97,10 +97,10 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
                 toml::from_str(&manifest).context("failed to deserialize Cargo.toml")?;
 
             let gc = GitCache::default();
-            let sha1 = GitCache::parse_vcs_info(&crate_path.join(".cargo_vcs_info.json"))
+            let vcs_info = GitCache::parse_vcs_info(&crate_path.join(".cargo_vcs_info.json"))
                 .context("failed to read sha1")?;
 
-            gc.retrieve_remote(&pkg.package.repository, &sha1, &args.path)
+            gc.retrieve_remote(&pkg.package.repository, &vcs_info.git.sha1, &args.path)
                 .context("failed to retrieve remote file")?
         }
     };
