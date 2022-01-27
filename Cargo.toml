@@ -75,7 +75,7 @@ structopt = "0.3"
 # Configuration parsing
 toml = "0.5"
 # Manipulation of cargo manifests for diagnostic purposes
-toml_edit = "0.9"
+toml_edit = "0.13"
 # Hashing
 twox-hash = "1.6"
 # Url parsing
