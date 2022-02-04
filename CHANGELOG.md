@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Changed
+- [PR#178](https://github.com/EmbarkStudios/cargo-about/pull/178) updated dependencies.
+
 ## [0.4.4] - 2021-12-23
 ### Fixed
 - [PR#177](https://github.com/EmbarkStudios/cargo-about/pull/177) updated the structure for the `.cargo_vcs_info.json` file since it now contains the path in the repo of the crate.
