@@ -1,16 +1,15 @@
 use std::fs;
-use structopt::StructOpt;
 
 static DEFAULT_CONFIG: &str = include_str!("../../resources/about.toml");
 static DEFAULT_HBS: &str = include_str!("../../resources/default.hbs");
 
-#[derive(StructOpt, Debug)]
+#[derive(clap::Parser, Debug)]
 pub struct Args {
     /// Disables the handlebars generation
-    #[structopt(long)]
+    #[clap(long)]
     no_handlebars: bool,
     /// Forces cargo-about to overwrite the local config file
-    #[structopt(long)]
+    #[clap(long)]
     overwrite: bool,
 }
 

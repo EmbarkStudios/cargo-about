@@ -1,7 +1,6 @@
 use anyhow::Context as _;
 use cargo_about::licenses::fetch::GitCache;
 use krates::Utf8PathBuf as PathBuf;
-use structopt::StructOpt;
 
 fn parse_subsection(s: &str) -> anyhow::Result<(Option<String>, Option<String>)> {
     let pos = s
@@ -17,7 +16,7 @@ fn parse_subsection(s: &str) -> anyhow::Result<(Option<String>, Option<String>)>
     ))
 }
 
-#[derive(StructOpt, Debug)]
+#[derive(clap::Subcommand, Debug)]
 pub enum Subcommand {
     /// Reads the license information from a path on disk
     Path {
@@ -39,18 +38,18 @@ pub enum Subcommand {
     },
 }
 
-#[derive(StructOpt, Debug)]
+#[derive(clap::Parser, Debug)]
 pub struct Args {
     /// One or more subsections in the file which is itself its own license.
     /// Uses `!!` as the separator between the start and end of the subsection
-    #[structopt(long, short, parse(try_from_str = parse_subsection))]
+    #[clap(long, short, parse(try_from_str = parse_subsection))]
     subsections: Vec<(Option<String>, Option<String>)>,
     /// The minimum confidence score a license must have
-    #[structopt(long, default_value = "0.8")]
+    #[clap(long, default_value = "0.8")]
     threshold: f32,
     /// The relative file path from the root of the source
     path: PathBuf,
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     cmd: Subcommand,
 }
 
