@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.4.5] - 2022-02-04
 ### Changed
 - [PR#178](https://github.com/EmbarkStudios/cargo-about/pull/178) updated dependencies.
 
@@ -88,7 +89,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.4...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.5...HEAD
+[0.4.5]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.4...0.4.5
 [0.4.4]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.3...0.4.4
 [0.4.3]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.2...0.4.3
 [0.4.2]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.1...0.4.2
