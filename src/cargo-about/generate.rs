@@ -5,41 +5,40 @@ use handlebars::Handlebars;
 use krates::{Utf8Path as Path, Utf8PathBuf as PathBuf};
 use serde::Serialize;
 use std::collections::BTreeMap;
-use structopt::StructOpt;
 
-#[derive(StructOpt, Debug)]
+#[derive(clap::Parser, Debug)]
 pub struct Args {
     /// Path to the config to use
     ///
     /// Defaults to <manifest_root>/about.toml if not specified
-    #[structopt(short, long)]
+    #[clap(short, long)]
     config: Option<PathBuf>,
     /// The confidence threshold required for license files
     /// to be positively identified: 0.0 - 1.0
-    #[structopt(long, default_value = "0.8")]
+    #[clap(long, default_value = "0.8")]
     threshold: f32,
     /// The name of the template to use when rendering. If only passing a
     /// single template file to `templates` this is not used.
-    #[structopt(short, long)]
+    #[clap(short, long)]
     name: Option<String>,
     /// A file to write the generated output to.  Typically an .html file.
-    #[structopt(short = "o", long = "output-file")]
+    #[clap(short, long)]
     output_file: Option<PathBuf>,
     /// Space-separated list of features to activate
-    #[structopt(long)]
+    #[clap(long)]
     features: Vec<String>,
     /// Activate all available features
-    #[structopt(long)]
+    #[clap(long)]
     all_features: bool,
     /// Do not activate the `default` feature
-    #[structopt(long)]
+    #[clap(long)]
     no_default_features: bool,
     /// The path of the Cargo.toml for the root crate, defaults to the
     /// current crate or workspace in the current working directory
-    #[structopt(short, long = "manifest-path")]
+    #[clap(short, long)]
     manifest_path: Option<PathBuf>,
     /// Scan licenses for the entire workspace, not just the active package
-    #[structopt(long)]
+    #[clap(long)]
     workspace: bool,
     /// The template(s) or template directory to use. Must either be a `.hbs`
     /// file, or have at least one `.hbs` file in it if it is a directory

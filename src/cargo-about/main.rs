@@ -1,3 +1,4 @@
+#![doc = include_str!("../../README.md")]
 // BEGIN - Embark standard lints v5 for Rust 1.55+
 // do not change or add/remove here, but one can add exceptions after this section
 // for more info see: <https://github.com/EmbarkStudios/rust-ecosystem/issues/59>
@@ -81,7 +82,6 @@
 #![allow(clippy::exit, clippy::single_match_else)]
 
 use anyhow::Context as _;
-use structopt::StructOpt;
 
 mod clarify;
 mod generate;
@@ -90,7 +90,7 @@ mod init;
 #[global_allocator]
 static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-#[derive(StructOpt, Debug)]
+#[derive(clap::Subcommand, Debug)]
 enum Command {
     /// Outputs a listing of all licenses and the crates that use them
     Generate(generate::Args),
@@ -100,17 +100,11 @@ enum Command {
     Clarify(clarify::Args),
 }
 
-#[derive(StructOpt, Copy, Clone, Debug)]
+#[derive(clap::ArgEnum, Copy, Clone, Debug)]
 pub enum Color {
     Auto,
     Always,
     Never,
-}
-
-impl Color {
-    fn variants() -> &'static [&'static str] {
-        &["auto", "always", "never"]
-    }
 }
 
 impl std::str::FromStr for Color {
@@ -133,13 +127,12 @@ fn parse_level(s: &str) -> anyhow::Result<log::LevelFilter> {
         .with_context(|| format!("failed to parse level '{}'", s))
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, clap::Parser)]
 struct Opts {
     /// The log level for messages, only log messages at or above
     /// the level will be emitted.
-    #[structopt(
-        short = "L",
-        long = "log-level",
+    #[clap(
+        short = 'L',
         default_value = "warn",
         parse(try_from_str = parse_level),
         long_help = "The log level for messages, only log messages at or above the level will be emitted.
@@ -153,9 +146,9 @@ Possible values:
 * trace"
     )]
     log_level: log::LevelFilter,
-    #[structopt(short, long, default_value = "auto", possible_values = Color::variants())]
+    #[clap(arg_enum, short, long, ignore_case = true, default_value = "auto")]
     color: Color,
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     cmd: Command,
 }
 
@@ -167,9 +160,10 @@ fn setup_logger(level: log::LevelFilter) -> Result<(), fern::InitError> {
         .level(log::LevelFilter::Warn)
         .level_for("cargo_about", level)
         .format(move |out, message, record| {
+            let date = time::OffsetDateTime::now_utc();
+
             out.finish(format_args!(
                 "{date} [{level}] {message}\x1B[0m",
-                date = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"),
                 level = match record.level() {
                     Lvl::Error => Color::Red.paint("ERROR"),
                     Lvl::Warn => Color::Yellow.paint("WARN"),
@@ -177,7 +171,6 @@ fn setup_logger(level: log::LevelFilter) -> Result<(), fern::InitError> {
                     Lvl::Debug => Color::Blue.paint("DEBUG"),
                     Lvl::Trace => Color::Purple.paint("TRACE"),
                 },
-                message = message,
             ));
         })
         .chain(std::io::stderr())
@@ -186,7 +179,9 @@ fn setup_logger(level: log::LevelFilter) -> Result<(), fern::InitError> {
 }
 
 fn real_main() -> anyhow::Result<()> {
-    let args = Opts::from_iter({
+    use clap::Parser;
+
+    let args = Opts::parse_from({
         std::env::args().enumerate().filter_map(|(i, a)| {
             if i == 1 && a == "about" {
                 None
