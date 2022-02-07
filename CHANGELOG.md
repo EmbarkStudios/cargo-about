@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.4.6] - 2022-02-07
 ### Fixed
 - [PR#180](https://github.com/EmbarkStudios/cargo-about/pull/180) fixed [#179](https://github.com/EmbarkStudios/cargo-about/issues/179) by setting the MSRV to 1.56.1 and adding a CI check for it.
 
@@ -92,7 +93,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.5...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.6...HEAD
+[0.4.6]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.5...0.4.6
 [0.4.5]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.4...0.4.5
 [0.4.4]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.3...0.4.4
 [0.4.3]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.2...0.4.3
