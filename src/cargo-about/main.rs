@@ -160,10 +160,9 @@ fn setup_logger(level: log::LevelFilter) -> Result<(), fern::InitError> {
         .level(log::LevelFilter::Warn)
         .level_for("cargo_about", level)
         .format(move |out, message, record| {
-            let date = time::OffsetDateTime::now_utc();
-
             out.finish(format_args!(
                 "{date} [{level}] {message}\x1B[0m",
+                date = time::OffsetDateTime::now_utc(),
                 level = match record.level() {
                     Lvl::Error => Color::Red.paint("ERROR"),
                     Lvl::Warn => Color::Yellow.paint("WARN"),
@@ -171,6 +170,7 @@ fn setup_logger(level: log::LevelFilter) -> Result<(), fern::InitError> {
                     Lvl::Debug => Color::Blue.paint("DEBUG"),
                     Lvl::Trace => Color::Purple.paint("TRACE"),
                 },
+                message = message,
             ));
         })
         .chain(std::io::stderr())
