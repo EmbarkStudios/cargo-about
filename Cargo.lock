@@ -227,9 +227,9 @@ dependencies = [
 
 [[package]]
 name = "cfg-expr"
-version = "0.9.1"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3431df59f28accaf4cb4eed4a9acc66bea3f3c3753aa6cdc2f024174ef232af7"
+checksum = "295b6eb918a60a25fec0b23a5e633e74fddbaf7bb04411e65a10c366aca4b5cd"
 dependencies = [
  "smallvec",
 ]
@@ -727,9 +727,9 @@ dependencies = [
 
 [[package]]
 name = "krates"
-version = "0.9.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8549dc44b3c544e5326df8e032191977519cbec37a2de2650d14024bcf2ee70a"
+checksum = "44e5f5e84e0e156e16781f28d5af802adbc78a45cfba8cce54f1e21d273c2af9"
 dependencies = [
  "cargo_metadata",
  "cfg-expr",
