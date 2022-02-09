@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.4.7] - 2022-02-09
 ### Fixed
 - [PR#182](https://github.com/EmbarkStudios/cargo-about/pull/182) fixed [#181](https://github.com/EmbarkStudios/cargo-about/issues/181) by adding version, author, and about metadata to the CLI output, as `structopt` by default added that, but `clap` v3 does not.
 
@@ -96,7 +97,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.6...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.7...HEAD
+[0.4.7]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.6...0.4.7
 [0.4.6]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.5...0.4.6
 [0.4.5]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.4...0.4.5
 [0.4.4]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.3...0.4.4
