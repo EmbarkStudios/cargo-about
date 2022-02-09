@@ -128,6 +128,7 @@ fn parse_level(s: &str) -> anyhow::Result<log::LevelFilter> {
 }
 
 #[derive(Debug, clap::Parser)]
+#[clap(author, version, about, long_about = None)]
 struct Opts {
     /// The log level for messages, only log messages at or above
     /// the level will be emitted.
