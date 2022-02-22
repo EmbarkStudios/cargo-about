@@ -158,19 +158,19 @@ impl Gatherer {
 
         let git_cache = fetch::GitCache::default();
 
-        // If we're ignoring workspace crates that are private, just add them
+        // If we're ignoring crates that are private, just add them
         // to the list so all of the following gathers ignore them
         if cfg.private.ignore {
-            for wm in krates.workspace_members() {
-                if let Some(publish) = &wm.krate.publish {
+            for krate in krates.krates() {
+                if let Some(publish) = &krate.krate.publish {
                     if publish.is_empty()
                         || publish
                             .iter()
                             .all(|reg| cfg.private.registries.contains(reg))
                     {
-                        log::debug!("ignoring private workspace crate '{}'", wm.krate);
+                        log::debug!("ignoring private crate '{}'", krate.krate);
                         licensed_krates.push(KrateLicense {
-                            krate: &wm.krate,
+                            krate: &krate.krate,
                             lic_info: LicenseInfo::Ignore,
                             license_files: Vec::new(),
                         });
