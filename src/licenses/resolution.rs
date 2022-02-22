@@ -56,6 +56,7 @@ impl<'acc> fmt::Display for Accepted<'acc> {
     }
 }
 
+#[derive(Debug)]
 pub struct Resolved {
     /// The minimum license requirements that are required
     pub licenses: Vec<LicenseReq>,
@@ -105,7 +106,7 @@ pub fn resolve(
 
     let resolved = licenses
         .iter()
-        .filter_map(|kl| {
+        .map(|kl| {
             let mut resolved = Resolved {
                 licenses: Vec::new(),
                 diagnostics: Vec::new(),
@@ -126,7 +127,7 @@ pub fn resolve(
             let expr = match &kl.lic_info {
                 LicenseInfo::Expr(expr) => std::borrow::Cow::Borrowed(expr),
                 LicenseInfo::Ignore => {
-                    return None;
+                    return resolved;
                 }
                 LicenseInfo::Unknown => {
                     // Find all of the unique license expressions that were discovered
@@ -135,7 +136,7 @@ pub fn resolve(
 
                     if kl.license_files.is_empty() {
                         log::warn!("unable to synthesize license expression for '{}': no `license` specified, and no license files were found", kl.krate);
-                        return Some(resolved);
+                        return resolved;
                     }
 
                     for file in &kl.license_files {
@@ -177,7 +178,7 @@ pub fn resolve(
                                     .with_message(reason.to_string())]),
                             );
 
-                            return Some(resolved);
+                            return resolved;
                         }
                     }
                 }
@@ -254,7 +255,7 @@ pub fn resolve(
                         ),
                 );
 
-                return Some(resolved);
+                return resolved;
             }
 
             // Attempt to  find the minimal set of licenses needed to satisfy the
@@ -268,7 +269,7 @@ pub fn resolve(
                 }
             }
 
-            Some(resolved)
+            resolved
         })
         .collect();
 
