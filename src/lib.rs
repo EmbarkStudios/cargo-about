@@ -143,7 +143,7 @@ impl From<cm::Package> for Krate {
         // Fix the license field as cargo used to allow the
         // invalid / separator
         if let Some(ref mut lf) = pkg.license {
-            *lf = lf.replace("/", " OR ");
+            *lf = lf.replace('/', " OR ");
         }
 
         Self(pkg)
