@@ -19,10 +19,7 @@ deny = [
     # crates should use cc, not big separate build systems
     { name = "cmake" },
 ]
-skip = [
-    # pre-1.0 version still used by http/hyper etc
-    { name = "itoa", version = "=0.4.8" },
-]
+skip = []
 
 [licenses]
 unlicensed = "deny"
