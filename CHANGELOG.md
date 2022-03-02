@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.4.8] - 2022-03-02
 ### Fixed
 - [PR#184](https://github.com/EmbarkStudios/cargo-about/pull/184) fixed [#183](https://github.com/EmbarkStudios/cargo-about/issues/183) to correct an issue where licenses were misattributed to crates if 1 or more crates was marked as `publish = false` and private crates were ignored in the config. Thanks [@danielnelson](https://github.com/danielnelson)!
 
@@ -100,7 +101,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.7...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.8...HEAD
+[0.4.8]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.7...0.4.8
 [0.4.7]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.6...0.4.7
 [0.4.6]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.5...0.4.6
 [0.4.5]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.4...0.4.5
