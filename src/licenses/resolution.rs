@@ -56,6 +56,7 @@ impl<'acc> fmt::Display for Accepted<'acc> {
     }
 }
 
+#[derive(Debug)]
 pub struct Resolved {
     /// The minimum license requirements that are required
     pub licenses: Vec<LicenseReq>,
@@ -100,12 +101,12 @@ pub fn resolve(
     licenses: &[KrateLicense<'_>],
     accepted: &[Licensee],
     krate_cfg: &std::collections::BTreeMap<String, config::KrateConfig>,
-) -> (Files, Vec<Resolved>) {
+) -> (Files, Vec<Option<Resolved>>) {
     let mut files = codespan::Files::new();
 
     let resolved = licenses
         .iter()
-        .filter_map(|kl| {
+        .map(|kl| {
             let mut resolved = Resolved {
                 licenses: Vec::new(),
                 diagnostics: Vec::new(),
