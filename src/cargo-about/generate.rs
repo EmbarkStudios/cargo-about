@@ -256,7 +256,7 @@ struct Input<'a> {
 
 fn generate(
     nfos: &[licenses::KrateLicense<'_>],
-    resolved: &[licenses::Resolved],
+    resolved: &[Option<licenses::Resolved>],
     files: &licenses::resolution::Files,
     stream: term::termcolor::StandardStream,
     hbs: &Handlebars<'_>,
@@ -270,7 +270,11 @@ fn generate(
 
     let licenses = {
         let mut licenses = BTreeMap::new();
-        for (krate_license, resolved) in nfos.iter().zip(resolved.iter()) {
+        for (krate_license, resolved) in nfos
+            .iter()
+            .zip(resolved.iter())
+            .filter_map(|(kl, res)| res.as_ref().map(|res| (kl, res)))
+        {
             if !resolved.diagnostics.is_empty() {
                 let mut streaml = stream.lock();
 

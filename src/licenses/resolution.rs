@@ -101,7 +101,7 @@ pub fn resolve(
     licenses: &[KrateLicense<'_>],
     accepted: &[Licensee],
     krate_cfg: &std::collections::BTreeMap<String, config::KrateConfig>,
-) -> (Files, Vec<Resolved>) {
+) -> (Files, Vec<Option<Resolved>>) {
     let mut files = codespan::Files::new();
 
     let resolved = licenses
@@ -127,7 +127,7 @@ pub fn resolve(
             let expr = match &kl.lic_info {
                 LicenseInfo::Expr(expr) => std::borrow::Cow::Borrowed(expr),
                 LicenseInfo::Ignore => {
-                    return resolved;
+                    return None;
                 }
                 LicenseInfo::Unknown => {
                     // Find all of the unique license expressions that were discovered
@@ -136,7 +136,7 @@ pub fn resolve(
 
                     if kl.license_files.is_empty() {
                         log::warn!("unable to synthesize license expression for '{}': no `license` specified, and no license files were found", kl.krate);
-                        return resolved;
+                        return Some(resolved);
                     }
 
                     for file in &kl.license_files {
@@ -178,7 +178,7 @@ pub fn resolve(
                                     .with_message(reason.to_string())]),
                             );
 
-                            return resolved;
+                            return Some(resolved);
                         }
                     }
                 }
@@ -255,7 +255,7 @@ pub fn resolve(
                         ),
                 );
 
-                return resolved;
+                return Some(resolved);
             }
 
             // Attempt to  find the minimal set of licenses needed to satisfy the
@@ -269,7 +269,7 @@ pub fn resolve(
                 }
             }
 
-            resolved
+            Some(resolved)
         })
         .collect();
 
