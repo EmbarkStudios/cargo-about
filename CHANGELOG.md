@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Fixed
+- [PR#184](https://github.com/EmbarkStudios/cargo-about/pull/184) fixed [#183](https://github.com/EmbarkStudios/cargo-about/issues/183) to correct an issue where licenses were misattributed to crates if 1 or more crates was marked as `publish = false` and private crates were ignored in the config. Thanks [@danielnelson](https://github.com/danielnelson)!
+
 ## [0.4.7] - 2022-02-09
 ### Fixed
 - [PR#182](https://github.com/EmbarkStudios/cargo-about/pull/182) fixed [#181](https://github.com/EmbarkStudios/cargo-about/issues/181) by adding version, author, and about metadata to the CLI output, as `structopt` by default added that, but `clap` v3 does not.
