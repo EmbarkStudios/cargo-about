@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.5.0] - 2022-03-04
 ### Changed
 - [PR#187](https://github.com/EmbarkStudios/cargo-about/pull/187) closed [#185](https://github.com/EmbarkStudios/cargo-about/issues/185) by making it so that **all** crates marked as `publish = false` will be ignored, rather than the previous behavior of only ignore workspace members. Please file an issue if this behavior is not acceptable. Thanks [@danielnelson](https://github.com/danielnelson)!
 
@@ -104,7 +105,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.8...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.0...HEAD
+[0.5.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.8...0.5.0
 [0.4.8]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.7...0.4.8
 [0.4.7]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.6...0.4.7
 [0.4.6]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.5...0.4.6
