@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Changed
+- [PR#187](https://github.com/EmbarkStudios/cargo-about/pull/187) closed [#185](https://github.com/EmbarkStudios/cargo-about/issues/185) by making it so that **all** crates marked as `publish = false` will be ignored, rather than the previous behavior of only ignore workspace members. Please file an issue if this behavior is not acceptable. Thanks [@danielnelson](https://github.com/danielnelson)!
+
 ## [0.4.8] - 2022-03-02
 ### Fixed
 - [PR#184](https://github.com/EmbarkStudios/cargo-about/pull/184) fixed [#183](https://github.com/EmbarkStudios/cargo-about/issues/183) to correct an issue where licenses were misattributed to crates if 1 or more crates was marked as `publish = false` and private crates were ignored in the config. Thanks [@danielnelson](https://github.com/danielnelson)!
