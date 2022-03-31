@@ -208,6 +208,9 @@ pub struct Config {
     /// Ignores any dev dependencies in the graph
     #[serde(default)]
     pub ignore_dev_dependencies: bool,
+    /// Ignores any transitive dependencies in the graph, so it basically only considers direct dependencies
+    #[serde(default)]
+    pub ignore_transitive_dependencies: bool,
     /// The list of licenses we will use for all crates, in priority order
     #[serde(deserialize_with = "deserialize_licensee")]
     pub accepted: Vec<spdx::Licensee>,
