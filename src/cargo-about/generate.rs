@@ -248,6 +248,7 @@ struct LicenseSet {
     name: String,
     id: String,
     indices: Vec<usize>,
+    text: String,
 }
 
 #[derive(Serialize)]
@@ -400,6 +401,7 @@ fn generate(
                     name: lic.name.clone(),
                     id: lic.id.clone(),
                     indices: Vec::with_capacity(10),
+                    text: lic.text.clone(),
                 };
 
                 ls.indices.push(ndx);
