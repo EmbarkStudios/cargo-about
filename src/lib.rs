@@ -84,7 +84,7 @@ use std::{cmp, fmt};
 
 pub mod licenses;
 
-pub struct Krate(cm::Package);
+pub struct Krate(pub cm::Package);
 
 impl Krate {
     fn get_license_expression(&self) -> licenses::LicenseInfo {

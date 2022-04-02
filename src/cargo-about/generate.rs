@@ -2,11 +2,10 @@ use anyhow::{self, bail, Context as _};
 use cargo_about::licenses;
 use codespan_reporting::term;
 use handlebars::Handlebars;
-use krates::cm::{Package, PackageId};
+use krates::cm::Package;
 use krates::{Utf8Path as Path, Utf8PathBuf as PathBuf};
 use serde::Serialize;
 use std::collections::BTreeMap;
-use std::collections::HashMap;
 
 #[derive(clap::Parser, Debug)]
 pub struct Args {
@@ -255,7 +254,7 @@ struct LicenseSet {
 struct Input<'a> {
     overview: Vec<LicenseSet>,
     licenses: Vec<License<'a>>,
-    crates: Vec<&'a krates::cm::Package>,
+    crates: Vec<PackageLicense<'a>>,
 }
 
 fn generate(
@@ -414,16 +413,13 @@ fn generate(
     // Show the most used licenses first
     overview.sort_by(|a, b| b.count.cmp(&a.count));
 
-    let mut crates_map: HashMap<&PackageId, &Package> = HashMap::with_capacity(256);
-    licenses.iter().for_each(|license| {
-        license.used_by.iter().for_each(|used_by| {
-            crates_map.insert(&used_by.krate.id, used_by.krate);
+    let crates = nfos
+        .iter()
+        .map(|nfo| PackageLicense {
+            package: &nfo.krate.0,
+            license: nfo.lic_info.to_string(),
         })
-    });
-
-    let mut crates: Vec<&Package> = crates_map.values().cloned().collect();
-    crates.sort_by(|a, b| a.name.cmp(&b.name));
-
+        .collect();
     let nput = Input {
         overview,
         licenses,
@@ -431,4 +427,10 @@ fn generate(
     };
 
     Ok(hbs.render(template_name, &nput)?)
+}
+
+#[derive(Serialize)]
+struct PackageLicense<'a> {
+    package: &'a Package,
+    license: String,
 }

@@ -46,10 +46,10 @@
         <table>
         {{#each crates}}
             <tr>
-                <td><a href="{{#if repository}} {{repository}} {{else}} https://crates.io/crates/{{name}} {{/if}}">
-                    {{name}}
+                <td><a href="{{#if package.repository}} {{package.repository}} {{else}} https://crates.io/crates/{{package.name}} {{/if}}">
+                    {{package.name}}
                 </a></td>
-                <td>{{version}}</td>
+                <td>{{package.version}}</td>
                 <td>{{license}}</td>
             </tr>
         {{/each}}
