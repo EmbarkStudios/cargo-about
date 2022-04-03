@@ -7,7 +7,7 @@ targets = [
 ]
 ignore-build-dependencies = false
 ignore-dev-dependencies = false
-ignore-transitive-dependencies = true
+ignore-non-workspace-dependencies = true
 workarounds = ["ring", "chrono", "rustls"]
 
 [codespan.clarify]

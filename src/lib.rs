@@ -213,7 +213,7 @@ pub fn get_all_crates(
         builder.ignore_kind(krates::DepKind::Dev, krates::Scope::All);
     }
 
-    if cfg.ignore_transitive_dependencies {
+    if cfg.ignore_non_workspace_dependencies {
         builder.ignore_kind(krates::DepKind::Normal, krates::Scope::NonWorkspace);
         builder.ignore_kind(krates::DepKind::Dev, krates::Scope::NonWorkspace);
         builder.ignore_kind(krates::DepKind::Build, krates::Scope::NonWorkspace);
