@@ -1,5 +1,6 @@
 use anyhow::{self, bail, Context as _};
 use cargo_about::licenses;
+use cargo_about::licenses::LicenseInfo;
 use codespan_reporting::term;
 use handlebars::Handlebars;
 use krates::cm::Package;
@@ -415,6 +416,7 @@ fn generate(
 
     let crates = nfos
         .iter()
+        .filter(|nfo| !matches!(nfo.lic_info, LicenseInfo::Ignore))
         .map(|nfo| PackageLicense {
             package: &nfo.krate.0,
             license: nfo.lic_info.to_string(),
