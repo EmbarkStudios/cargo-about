@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Added
+- [PR#188](https://github.com/EmbarkStudios/cargo-about/pull/188) added the ability to ignore transitive dependencies via the `ignore-transitive-dependencies` config flag. Thanks [@haraldreingruber](https://github.com/haraldreingruber)!
+- [PR#188](https://github.com/EmbarkStudios/cargo-about/pull/188) added a `crates` property to the handlebars context, see the [about_list_by_crate_example](about_list_by_crate_example.hbs) for how it can be used. Thanks [@haraldreingruber](https://github.com/haraldreingruber)!
+
 ### Changed
 - [PR#189](https://github.com/EmbarkStudios/cargo-about/pull/189) updated dependencies, notably `regex` to fix an [advisory](https://rustsec.org/advisories/RUSTSEC-2022-0013).
 
