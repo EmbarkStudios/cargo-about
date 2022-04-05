@@ -42,6 +42,14 @@ If true, all crates that are only used as dev dependencies will be ignored.
 ignore-dev-dependencies = true
 ```
 
+## The `ignore-transitive-dependencies` field (optional)
+
+If true, only direct dependencies of crates in the workspace will be included in the graph, transitive dependencies (dependencies of dependencies) will be ignored.
+
+```ini
+ignore-transitive-dependencies = true
+```
+
 ## The `no-clearly-defined` field (optional)
 
 If true, will not attempt to lookup licensing information for any crate from <https://clearlydefined.io>, only user clarifications, workarounds, and local file scanning will be used to determine licensing information.

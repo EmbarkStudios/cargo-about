@@ -9,7 +9,7 @@ use anyhow::Context as _;
 use krates::Utf8PathBuf as PathBuf;
 use rayon::prelude::*;
 pub use resolution::Resolved;
-use std::{cmp, sync::Arc};
+use std::{cmp, fmt, sync::Arc};
 
 const LICENSE_CACHE: &[u8] = include_bytes!("../spdx_cache.bin.zstd");
 
@@ -26,6 +26,16 @@ pub enum LicenseInfo {
     Expr(spdx::Expression),
     Unknown,
     Ignore,
+}
+
+impl fmt::Display for LicenseInfo {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LicenseInfo::Expr(expr) => write!(f, "{}", expr),
+            LicenseInfo::Unknown => write!(f, "Unknown"),
+            LicenseInfo::Ignore => write!(f, "Ignore"),
+        }
+    }
 }
 
 /// The contents of a file with license info in it

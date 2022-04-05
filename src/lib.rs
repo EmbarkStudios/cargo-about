@@ -84,7 +84,7 @@ use std::{cmp, fmt};
 
 pub mod licenses;
 
-pub struct Krate(cm::Package);
+pub struct Krate(pub cm::Package);
 
 impl Krate {
     fn get_license_expression(&self) -> licenses::LicenseInfo {
@@ -211,6 +211,12 @@ pub fn get_all_crates(
 
     if cfg.ignore_dev_dependencies {
         builder.ignore_kind(krates::DepKind::Dev, krates::Scope::All);
+    }
+
+    if cfg.ignore_transitive_dependencies {
+        builder.ignore_kind(krates::DepKind::Normal, krates::Scope::NonWorkspace);
+        builder.ignore_kind(krates::DepKind::Dev, krates::Scope::NonWorkspace);
+        builder.ignore_kind(krates::DepKind::Build, krates::Scope::NonWorkspace);
     }
 
     builder.include_targets(cfg.targets.iter().map(|triple| (triple.as_str(), vec![])));

@@ -1,0 +1,66 @@
+<html>
+
+<head>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #333;
+                color: white;
+            }
+            a {
+                color: skyblue;
+            }
+        }
+        .container {
+            font-family: sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .intro {
+            text-align: center;
+        }
+        .licenses-list {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+        .license-used-by {
+            margin-top: -10px;
+        }
+        .license-text {
+            max-height: 200px;
+            overflow-y: scroll;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container">
+        <div class="intro">
+            <h1>Third-Party Licenses</h1>
+            <p>This page lists the licenses of the projects used in cargo-about.</p>
+        </div>
+
+        <h2>Third-party components:</h2>
+        <table>
+        {{#each crates}}
+            <tr>
+                <td><a href="{{#if package.repository}} {{package.repository}} {{else}} https://crates.io/crates/{{package.name}} {{/if}}">
+                    {{package.name}}
+                </a></td>
+                <td>{{package.version}}</td>
+                <td>{{license}}</td>
+            </tr>
+        {{/each}}
+        </table>
+
+        <h2>License texts:</h2>
+        {{#each overview}}
+            <h3 id="{{id}}">{{name}}</h3>
+            <pre class="license-text">{{text}}</pre>
+        {{/each}}
+</main>
+</body>
+
+</html>
