@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Changed
+- [PR#189](https://github.com/EmbarkStudios/cargo-about/pull/189) updated dependencies, notably `regex` to fix an [advisory](https://rustsec.org/advisories/RUSTSEC-2022-0013).
+
 ## [0.5.0] - 2022-03-04
 ### Changed
 - [PR#187](https://github.com/EmbarkStudios/cargo-about/pull/187) closed [#185](https://github.com/EmbarkStudios/cargo-about/issues/185) by making it so that **all** crates marked as `publish = false` will be ignored, rather than the previous behavior of only ignore workspace members. Please file an issue if this behavior is not acceptable. Thanks [@danielnelson](https://github.com/danielnelson)!
