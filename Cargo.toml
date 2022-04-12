@@ -80,3 +80,11 @@ toml_edit = "0.14"
 twox-hash = "1.6"
 # Url parsing
 url = "2.2"
+
+[dev-dependencies]
+# Filesystems - Filesystem fixtures and assertions for testing
+assert_fs = "1.0.7"
+# Easy command initialization and assertions
+assert_cmd = "2.0"
+# Composable first-order predicate functions
+predicates = "2.1"
