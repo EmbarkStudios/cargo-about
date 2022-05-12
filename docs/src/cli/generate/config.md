@@ -85,7 +85,7 @@ publish = false # "private"!
 
 ```ini
 # about.toml
-[licenses]
+
 # The sekret package would be ignored now
 private = { ignore = true }
 ```
@@ -104,14 +104,14 @@ publish = ["sauce"]
 
 ```ini
 # about.toml
-[licenses]
+
 # Still ignored!
 private = { ignore = true, registries = ["sauce"] }
 ```
 
 ## Crate configuration
 
-Along with the global options, crates can be individually configured as well, using the name of the crate as the key.
+Along with the global options, crates can be individually configured as well, using the name of the crate as the key. Crate specific configuration _must_ come last in the config file.
 
 ### The `accepted` field (optional)
 
@@ -156,7 +156,7 @@ override-git-commit = "3841d2bb3aa76dec2ea6319e757603fb923b5a50"
 
 #### The `files` and/or `git` field
 
-When clarifying the license of a crate, it is required to give a source of truth for the licenses in the expression, to prevent drift between the clarification and the actual licensing of the crate in question. For example, if a crate uses the `Zlib` license, then changes between releases to use the `MIT` license instead, the source of truth (eg. the `LICENSE` file) would also (hopefully...) change resulting in a hash mismatch that means the clarification would not be used.
+When clarifying the license of a crate, it is **required** to give a source of truth for the licenses in the expression, to prevent drift between the clarification and the actual licensing of the crate in question. For example, if a crate uses the `Zlib` license, then changes between releases to use the `MIT` license instead, the source of truth (eg. the `LICENSE` file) would also (hopefully...) change resulting in a hash mismatch that means the clarification would not be used.
 
 We'll be using this example for the `ring` crate
 
