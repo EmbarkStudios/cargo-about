@@ -130,7 +130,7 @@ impl GitCache {
         // in mind, though this might fail in more complicated scenarios like if
         // there are multiple workspaces in a single repository
         let mut cmd = std::process::Command::new("cargo");
-        cmd.args(&[
+        cmd.args([
             "locate-project",
             "--workspace",
             "--manifest-path",
