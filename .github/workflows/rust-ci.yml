@@ -14,13 +14,11 @@ name: CI
 jobs:
   lint:
     name: Lint
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: "1.56.1"
-          override: true
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
 
       # make sure all code has been formatted with rustfmt
       - run: rustup component add rustfmt
@@ -37,41 +35,53 @@ jobs:
     name: Test
     strategy:
       matrix:
-        os: [ubuntu-20.04, macOS-latest, windows-latest]
+        os: [ubuntu-22.04, macOS-12, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
       - run: cargo fetch
       - name: cargo test build
         run: cargo build --tests --release
       - name: cargo test
         run: cargo test --release
 
+  msrv-check:
+    name: Minimum Stable Rust Version Check
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.60.0"
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fetch
+      - name: cargo check
+        run: cargo check --all-targets
+
   build-aarch64-apple-darwin:
     name: Build aarch64-apple-darwin
     strategy:
       matrix:
-        os: [macOS-latest]
+        include:
+          - os: macOS-12
+          - target: aarch64-apple-darwin
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          override: true
-      - run: rustup target add aarch64-apple-darwin
-      - run: cargo fetch --target aarch64-apple-darwin
-      - run: cargo build --release --target aarch64-apple-darwin
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fetch --target ${{ matrix.target }}
+      - run: cargo build --release --target ${{ matrix.target }}
 
   deny-check:
     name: cargo-deny
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: EmbarkStudios/cargo-deny-action@v1
 
   # Build `mdBook` documentation and upload it as a temporary build artifact
@@ -79,10 +89,10 @@ jobs:
     name: Build the book
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: |
           set -e
-          curl -L https://github.com/rust-lang-nursery/mdBook/releases/download/v0.4.13/mdbook-v0.4.13-x86_64-unknown-linux-gnu.tar.gz | tar xzf -
+          curl -L https://github.com/rust-lang-nursery/mdBook/releases/download/v0.4.21/mdbook-v0.4.21-x86_64-unknown-linux-gnu.tar.gz | tar xzf -
           echo `pwd` >> $GITHUB_PATH
       - run: (cd docs && mdbook build)
       - uses: actions/upload-artifact@v1
@@ -92,13 +102,11 @@ jobs:
 
   publish-check:
     name: Publish Check
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
       - run: cargo fetch
       - name: cargo publish
         run: cargo publish --dry-run
@@ -110,36 +118,34 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             rust: stable
             target: x86_64-unknown-linux-musl
             bin: cargo-about
-          - os: windows-latest
+          - os: windows-2022
             rust: stable
             target: x86_64-pc-windows-msvc
             bin: cargo-about.exe
-          - os: macOS-latest
+          - os: macos-12
             rust: stable
             target: x86_64-apple-darwin
             bin: cargo-about
-          - os: macOS-latest
+          - os: macos-12
             rust: stable
             target: aarch64-apple-darwin
             bin: cargo-about
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
-          override: true
-          target: ${{ matrix.target }}
+          targets: ${{ matrix.target }}
       - name: Install musl tools
-        if: matrix.os == 'ubuntu-20.04'
+        if: matrix.target == 'x86_64-unknown-linux-musl'
         run: |
           sudo apt-get install -y musl-tools
-      - name: Checkout
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      - uses: Swatinem/rust-cache@v2
       - name: cargo fetch
         run: cargo fetch --target ${{ matrix.target }}
       - name: Release build
@@ -181,7 +187,7 @@ jobs:
   publish:
     name: Publish Docs
     needs: [doc-book]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Download book
