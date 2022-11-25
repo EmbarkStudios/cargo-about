@@ -83,25 +83,24 @@ fn load_config(manifest_path: &Path) -> anyhow::Result<cargo_about::licenses::co
 }
 
 pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
-    let manifest_path = match args.manifest_path.clone() {
-        Some(mp) => mp,
-        None => {
-            let cwd =
-                std::env::current_dir().context("unable to determine current working directory")?;
-            let mut cwd = PathBuf::from_path_buf(cwd).map_err(|pb| {
-                anyhow::anyhow!(
-                    "current working directory '{}' is not a utf-8 path",
-                    pb.display()
-                )
-            })?;
+    let manifest_path = if let Some(mp) = args.manifest_path.clone() {
+        mp
+    } else {
+        let cwd =
+            std::env::current_dir().context("unable to determine current working directory")?;
+        let mut cwd = PathBuf::from_path_buf(cwd).map_err(|pb| {
+            anyhow::anyhow!(
+                "current working directory '{}' is not a utf-8 path",
+                pb.display()
+            )
+        })?;
 
-            cwd.push("Cargo.toml");
-            cwd
-        }
+        cwd.push("Cargo.toml");
+        cwd
     };
 
     if !manifest_path.exists() {
-        bail!("cargo manifest path '{}' does not exist", manifest_path);
+        bail!("cargo manifest path '{manifest_path}' does not exist");
     }
 
     let cfg = match &args.config {

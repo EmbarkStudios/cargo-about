@@ -133,7 +133,7 @@ impl<'a> PackageBuilder<'a> {
     pub fn accepted(&mut self, accepted: &[&str]) -> &mut Self {
         self.accepted = accepted
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| (*s).to_owned())
             .collect::<HashSet<_>>();
         self
     }
@@ -168,7 +168,7 @@ impl<'a> PackageBuilder<'a> {
                 *dependencies = toml_edit::table();
                 for package in &self.dependencies {
                     dependencies[&package.name]["version"] =
-                        toml_edit::value(package.version.to_string());
+                        toml_edit::value(package.version.clone());
                     dependencies[&package.name]["path"] =
                         toml_edit::value(package.dir.to_str().unwrap());
                 }
@@ -185,7 +185,7 @@ impl<'a> PackageBuilder<'a> {
         if self.not_overridden_or_excluded(ABOUT_CONFIG_FILENAME) {
             let mut config = toml_edit::Document::new();
             config["accepted"] =
-                toml_edit::value(toml_edit::Array::from_iter(self.accepted.iter()));
+                toml_edit::value(self.accepted.iter().collect::<toml_edit::Array>());
 
             dir.child(ABOUT_CONFIG_FILENAME)
                 .write_str(&config.to_string())?;
