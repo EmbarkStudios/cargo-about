@@ -36,7 +36,7 @@ atty = "0.2"
 # API helpers for api.clearlydefined.io
 cd = { version = "0.2", features = ["blocking", "rustls"] }
 # Argument parsing
-clap = { version = "3.0", features = ["derive"] }
+clap = { version = "4.0", features = ["derive"] }
 # Diagnostic reporting
 codespan = "0.11"
 codespan-reporting = "0.11"
@@ -49,7 +49,7 @@ home = "0.5"
 # Directory walking
 ignore = "0.4"
 # Dependency graphing
-krates = "0.10"
+krates = "0.12"
 # Logging macros
 log = "0.4"
 # Better heap allocator over system one (usually)
@@ -75,7 +75,7 @@ time = "0.3"
 # Configuration parsing
 toml = "0.5"
 # Manipulation of cargo manifests for diagnostic purposes
-toml_edit = "0.14"
+toml_edit = "0.15"
 # Hashing
 twox-hash = "1.6"
 # Url parsing
