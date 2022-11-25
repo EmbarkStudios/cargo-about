@@ -28,24 +28,20 @@ pub(crate) fn apply_workarounds<'krate>(
     }
 
     for workaround in &cfg.workarounds {
-        let retrieve_workaround = match WORKAROUNDS
+        let Some(retrieve_workaround) = WORKAROUNDS
             .iter()
-            .find_map(|(name, func)| (workaround == *name).then(|| func))
-        {
-            Some(func) => func,
-            None => {
-                log::warn!("no workaround registered for the '{}' crate", workaround);
+            .find_map(|(name, func)| (workaround == *name).then_some(func)) else {
+                log::warn!("no workaround registered for the '{workaround}' crate");
                 continue;
-            }
         };
 
-        for krate in krates.krates().map(|kn| &kn.krate) {
+        for krate in krates.krates() {
             if let Err(i) = super::binary_search(licensed_krates, krate) {
                 match retrieve_workaround(krate) {
                     Ok(Some(clarification)) => {
                         match crate::licenses::apply_clarification(gc, krate, &clarification) {
                             Ok(files) => {
-                                log::debug!("applying workaround '{}' to '{}'", workaround, krate);
+                                log::debug!("applying workaround '{workaround}' to '{krate}'");
 
                                 licensed_krates.insert(
                                     i,
@@ -58,10 +54,7 @@ pub(crate) fn apply_workarounds<'krate>(
                             }
                             Err(e) => {
                                 log::debug!(
-                                    "unable to apply workaround '{}' to '{}': {:#}",
-                                    workaround,
-                                    krate,
-                                    e
+                                    "unable to apply workaround '{workaround}' to '{krate}': {e:#}"
                                 );
                             }
                         }
@@ -69,10 +62,7 @@ pub(crate) fn apply_workarounds<'krate>(
                     Ok(None) => {}
                     Err(e) => {
                         log::debug!(
-                            "unable to apply workaround '{}' to '{}': {:#}",
-                            workaround,
-                            krate,
-                            e
+                            "unable to apply workaround '{workaround}' to '{krate}': {e:#}"
                         );
                     }
                 }

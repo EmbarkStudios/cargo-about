@@ -42,7 +42,7 @@ pub enum Subcommand {
 pub struct Args {
     /// One or more subsections in the file which is itself its own license.
     /// Uses `!!` as the separator between the start and end of the subsection
-    #[clap(long, short, parse(try_from_str = parse_subsection))]
+    #[clap(long, short, value_parser = parse_subsection)]
     subsections: Vec<(Option<String>, Option<String>)>,
     /// The minimum confidence score a license must have
     #[clap(long, default_value = "0.8")]

@@ -31,7 +31,7 @@ pub enum LicenseInfo {
 impl fmt::Display for LicenseInfo {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            LicenseInfo::Expr(expr) => write!(f, "{}", expr),
+            LicenseInfo::Expr(expr) => write!(f, "{expr}"),
             LicenseInfo::Unknown => write!(f, "Unknown"),
             LicenseInfo::Ignore => write!(f, "Ignore"),
         }
@@ -172,15 +172,15 @@ impl Gatherer {
         // to the list so all of the following gathers ignore them
         if cfg.private.ignore {
             for krate in krates.krates() {
-                if let Some(publish) = &krate.krate.publish {
+                if let Some(publish) = &krate.publish {
                     if publish.is_empty()
                         || publish
                             .iter()
                             .all(|reg| cfg.private.registries.contains(reg))
                     {
-                        log::debug!("ignoring private crate '{}'", krate.krate);
+                        log::debug!("ignoring private crate '{krate}'");
                         licensed_krates.push(KrateLicense {
-                            krate: &krate.krate,
+                            krate,
                             lic_info: LicenseInfo::Ignore,
                             license_files: Vec::new(),
                         });
@@ -220,19 +220,18 @@ impl Gatherer {
         gc: &fetch::GitCache,
         licensed_krates: &mut Vec<KrateLicense<'k>>,
     ) {
-        for (krate, clarification) in krates.krates().filter_map(|kn| {
+        for (krate, clarification) in krates.krates().filter_map(|krate| {
             cfg.crates
-                .get(&kn.krate.name)
+                .get(&krate.name)
                 .and_then(|kc| kc.clarify.as_ref())
-                .map(|cl| (&kn.krate, cl))
+                .map(|cl| (krate, cl))
         }) {
             if let Err(i) = binary_search(licensed_krates, krate) {
                 match apply_clarification(gc, krate, clarification) {
                     Ok(lic_files) => {
                         log::debug!(
-                            "applying clarification expression '{}' to crate {}",
+                            "applying clarification expression '{}' to crate {krate}",
                             clarification.license,
-                            krate
                         );
                         licensed_krates.insert(
                             i,
@@ -244,7 +243,7 @@ impl Gatherer {
                         );
                     }
                     Err(e) => {
-                        log::warn!("failed to validate all files specified in clarification for crate {}: {}", krate, e);
+                        log::warn!("failed to validate all files specified in clarification for crate {krate}: {e}");
                     }
                 }
             }
@@ -265,13 +264,12 @@ impl Gatherer {
         let reqs = cd::definitions::get(
             10,
             krates.krates().filter_map(|krate| {
-                if binary_search(licensed_krates, &krate.krate).is_ok() {
+                if binary_search(licensed_krates, krate).is_ok() {
                     return None;
                 }
 
                 // Ignore local and git sources in favor of scanning those on the local disk
                 if krate
-                    .krate
                     .source
                     .as_ref()
                     .map_or(false, |src| src.is_crates_io())
@@ -281,8 +279,8 @@ impl Gatherer {
                         provider: cd::Provider::CratesIo,
                         // Rust crates, at least on crates.io, don't have a namespace
                         namespace: None,
-                        name: krate.krate.name.clone(),
-                        version: cd::CoordVersion::Semver(krate.krate.version.clone()),
+                        name: krate.name.clone(),
+                        version: cd::CoordVersion::Semver(krate.version.clone()),
                         // TODO: maybe set this if it's overriden in the config? seems messy though
                         curation_pr: None,
                     })
@@ -308,104 +306,99 @@ impl Gatherer {
                             cd::CoordVersion::Semver(vers) => vers.clone(),
                             cd::CoordVersion::Any(vers) => {
                                 log::warn!(
-                                    "the definition for {} does not have a valid semver '{}'",
+                                    "the definition for {} does not have a valid semver '{vers}'",
                                     def.coordinates,
-                                    vers,
                                 );
                                 return None;
                             }
                         };
 
-                        match krates.krates_by_name(&def.coordinates.name).find_map(|(_, kn)| {
-                            if kn.krate.version == version {
-                                Some(&kn.krate)
+                        let krate = krates.krates_by_name(def.coordinates.name).find_map(move |(_, krate)| {
+                            if krate.version == version {
+                                Some(krate)
                             } else {
                                 None
-                            }})
-                        {
-                            Some(krate) => {
-                                let info = krate.get_license_expression();
+                            }
+                        });
 
-                                // clearly defined doesn't provide per-file scores, so we just use
-                                // the overall score for the entire crate
-                                let confidence = def.scores.effective as f32 / 100.0;
+                        krate.map(|krate| {
+                            let info = krate.get_license_expression();
 
-                                let license_files = def.files.into_iter().filter_map(|cd_file| {
-                                    // Retrieve (and validate) the text of the file if clearlydefined thinks it is a license file
-                                    let license_text = if cd_file.natures.iter().any(|s| s == "license") {
-                                        let root_path = krate.manifest_path.parent().unwrap();
-                                        let path = root_path.join(&cd_file.path);
-                                        match std::fs::read_to_string(&path) {
-                                            Ok(text) => {
-                                                if let Some(expected) = cd_file.hashes.as_ref().and_then(|hashes| hashes.sha256.as_ref()) {
-                                                    if let Err(err) = crate::validate_sha256(&text, expected) {
-                                                        log::warn!("file '{}' for crate '{}' marked as a license but the sha256 hash could not be verified: {}", path, krate, err);
-                                                        return None;
-                                                    }
-                                                }
+                            // clearly defined doesn't provide per-file scores, so we just use
+                            // the overall score for the entire crate
+                            let confidence = def.scores.effective as f32 / 100.0;
 
-                                                Some(text)
-                                            }
-                                            Err(err) => {
-                                                log::warn!("failed to read license from '{}' for crate '{}': {}", path, krate, err);
-                                                return None;
-                                            }
-                                        }
-                                    } else {
-                                        None
-                                    };
-
-                                    let path = cd_file.path;
-
-                                    // clearly defined will attach a license identifier to any file
-                                    // with a license or SPDX identifier, but like askalono it won't
-                                    // detect all licenses if there are multiple in a single file
-                                    match (cd_file.license, license_text) {
-                                        (Some(lic), license_text) => {
-                                            let license_expr = match spdx::Expression::parse_mode(&lic, spdx::ParseMode::LAX) {
-                                                Ok(expr) => expr,
-                                                Err(err) => {
-                                                    log::warn!("clearlydefined detected license '{}' in '{}' for crate '{}', but it can't be parsed: {}", lic, path, krate, err);
+                            let license_files = def.files.into_iter().filter_map(|cd_file| {
+                                // Retrieve (and validate) the text of the file if clearlydefined thinks it is a license file
+                                let license_text = if cd_file.natures.iter().any(|s| s == "license") {
+                                    let root_path = krate.manifest_path.parent().unwrap();
+                                    let path = root_path.join(&cd_file.path);
+                                    match std::fs::read_to_string(&path) {
+                                        Ok(text) => {
+                                            if let Some(expected) = cd_file.hashes.as_ref().and_then(|hashes| hashes.sha256.as_ref()) {
+                                                if let Err(err) = crate::validate_sha256(&text, expected) {
+                                                    log::warn!("file '{path}' for crate '{krate}' marked as a license but the sha256 hash could not be verified: {err}");
                                                     return None;
                                                 }
-                                            };
+                                            }
 
-                                            Some(LicenseFile {
-                                                license_expr,
-                                                path,
-                                                confidence,
-                                                kind: license_text.map_or(LicenseFileKind::Header, LicenseFileKind::Text),
-                                            })
+                                            Some(text)
                                         }
-                                        (None, Some(license_text)) => {
-                                            // For some reason, clearlydefined will correctly identify text as being a
-                                            // license but won't give it an expression, so we have to figure out what it
-                                            // is, but at least have high confidence that it will result in a match
-                                            scan::check_is_license_file(path.clone(), license_text, strategy, self.threshold)
-                                                .or_else(|| {
-                                                    log::warn!("clearlydefined detected license in '{}' for crate '{}', but it we failed to determine what its license was", path, krate);
-                                                    None
-                                                })
+                                        Err(err) => {
+                                            log::warn!("failed to read license from '{}' for crate '{}': {}", path, krate, err);
+                                            return None;
                                         }
-                                        _ => None,
                                     }
-                                }).collect();
+                                } else {
+                                    None
+                                };
 
-                                Some(KrateLicense {
-                                    krate,
-                                    lic_info: info,
-                                    license_files,
-                                })
+                                let path = cd_file.path;
+
+                                // clearly defined will attach a license identifier to any file
+                                // with a license or SPDX identifier, but like askalono it won't
+                                // detect all licenses if there are multiple in a single file
+                                match (cd_file.license, license_text) {
+                                    (Some(lic), license_text) => {
+                                        let license_expr = match spdx::Expression::parse_mode(&lic, spdx::ParseMode::LAX) {
+                                            Ok(expr) => expr,
+                                            Err(err) => {
+                                                log::warn!("clearlydefined detected license '{lic}' in '{path}' for crate '{krate}', but it can't be parsed: {err}");
+                                                return None;
+                                            }
+                                        };
+
+                                        Some(LicenseFile {
+                                            license_expr,
+                                            path,
+                                            confidence,
+                                            kind: license_text.map_or(LicenseFileKind::Header, LicenseFileKind::Text),
+                                        })
+                                    }
+                                    (None, Some(license_text)) => {
+                                        // For some reason, clearlydefined will correctly identify text as being a
+                                        // license but won't give it an expression, so we have to figure out what it
+                                        // is, but at least have high confidence that it will result in a match
+                                        scan::check_is_license_file(path.clone(), license_text, strategy, self.threshold)
+                                            .or_else(|| {
+                                                log::warn!("clearlydefined detected license in '{path}' for crate '{krate}', but it we failed to determine what its license was");
+                                                None
+                                            })
+                                    }
+                                    _ => None,
+                                }
+                            }).collect();
+
+                            KrateLicense {
+                                krate,
+                                lic_info: info,
+                                license_files,
                             }
-                            None => None,
-                        }
+                        })
                     }).collect::<Vec<_>>())
                 }
                 Err(err) => {
-                    log::warn!(
-                        "failed to request license information from clearly defined: {:#}",
-                        err
-                    );
+                    log::warn!("failed to request license information from clearly defined: {err:#}");
                     None
                 }
             }
@@ -428,9 +421,7 @@ impl Gatherer {
         let mut gathered: Vec<_> = krates
             .krates()
             .par_bridge()
-            .filter_map(|kn| {
-                let krate = &kn.krate;
-
+            .filter_map(|krate| {
                 // Ignore crates that we've already gathered
                 if binary_search(licensed_krates, krate).is_ok() {
                     return None;
@@ -444,10 +435,9 @@ impl Gatherer {
                     Ok(files) => files,
                     Err(err) => {
                         log::error!(
-                            "unable to scan for license files for crate '{} - {}': {}",
+                            "unable to scan for license files for crate '{} - {}': {err}",
                             krate.name,
                             krate.version,
-                            err
                         );
 
                         Vec::new()
@@ -504,16 +494,12 @@ pub(crate) fn apply_clarification<'krate>(
     let mut push = |contents: &str, cf: &config::ClarificationFile, license_path| {
         anyhow::ensure!(
             !contents.is_empty(),
-            "clarification file '{}' is empty",
-            license_path
+            "clarification file '{license_path}' is empty"
         );
 
         let start = match &cf.start {
             Some(starts) => contents.find(starts).with_context(|| {
-                format!(
-                    "failed to find subsection starting with '{}' in {}",
-                    starts, license_path
-                )
+                format!("failed to find subsection starting with '{starts}' in {license_path}")
             })?,
             None => 0,
         };
@@ -521,10 +507,7 @@ pub(crate) fn apply_clarification<'krate>(
         let end = match &cf.end {
             Some(ends) => {
                 contents[start..].find(ends).with_context(|| {
-                    format!(
-                        "failed to find subsection ending with '{}' in {}",
-                        ends, license_path
-                    )
+                    format!("failed to find subsection ending with '{ends}' in {license_path}")
                 })? + start
                     + ends.len()
             }

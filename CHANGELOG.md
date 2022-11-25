@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Changed
+- [PR#205](https://github.com/EmbarkStudios/cargo-about/pull/205) updated to spdx 0.9 and therefore the SPDX license from version 3.14 -> 3.18. Thanks [@o0Ignition0o](https://github.com/o0Ignition0o)!
+
 ## [0.5.1] - 2022-04-05
 ### Added
 - [PR#188](https://github.com/EmbarkStudios/cargo-about/pull/188) added the ability to ignore transitive dependencies via the `ignore-transitive-dependencies` config flag. Thanks [@haraldreingruber](https://github.com/haraldreingruber)!

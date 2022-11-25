@@ -34,7 +34,7 @@ impl<'acc> fmt::Display for Accepted<'acc> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "global: [")?;
         for (id, val) in self.global.iter().enumerate() {
-            write!(f, "{}", val)?;
+            write!(f, "{val}")?;
             if id + 1 < self.global.len() {
                 write!(f, ", ")?;
             }
@@ -44,7 +44,7 @@ impl<'acc> fmt::Display for Accepted<'acc> {
         if let Some(krate) = self.krate {
             write!(f, "\ncrate: [")?;
             for (id, val) in krate.iter().enumerate() {
-                write!(f, "{}", val)?;
+                write!(f, "{val}")?;
                 if id + 1 < krate.len() {
                     write!(f, ", ")?;
                 }
@@ -71,19 +71,18 @@ fn synthesize_manifest(
     existing: Option<toml_edit::Document>,
     expression: &spdx::Expression,
 ) -> (String, usize) {
-    let mut doc = match existing {
-        Some(existing) => existing,
-        None => {
-            let mut doc = toml_edit::Document::new();
+    let mut doc = if let Some(existing) = existing {
+        existing
+    } else {
+        let mut doc = toml_edit::Document::new();
 
-            let package = &mut doc["package"];
-            package["name"] = toml_edit::value(krate.name.clone());
-            package["version"] = toml_edit::value(krate.version.to_string());
-            package["authors"] =
-                toml_edit::value(krate.authors.iter().cloned().collect::<toml_edit::Array>());
+        let package = &mut doc["package"];
+        package["name"] = toml_edit::value(krate.name.clone());
+        package["version"] = toml_edit::value(krate.version.to_string());
+        package["authors"] =
+            toml_edit::value(krate.authors.iter().cloned().collect::<toml_edit::Array>());
 
-            doc
-        }
+        doc
     };
 
     doc["package"]["license"] = toml_edit::value(expression.as_ref().to_owned());
@@ -115,10 +114,9 @@ pub fn resolve(
             let manifest = std::fs::read_to_string(&kl.krate.manifest_path)
                 .map_err(|e| {
                     log::error!(
-                        "failed to read manifest path {} for crate '{}': {}",
+                        "failed to read manifest path {} for crate '{}': {e}",
                         kl.krate.manifest_path,
                         kl.krate,
-                        e
                     );
                     e
                 })
