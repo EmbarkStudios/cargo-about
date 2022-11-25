@@ -8,7 +8,7 @@
 [![Embark Discord](https://img.shields.io/badge/discord-ark-%237289da.svg?logo=discord)](https://discord.gg/Fg4u4VX)
 [![Crates.io](https://img.shields.io/crates/v/cargo-about.svg)](https://crates.io/crates/cargo-about)
 [![API Docs](https://docs.rs/cargo-about/badge.svg)](https://docs.rs/cargo-about)
-[![SPDX Version](https://img.shields.io/badge/SPDX%20Version-3.14-blue.svg)](https://spdx.org/licenses/)
+[![SPDX Version](https://img.shields.io/badge/SPDX%20Version-3.18-blue.svg)](https://spdx.org/licenses/)
 [![Minimum Stable Rust Version](https://img.shields.io/badge/Rust-1.56.1-blue?color=fc8d62&logo=rust)](https://blog.rust-lang.org/2021/10/21/Rust-1.56.0.html)
 [![dependency status](https://deps.rs/repo/github/EmbarkStudios/cargo-about/status.svg)](https://deps.rs/repo/github/EmbarkStudios/cargo-about)
 [![Build Status](https://github.com/EmbarkStudios/cargo-about/workflows/CI/badge.svg)](https://github.com/EmbarkStudios/cargo-about/actions?workflow=CI)
@@ -58,8 +58,8 @@ Please read our [Contributor Guide](CONTRIBUTING.md) for more information on how
 
 Licensed under either of
 
-* Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0>)
-* MIT license ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
+- Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0>)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
 
 at your option.
 

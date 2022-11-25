@@ -85,8 +85,8 @@ fn does_not_overwrite_by_default() -> Result<()> {
     let config = &package.dir.child(ABOUT_CONFIG_FILENAME);
     let template = &package.dir.child(ABOUT_TEMPLATE_FILENAME);
 
-    assert_eq!(std::fs::read_to_string(&config)?, config_content);
-    assert_eq!(std::fs::read_to_string(&template)?, template_content);
+    assert_eq!(std::fs::read_to_string(config)?, config_content);
+    assert_eq!(std::fs::read_to_string(template)?, template_content);
 
     Ok(())
 }
@@ -112,8 +112,8 @@ fn overwrites_config_and_template_when_overwrite_specified() -> Result<()> {
     let config = &package.dir.child(ABOUT_CONFIG_FILENAME);
     let template = &package.dir.child(ABOUT_TEMPLATE_FILENAME);
 
-    assert_ne!(std::fs::read_to_string(&config)?, config_content);
-    assert_ne!(std::fs::read_to_string(&template)?, template_content);
+    assert_ne!(std::fs::read_to_string(config)?, config_content);
+    assert_ne!(std::fs::read_to_string(template)?, template_content);
 
     Ok(())
 }
@@ -140,8 +140,8 @@ fn overwrites_config_only_when_no_handlebars_and_overwrite_specified() -> Result
     let config = &package.dir.child(ABOUT_CONFIG_FILENAME);
     let template = &package.dir.child(ABOUT_TEMPLATE_FILENAME);
 
-    assert_ne!(std::fs::read_to_string(&config)?, config_content);
-    assert_eq!(std::fs::read_to_string(&template)?, template_content);
+    assert_ne!(std::fs::read_to_string(config)?, config_content);
+    assert_eq!(std::fs::read_to_string(template)?, template_content);
 
     Ok(())
 }

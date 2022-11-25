@@ -235,7 +235,7 @@ impl<'a> PackageBuilder<'a> {
     pub fn write_files(&self, dir: &TempDir) -> Result<()> {
         for (filename, content) in &self.files {
             if !self.excludes.contains(filename) {
-                let file = dir.child(&filename);
+                let file = dir.child(filename);
                 file.write_str(content)?;
             }
         }

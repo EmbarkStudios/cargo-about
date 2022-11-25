@@ -91,7 +91,7 @@ fn synthesize_manifest(
     let serialized = doc.to_string();
 
     let offset = serialized
-        .find(&expression.as_ref())
+        .find(expression.as_ref())
         .expect("we literally just serialized this");
     (serialized, offset)
 }
