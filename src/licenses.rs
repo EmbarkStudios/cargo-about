@@ -320,7 +320,7 @@ impl Gatherer {
                                 None
                             }
                         });
-                        
+
                         krate.map(|krate| {
                             let info = krate.get_license_expression();
 
