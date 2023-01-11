@@ -72,8 +72,8 @@ Possible values:
 }
 
 fn setup_logger(level: log::LevelFilter) -> Result<(), fern::InitError> {
-    use ansi_term::Color;
     use log::Level as Lvl;
+    use nu_ansi_term::Color;
 
     fern::Dispatch::new()
         .level(log::LevelFilter::Warn)

@@ -10,9 +10,6 @@ vulnerability = "deny"
 unsound = "deny"
 unmaintained = "deny"
 ignore = [
-    # ansi_term is unmaintained, but it does exactly what it needs to and no more
-    # so no reason to change just for the sake of it
-    "RUSTSEC-2021-0139",
     # atty potential misaligned pointer, not an issue
     "RUSTSEC-2021-0145",
 ]
@@ -25,7 +22,10 @@ deny = [
     # crates should use cc, not big separate build systems
     { name = "cmake" },
 ]
-skip = []
+skip = [
+    # reqwest depends on 2 different versions if rustls is enabled :p
+    { name = "base64", version = "=0.13.1" },
+]
 
 [licenses]
 unlicensed = "deny"

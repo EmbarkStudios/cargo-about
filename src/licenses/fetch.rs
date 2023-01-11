@@ -19,10 +19,9 @@ impl GitHostFlavor {
             Some("github.com") => Self::Github,
             Some("gitlab.com") => Self::Gitlab,
             Some("bitbucket.org") => Self::Bitbucket,
-            Some(unsupported) => anyhow::bail!(
-                "the git host '{}' is not supported at this time",
-                unsupported
-            ),
+            Some(unsupported) => {
+                anyhow::bail!("the git host '{unsupported}' is not supported at this time")
+            }
             None => anyhow::bail!("the repo url is malformed and does not contain a domain"),
         })
     }
@@ -49,31 +48,20 @@ impl GitHostFlavor {
         let req = match self {
             Self::Github => {
                 // https://docs.github.com/en/rest/reference/repos#contents
-                client.get(format!(
-                    "https://rawcdn.githack.com/{project}/{rev}/{path}",
-                    project = project,
-                    rev = rev,
-                    path = path,
-                ))
+                client.get(format!("https://rawcdn.githack.com/{project}/{rev}/{path}"))
             }
             Self::Gitlab => {
                 // https://docs.gitlab.com/ee/api/repository_files.html#get-raw-file-from-repository
                 // https://glcdn.githack.com/veloren/veloren/-/raw/f92c6fbd49269b6e2cad04ae229d3405a6656053/LICENSE
                 client.get(format!(
-                    "https://glcdn.githack.com/{project}/-/raw/{rev}/{path}",
-                    project = project,
-                    rev = rev,
-                    path = path,
+                    "https://glcdn.githack.com/{project}/-/raw/{rev}/{path}"
                 ))
             }
             Self::Bitbucket => {
                 // https://developer.atlassian.com/bitbucket/api/2/reference/resource/repositories/%7Bworkspace%7D/%7Brepo_slug%7D/src/%7Bcommit%7D/%7Bpath%7D
                 // https://bbcdn.githack.com/atlassian/pipelines-examples-rust/raw/581100fe400cd0cfb17f54c2aa26121181f82646/README.md
                 client.get(format!(
-                    "https://bbcdn.githack.com/{project}/raw/{commit}/{path}",
-                    project = project,
-                    commit = rev,
-                    path = path,
+                    "https://bbcdn.githack.com/{project}/raw/{rev}/{path}"
                 ))
             }
         };
@@ -157,22 +145,19 @@ impl GitCache {
                 Ok(loc.root)
             })
             .with_context(|| {
-                format!(
-                    "failed to locate workspace root for path dependency '{}'",
-                    krate
-                )
+                format!("failed to locate workspace root for path dependency '{krate}'")
             })?;
 
         let license_path = root.parent().unwrap().join(&file.path);
 
         let contents = std::fs::read_to_string(&license_path)
-            .with_context(|| format!("unable to read path '{}'", license_path))?;
+            .with_context(|| format!("unable to read path '{license_path}'"))?;
         Ok(contents)
     }
 
     pub fn retrieve_remote(&self, repo: &str, rev: &str, path: &Path) -> anyhow::Result<String> {
         let repo_url = url::Url::parse(repo)
-            .with_context(|| format!("unable to parse repository url '{}'", repo))?;
+            .with_context(|| format!("unable to parse repository url '{repo}'"))?;
 
         // Unfortunately the HTTP retrieval methods for most of the popular
         // providers require an API token to use, so instead we just use a
@@ -185,22 +170,17 @@ impl GitCache {
 
         flavor
             .fetch(&self.http_client, &repo_url, rev, path)
-            .with_context(|| {
-                format!(
-                    "failed to fetch contents of '{}' from repo '{}'",
-                    path, repo
-                )
-            })
+            .with_context(|| format!("failed to fetch contents of '{path}' from repo '{repo}'"))
     }
 
     /// Parses a `.cargo_vcs_info.json` located in the root of a packaged crate
     /// and returns the sha1 commit the package was built from
     pub fn parse_vcs_info(vcs_info_path: &Path) -> anyhow::Result<VcsInfo> {
         let vcs_info = std::fs::read_to_string(vcs_info_path)
-            .with_context(|| format!("unable to read '{}'", vcs_info_path))?;
+            .with_context(|| format!("unable to read '{vcs_info_path}'"))?;
 
         let vcs_info: VcsInfo = serde_json::from_str(&vcs_info)
-            .with_context(|| format!("failed to deserialize '{}'", vcs_info_path))?;
+            .with_context(|| format!("failed to deserialize '{vcs_info_path}'"))?;
 
         Ok(vcs_info)
     }
@@ -222,15 +202,12 @@ impl GitCache {
                     self.retrieve_local(krate, file).map(Arc::new)
                 } else if src.repr.starts_with("registry+") {
                     let repo = krate.repository.as_deref().with_context(|| {
-                        format!(
-                            "crate '{}' with registry source does not have a 'repository'",
-                            krate
-                        )
+                        format!("crate '{krate}' with registry source does not have a 'repository'")
                     })?;
 
                     let sha1 = match commit_override {
                         Some(co) => {
-                            log::debug!("using commit override '{}' for crate '{}'", co, krate);
+                            log::debug!("using commit override '{co}' for crate '{krate}'");
                             co.clone()
                         }
                         None => {
@@ -265,11 +242,7 @@ impl GitCache {
 
                     Ok(contents)
                 } else {
-                    anyhow::bail!(
-                        "unknown package source '{}' for crate '{}'",
-                        src.repr,
-                        krate
-                    );
+                    anyhow::bail!("unknown package source '{}' for crate '{krate}'", src.repr);
                 }
             }
             None => {

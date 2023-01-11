@@ -26,7 +26,7 @@ path = "src/cargo-about/main.rs"
 
 [dependencies]
 # Colorization
-ansi_term = "0.12"
+nu-ansi-term = "0.46"
 # Error facilities
 anyhow = "1.0"
 # License detection
@@ -69,13 +69,13 @@ ring = "0.16"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 # License expression parsing and evaluation
-spdx = { version = "0.9", features = ["text"] }
+spdx = { version = "0.10", features = ["text"] }
 # Log timestamps
 time = "0.3"
 # Configuration parsing
 toml = "0.5"
 # Manipulation of cargo manifests for diagnostic purposes
-toml_edit = "0.15"
+toml_edit = "0.17"
 # Hashing
 twox-hash = "1.6"
 # Url parsing

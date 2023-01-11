@@ -5,7 +5,7 @@ use krates::Utf8PathBuf as PathBuf;
 fn parse_subsection(s: &str) -> anyhow::Result<(Option<String>, Option<String>)> {
     let pos = s
         .find("!!")
-        .with_context(|| format!("unable to find '!!' in {}", s))?;
+        .with_context(|| format!("unable to find '!!' in {s}"))?;
 
     let start = &s[..pos];
     let end = &s[pos + 1..];
@@ -58,7 +58,7 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
         Subcommand::Path { root } => {
             let full_path = root.join(&args.path);
             std::fs::read_to_string(&full_path)
-                .with_context(|| format!("unable to read file '{}'", full_path))?
+                .with_context(|| format!("unable to read file '{full_path}'"))?
         }
         Subcommand::Repo { rev, repo } => {
             let gc = GitCache::default();
@@ -113,7 +113,7 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
             let start_ind = match &start {
                 Some(start) => contents
                     .find(start)
-                    .with_context(|| format!("unable to find start text '{}'", start))?,
+                    .with_context(|| format!("unable to find start text '{start}'"))?,
                 None => 0,
             };
 
@@ -121,7 +121,7 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
                 Some(end) => {
                     contents[start_ind..]
                         .find(end)
-                        .with_context(|| format!("unable to find end text '{}'", end))?
+                        .with_context(|| format!("unable to find end text '{end}'"))?
                         + start_ind
                         + end.len()
                 }
@@ -142,9 +142,7 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
 
     let strategy = askalono::ScanStrategy::new(&license_store)
         .mode(askalono::ScanMode::Elimination)
-        .confidence_threshold(
-            std::cmp::max(10, std::cmp::min(100, (args.threshold * 100.0) as u32)) as f32 / 100.0,
-        )
+        .confidence_threshold(((args.threshold * 100.0) as u32).clamp(10, 100) as f32 / 100.0)
         .optimize(false)
         .max_passes(1);
 
