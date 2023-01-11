@@ -198,10 +198,9 @@ pub fn resolve(
                         .parse()
                         .map_err(|e| {
                             log::error!(
-                                "failed to parse manifest at '{}' for crate '{}': {}",
+                                "failed to parse manifest at '{}' for crate '{}': {e}",
                                 kl.krate.manifest_path,
-                                kl.krate,
-                                e
+                                kl.krate
                             );
                             e
                         })
@@ -263,7 +262,7 @@ pub fn resolve(
                     resolved.licenses = min_reqs;
                 }
                 Err(e) => {
-                    log::warn!("failed to minimize license requirements: {}", e);
+                    log::warn!("failed to minimize license requirements: {e}");
                 }
             }
 

@@ -68,11 +68,11 @@ fn read_file(path: &Path) -> Option<String> {
         Err(ref e) if e.kind() == std::io::ErrorKind::InvalidData => {
             // If we fail due to invaliddata, it just means the file in question was
             // probably binary and didn't have valid utf-8 data, so we can ignore it
-            log::debug!("binary file {} detected", path);
+            log::debug!("binary file '{path}' detected");
             None
         }
         Err(e) => {
-            log::error!("failed to read '{}': {}", path, e);
+            log::error!("failed to read '{path}': {e}");
             None
         }
         Ok(c) => Some(c),
@@ -94,9 +94,8 @@ pub(crate) fn check_is_license_file(
                 Ok(expr) => expr,
                 Err(err) => {
                     log::error!(
-                        "failed to parse license '{}' into a valid expression: {}",
-                        ided.id.name,
-                        err
+                        "failed to parse license '{}' into a valid expression: {err}",
+                        ided.id.name
                     );
                     return None;
                 }
@@ -114,9 +113,8 @@ pub(crate) fn check_is_license_file(
                 Ok(expr) => expr,
                 Err(err) => {
                     log::error!(
-                        "failed to parse license '{}' into a valid expression: {}",
-                        ided.id.name,
-                        err
+                        "failed to parse license '{}' into a valid expression: {err}",
+                        ided.id.name
                     );
                     return None;
                 }
@@ -130,18 +128,13 @@ pub(crate) fn check_is_license_file(
             })
         }
         ScanResult::UnknownId(id_str) => {
-            log::error!(
-                "found unknown SPDX identifier '{}' scanning '{}'",
-                id_str,
-                path,
-            );
+            log::error!("found unknown SPDX identifier '{id_str}' scanning '{path}'");
             None
         }
         ScanResult::LowLicenseChance(ided) => {
             log::debug!(
-                "found '{}' scanning '{}' but it only has a confidence score of {}",
+                "found '{}' scanning '{path}' but it only has a confidence score of {}",
                 ided.id.name,
-                path,
                 ided.confidence,
             );
             None
@@ -197,7 +190,7 @@ fn scan_text(contents: &str, strat: &askalono::ScanStrategy<'_>, threshold: f32)
         }
         Err(e) => {
             // the elimination strategy can't currently fail
-            panic!("askalalono elimination strategy failed: {}", e);
+            panic!("askalalono elimination strategy failed: {e}");
         }
     }
 }

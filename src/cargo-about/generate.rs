@@ -71,7 +71,7 @@ fn load_config(manifest_path: &Path) -> anyhow::Result<cargo_about::licenses::co
             let contents = std::fs::read_to_string(&about_toml)?;
             let cfg = toml::from_str(&contents)?;
 
-            log::info!("loaded config from {}", about_toml);
+            log::info!("loaded config from '{about_toml}'");
             return Ok(cfg);
         }
 
@@ -106,16 +106,16 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
     let cfg = match &args.config {
         Some(cfg_path) => {
             let cfg_str = std::fs::read_to_string(cfg_path)
-                .with_context(|| format!("unable to read {}", cfg_path))?;
+                .with_context(|| format!("unable to read '{cfg_path}'"))?;
             toml::from_str(&cfg_str)
-                .with_context(|| format!("unable to deserialize config from {}", cfg_path))?
+                .with_context(|| format!("unable to deserialize config from '{cfg_path}'"))?
         }
         None => load_config(&manifest_path)?,
     };
 
     let (all_crates, store) = rayon::join(
         || {
-            log::info!("gathering crates for {}", manifest_path);
+            log::info!("gathering crates for {manifest_path}");
             cargo_about::get_all_crates(
                 &manifest_path,
                 args.no_default_features,
@@ -209,11 +209,11 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
     let output = generate(&summary, &resolved, &files, stream, &registry, &template)?;
 
     match args.output_file.as_ref() {
-        None => println!("{}", output),
-        Some(path) if path == Path::new("-") => println!("{}", output),
+        None => println!("{output}"),
+        Some(path) if path == Path::new("-") => println!("{output}"),
         Some(path) => {
             std::fs::write(path, output)
-                .with_context(|| format!("output file {} could not be written", path))?;
+                .with_context(|| format!("output file {path} could not be written"))?;
         }
     }
 
@@ -327,8 +327,7 @@ fn generate(
 
                         if license_texts.is_empty() {
                             log::debug!(
-                                "unable to find text for license '{}' for crate '{}', falling back to canonical text",
-                                license,
+                                "unable to find text for license '{license}' for crate '{}', falling back to canonical text",
                                 krate_license.krate
                             );
 
@@ -345,8 +344,7 @@ fn generate(
                     }
                     spdx::LicenseItem::Other { .. } => {
                         log::warn!(
-                            "{} has no license file for crate '{}'",
-                            license,
+                            "{license} has no license file for crate '{}'",
                             krate_license.krate
                         );
                     }
@@ -370,7 +368,7 @@ fn generate(
 
         let mut licenses: Vec<_> = licenses
             .into_iter()
-            .flat_map(|(_, v)| v.into_iter().map(|(_, v)| v))
+            .flat_map(|(_, v)| v.into_values())
             .collect();
 
         // Sort the krates that use a license lexicographically
@@ -384,8 +382,7 @@ fn generate(
 
     if num_errors > 0 {
         anyhow::bail!(
-            "encountered {} errors resolving licenses, unable to generate output",
-            num_errors
+            "encountered {num_errors} errors resolving licenses, unable to generate output"
         );
     }
 
