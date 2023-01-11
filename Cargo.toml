@@ -24,6 +24,9 @@ maintenance = { status = "actively-developed" }
 name = "cargo-about"
 path = "src/cargo-about/main.rs"
 
+[profile.release]
+strip = "debuginfo"
+
 [dependencies]
 # Colorization
 nu-ansi-term = "0.46"
