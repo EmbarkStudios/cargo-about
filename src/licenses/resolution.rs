@@ -100,6 +100,7 @@ pub fn resolve(
     licenses: &[KrateLicense<'_>],
     accepted: &[Licensee],
     krate_cfg: &std::collections::BTreeMap<String, config::KrateConfig>,
+    fail_on_missing: bool,
 ) -> (Files, Vec<Option<Resolved>>) {
     let mut files = codespan::Files::new();
 
@@ -133,7 +134,14 @@ pub fn resolve(
                     let mut unique_exprs = Vec::new();
 
                     if kl.license_files.is_empty() {
-                        log::warn!("unable to synthesize license expression for '{}': no `license` specified, and no license files were found", kl.krate);
+                        let msg = format!("unable to synthesize license expression for '{}': no `license` specified, and no license files were found", kl.krate);
+
+                        if fail_on_missing {
+                            resolved.diagnostics.push(Diagnostic::new(Severity::Error).with_message(msg));
+                        } else {
+                            log::warn!("{}", msg);
+                        }
+
                         return Some(resolved);
                     }
 
