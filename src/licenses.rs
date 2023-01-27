@@ -470,9 +470,9 @@ impl Gatherer {
     }
 }
 
-pub(crate) fn apply_clarification<'krate>(
+pub(crate) fn apply_clarification(
     git_cache: &fetch::GitCache,
-    krate: &'krate crate::Krate,
+    krate: &crate::Krate,
     clarification: &config::Clarification,
 ) -> anyhow::Result<Vec<LicenseFile>> {
     anyhow::ensure!(
@@ -531,7 +531,7 @@ pub(crate) fn apply_clarification<'krate>(
     for file in &clarification.files {
         let license_path = root.join(&file.path);
         let file_contents = std::fs::read_to_string(&license_path)
-            .with_context(|| format!("unable to read path '{}'", license_path))?;
+            .with_context(|| format!("unable to read path '{license_path}'"))?;
 
         push(&file_contents, file, license_path)?;
     }
@@ -543,8 +543,7 @@ pub(crate) fn apply_clarification<'krate>(
             .retrieve(krate, file, &clarification.override_git_commit)
             .with_context(|| {
                 format!(
-                    "unable to retrieve '{}' for crate '{}' from remote git host",
-                    license_path, krate
+                    "unable to retrieve '{license_path}' for crate '{krate}' from remote git host"
                 )
             })?;
 

@@ -34,14 +34,14 @@ impl Package {
 impl Debug for Package {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "Package")?;
-        writeln!(f, "{}:", CARGO_MANIFEST_FILENAME)?;
+        writeln!(f, "{CARGO_MANIFEST_FILENAME}:")?;
         writeln!(
             f,
             "{}",
             std::fs::read_to_string(self.dir.child(CARGO_MANIFEST_FILENAME))
                 .unwrap_or_else(|_| "Couldn't read file.".into())
         )?;
-        writeln!(f, "{}:", ABOUT_CONFIG_FILENAME)?;
+        writeln!(f, "{ABOUT_CONFIG_FILENAME}:")?;
         writeln!(
             f,
             "{}",
