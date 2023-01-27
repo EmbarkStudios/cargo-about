@@ -42,9 +42,10 @@ pub struct Args {
     /// Scan licenses for the entire workspace, not just the active package
     #[clap(long)]
     workspace: bool,
-    /// Generate an error code when failing to read, synthesize, or clarify a license expression for a crate
+    /// Exit with a non-zero exit code when failing to read, synthesize, or
+    /// clarify a license expression for a crate
     #[clap(long)]
-    fail_on_missing_license: bool,
+    fail: bool,
     /// The template(s) or template directory to use. Must either be a `.hbs`
     /// file, or have at least one `.hbs` file in it if it is a directory
     templates: PathBuf,
@@ -191,12 +192,8 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
         .with_confidence_threshold(args.threshold)
         .gather(&krates, &cfg);
 
-    let (files, resolved) = licenses::resolution::resolve(
-        &summary,
-        &cfg.accepted,
-        &cfg.crates,
-        args.fail_on_missing_license,
-    );
+    let (files, resolved) =
+        licenses::resolution::resolve(&summary, &cfg.accepted, &cfg.crates, args.fail);
 
     use term::termcolor::ColorChoice;
 

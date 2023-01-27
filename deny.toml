@@ -24,10 +24,7 @@ deny = [
     # crates should use cc, not big separate build systems
     { name = "cmake" },
 ]
-skip = [
-    # reqwest depends on 2 different versions if rustls is enabled :p
-    { name = "base64", version = "=0.13.1" },
-]
+skip = []
 
 [licenses]
 unlicensed = "deny"
