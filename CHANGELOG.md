@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.5.3] - 2023-01-27
 ### Fixed
 - [PR#213](https://github.com/EmbarkStudios/cargo-about/pull/213) resolved [#203](https://github.com/EmbarkStudios/cargo-about/issues/203) by adding the `--fail` option to the generate subcommand. Thanks [@mikayla-maki](https://github.com/mikayla-maki)!
 
@@ -120,7 +121,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.2...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.3...HEAD
+[0.5.3]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.2...0.5.3
 [0.5.2]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.1...0.5.2
 [0.5.1]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.0...0.5.1
 [0.5.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.4.8...0.5.0
