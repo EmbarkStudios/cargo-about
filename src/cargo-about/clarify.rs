@@ -170,10 +170,10 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
         let text = askalono::TextData::new(subsection);
         let scan_result = strategy
             .scan(&text)
-            .with_context(|| format!("failed to scan subsection for license:\n{}", subsection))?;
+            .with_context(|| format!("failed to scan subsection for license:\n{subsection}"))?;
 
         let found_license = scan_result.license.with_context(|| {
-            format!("failed to discern license for subsection:\n{}", subsection)
+            format!("failed to discern license for subsection:\n{subsection}")
         })?;
         let license = spdx::license_id(found_license.name).with_context(|| {
             format!(
@@ -182,7 +182,7 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
             )
         })?;
 
-        println!("--- {0}\n{1}\n{0} ---", ind, subsection);
+        println!("--- {ind}\n{subsection}\n{ind} ---");
         println!(
             "license: {} , confidence: {}",
             license.name, scan_result.score
@@ -232,7 +232,7 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
     let clar_toml =
         toml::to_string_pretty(&clarification).context("failed to serialize to toml")?;
 
-    println!("{}", clar_toml);
+    println!("{clar_toml}");
 
     Ok(())
 }
