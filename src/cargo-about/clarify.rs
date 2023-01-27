@@ -172,9 +172,9 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
             .scan(&text)
             .with_context(|| format!("failed to scan subsection for license:\n{subsection}"))?;
 
-        let found_license = scan_result.license.with_context(|| {
-            format!("failed to discern license for subsection:\n{subsection}")
-        })?;
+        let found_license = scan_result
+            .license
+            .with_context(|| format!("failed to discern license for subsection:\n{subsection}"))?;
         let license = spdx::license_id(found_license.name).with_context(|| {
             format!(
                 "detected license '{}' which is not a valid SPDX identifier",
