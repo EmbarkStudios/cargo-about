@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Fixed
+- [PR#213](https://github.com/EmbarkStudios/cargo-about/pull/213) resolved [#203](https://github.com/EmbarkStudios/cargo-about/issues/203) by adding the `--fail` option to the generate subcommand. Thanks [@mikayla-maki](https://github.com/mikayla-maki)!
+
 ## [0.5.2] - 2022-11-25
 ### Changed
 - [PR#205](https://github.com/EmbarkStudios/cargo-about/pull/205) updated to spdx 0.9 and therefore the SPDX license from version 3.14 -> 3.18. Thanks [@o0Ignition0o](https://github.com/o0Ignition0o)!
