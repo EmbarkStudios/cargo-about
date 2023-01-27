@@ -76,9 +76,9 @@ spdx = { version = "0.10", features = ["text"] }
 # Log timestamps
 time = "0.3"
 # Configuration parsing
-toml = "0.6"
+toml = "0.5"
 # Manipulation of cargo manifests for diagnostic purposes
-toml_edit = "0.18"
+toml_edit = "0.17"
 # Hashing
 twox-hash = "1.6"
 # Url parsing
