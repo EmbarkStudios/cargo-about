@@ -10,11 +10,15 @@ Enables all features when determining which crates to consider. Works for both s
 
 #### `--no-default-features` (single crate only)
 
-Disables the `default` feature for a crate when determing which crates to consider.
+Disables the `default` feature for a crate when determining which crates to consider.
 
 ### `--workspace`
 
 Scan licenses for the entire workspace, not just the active package.
+
+### `--fail`
+
+Exits with a non-zero exit code if any crate's license cannot be reasonably determined
 
 ## Options
 
