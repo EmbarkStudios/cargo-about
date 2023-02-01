@@ -8,6 +8,7 @@ targets = [
 ignore-build-dependencies = false
 ignore-dev-dependencies = false
 ignore-transitive-dependencies = false
+filter-noassertion = true
 workarounds = ["ring", "chrono", "rustls"]
 
 [codespan.clarify]
@@ -39,6 +40,9 @@ accepted = ["BSD-3-Clause"]
 
 [ring]
 accepted = ["ISC", "OpenSSL"]
+
+[unicode-ident]
+accepted = ["Unicode-DFS-2016"]
 
 [untrusted]
 accepted = ["ISC"]
