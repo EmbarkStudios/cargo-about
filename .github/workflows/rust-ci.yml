@@ -93,7 +93,7 @@ jobs:
         with:
           targets: x86_64-unknown-linux-musl
       - uses: Swatinem/rust-cache@v2
-      - run: cargo run --release -- generate --fail about.hbs
+      - run: cargo run --release --target x86_64-unknown-linux-musl -- generate --fail about.hbs
 
   # Build `mdBook` documentation and upload it as a temporary build artifact
   doc-book:
