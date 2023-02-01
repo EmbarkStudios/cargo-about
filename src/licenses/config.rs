@@ -212,6 +212,13 @@ pub struct Config {
     /// dependencies of crates in the workspace will be included
     #[serde(default)]
     pub ignore_transitive_dependencies: bool,
+    /// When using clearlydefined.io to gather harvested license information, it
+    /// will conservatively add `NOASSERTION` to any file that contains a license
+    /// that either cannot be identified, or diverges enough from the canonical
+    /// license text. This is not really useful in most cases, so this option
+    /// will remove the any instance of `NOASSERTION` to reduce noise.
+    #[serde(default)]
+    pub filter_noassertion: bool,
     /// The list of licenses we will use for all crates, in priority order
     #[serde(deserialize_with = "deserialize_licensee")]
     pub accepted: Vec<spdx::Licensee>,

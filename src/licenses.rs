@@ -353,7 +353,7 @@ impl Gatherer {
                                 // with a license or SPDX identifier, but like askalono it won't
                                 // detect all licenses if there are multiple in a single file
                                 match (cd_file.license, license_text) {
-                                    (Some(lic), license_text) => {
+                                    (Some(lic), license_text) if !cfg.filter_noassertion || !lic.contains("NOASSERTION") => {
                                         let license_expr = match spdx::Expression::parse_mode(&lic, spdx::ParseMode::LAX) {
                                             Ok(expr) => expr,
                                             Err(err) => {
