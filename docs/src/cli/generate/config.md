@@ -54,6 +54,12 @@ ignore-transitive-dependencies = true
 
 If true, will not attempt to lookup licensing information for any crate from <https://clearlydefined.io>, only user clarifications, workarounds, and local file scanning will be used to determine licensing information.
 
+## The `filter-noassertion` field (optional)
+
+If using <https://clearlydefined.io> to gather license information, that service will conservatively add [`NOASSERTION`](https://docs.clearlydefined.io/curation-guidelines) to the expression for files that contain license like data, but an SPDX license ID could not be confidently ascribed to it. This can result in the license expression for the crate to contain 1 or more `NOASSERTION` identifiers, which would require the user to accept that (not really valid) ID to pass the license check. By setting this field to `true`, files that have a `NOASSERTION` id will instead be scanned locally, which will generally either figure out the license, or else skip that file.
+
+For a real world example of what this looks like, [`webpki:0.22.0`](https://crates.io/crates/webpki/0.22.0)'s [LICENSE](https://clearlydefined.io/file/5b698ca13897be3afdb7174256fa1574f8c6892b8bea1a66dd6469d3fe27885a) file is an ISC license, however it has a preamble that is not part of the ISC license that trips up clearly defined's inspection, causing it to be attributed with `ISC AND NOASSERTION`. Locally scanning the file will be more tolerant and just attribute it with `ISC`.
+
 ## The `workarounds` field (optional)
 
 Unfortunately, not all crates properly package their licenses, or if they do, sometimes in a non-machine readable format, or in a few cases, are slightly wrong. These can be clarified manually via configuration, but some crates that are widely used in the Rust ecosystem have these issues, and rather than require that every cargo-about user who happens to have a dependency on one or more of these crates specify the same config to get it working, cargo-about instead includes a few built-in clarifications that can be opted into with a single config entry rather than redoing work.
