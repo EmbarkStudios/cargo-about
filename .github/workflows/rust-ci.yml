@@ -92,6 +92,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-unknown-linux-musl
+      - run: sudo apt install -y musl-tools
       - uses: Swatinem/rust-cache@v2
       - run: cargo run --release --target x86_64-unknown-linux-musl -- generate --fail about.hbs
 
