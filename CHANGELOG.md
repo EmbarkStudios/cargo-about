@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.5.4] - 2023-02-01
 ### Added
 - [PR#216](https://github.com/EmbarkStudios/cargo-about/pull/216) add the `filter-noassertion` configuration, allowing users to use local scanning for files that <clearlydefined.io> adds `NOASSERTION` license ids to so that they are properly attributed or ignored.
 
@@ -124,7 +125,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.3...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.4...HEAD
+[0.5.4]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.3...0.5.4
 [0.5.3]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.2...0.5.3
 [0.5.2]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.1...0.5.2
 [0.5.1]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.0...0.5.1
