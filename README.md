@@ -29,12 +29,10 @@ _Please Note: This is a tool that we use (and like!) and it makes sense to us to
 cargo install --locked cargo-about
 ```
 
-#### From the AUR
-
-Arch Linux users can install [cargo-about](https://aur.archlinux.org/packages/?O=0&K=cargo-about) from the AUR using an [AUR helper](https://wiki.archlinux.org/index.php/AUR_helpers). For example,
+#### On Arch Linux
 
 ```bash
-paru -S cargo-about
+pacman -S cargo-about
 ```
 
 ### Generate license information for your own project
