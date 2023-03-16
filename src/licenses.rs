@@ -284,7 +284,6 @@ impl Gatherer {
             }),
         );
 
-        //let threshold = std::cmp::min(std::cmp::max(10, (self.threshold * 100.0) as u8), 100);
         let collected: Vec<_> = reqs.par_bridge().filter_map(|req| {
             match self.cd_client.execute::<cd::definitions::GetResponse>(req) {
                 Ok(response) => {
@@ -375,7 +374,7 @@ impl Gatherer {
                                         // is, but at least have high confidence that it will result in a match
                                         scan::check_is_license_file(path.clone(), license_text, strategy, self.threshold)
                                             .or_else(|| {
-                                                log::warn!("clearlydefined detected license in '{path}' for crate '{krate}', but it we failed to determine what its license was");
+                                                log::warn!("clearlydefined detected license in '{path}' for crate '{krate}', but we failed to determine what its license was");
                                                 None
                                             })
                                     }
