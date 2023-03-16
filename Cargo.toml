@@ -29,7 +29,7 @@ strip = "debuginfo"
 
 [dependencies]
 # Colorization
-nu-ansi-term = "0.46"
+nu-ansi-term = "0.47"
 # Error facilities
 anyhow = "1.0"
 # License detection
@@ -90,4 +90,4 @@ assert_fs = "1.0.7"
 # Easy command initialization and assertions
 assert_cmd = "2.0"
 # Composable first-order predicate functions
-predicates = "2.1"
+predicates = "3.0"
