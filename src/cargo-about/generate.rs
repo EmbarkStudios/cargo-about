@@ -187,9 +187,14 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
         }
     };
 
-    let client = cd::client::Client::new();
-    let summary = licenses::Gatherer::with_store(std::sync::Arc::new(store), client)
+    let client = reqwest::blocking::ClientBuilder::new()
+        .timeout(std::time::Duration::from_secs(
+            cfg.clearly_defined_timeout_secs.unwrap_or(30),
+        ))
+        .build()?;
+    let summary = licenses::Gatherer::with_store(std::sync::Arc::new(store), client.into())
         .with_confidence_threshold(args.threshold)
+        .with_max_depth(cfg.max_depth.map(|md| md as _))
         .gather(&krates, &cfg);
 
     let (files, resolved) =

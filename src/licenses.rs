@@ -124,19 +124,26 @@ pub struct Gatherer {
     store: Arc<LicenseStore>,
     cd_client: cd::client::Client,
     threshold: f32,
+    max_depth: Option<usize>,
 }
 
 impl Gatherer {
     pub fn with_store(store: Arc<LicenseStore>, client: cd::client::Client) -> Self {
         Self {
             store,
-            threshold: 0.8,
             cd_client: client,
+            threshold: 0.8,
+            max_depth: None,
         }
     }
 
     pub fn with_confidence_threshold(mut self, threshold: f32) -> Self {
         self.threshold = threshold.clamp(0.0, 1.0);
+        self
+    }
+
+    pub fn with_max_depth(mut self, max_depth: Option<usize>) -> Self {
+        self.max_depth = max_depth;
         self
     }
 
@@ -284,7 +291,6 @@ impl Gatherer {
             }),
         );
 
-        //let threshold = std::cmp::min(std::cmp::max(10, (self.threshold * 100.0) as u8), 100);
         let collected: Vec<_> = reqs.par_bridge().filter_map(|req| {
             match self.cd_client.execute::<cd::definitions::GetResponse>(req) {
                 Ok(response) => {
@@ -375,7 +381,7 @@ impl Gatherer {
                                         // is, but at least have high confidence that it will result in a match
                                         scan::check_is_license_file(path.clone(), license_text, strategy, self.threshold)
                                             .or_else(|| {
-                                                log::warn!("clearlydefined detected license in '{path}' for crate '{krate}', but it we failed to determine what its license was");
+                                                log::warn!("clearlydefined detected license in '{path}' for crate '{krate}', but we failed to determine what its license was");
                                                 None
                                             })
                                     }
@@ -411,6 +417,7 @@ impl Gatherer {
         licensed_krates: &mut Vec<KrateLicense<'k>>,
     ) {
         let threshold = self.threshold;
+        let max_depth = self.max_depth;
 
         let mut gathered: Vec<_> = krates
             .krates()
@@ -425,18 +432,19 @@ impl Gatherer {
 
                 let root_path = krate.manifest_path.parent().unwrap();
 
-                let mut license_files = match scan::scan_files(root_path, strategy, threshold) {
-                    Ok(files) => files,
-                    Err(err) => {
-                        log::error!(
-                            "unable to scan for license files for crate '{} - {}': {err}",
-                            krate.name,
-                            krate.version,
-                        );
+                let mut license_files =
+                    match scan::scan_files(root_path, strategy, threshold, max_depth) {
+                        Ok(files) => files,
+                        Err(err) => {
+                            log::error!(
+                                "unable to scan for license files for crate '{} - {}': {err}",
+                                krate.name,
+                                krate.version,
+                            );
 
-                        Vec::new()
-                    }
-                };
+                            Vec::new()
+                        }
+                    };
 
                 // Condense each license down to the best candidate if
                 // multiple are found

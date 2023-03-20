@@ -6,6 +6,7 @@ pub(crate) fn scan_files(
     root_dir: &Path,
     strat: &askalono::ScanStrategy<'_>,
     threshold: f32,
+    max_depth: Option<usize>,
 ) -> anyhow::Result<Vec<LicenseFile>> {
     let types = {
         let mut tb = ignore::types::TypesBuilder::new();
@@ -17,6 +18,7 @@ pub(crate) fn scan_files(
     let walker = ignore::WalkBuilder::new(root_dir)
         .standard_filters(true)
         .follow_links(true)
+        .max_depth(max_depth)
         .types(types)
         .build();
 
