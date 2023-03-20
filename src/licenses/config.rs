@@ -205,6 +205,9 @@ pub struct Config {
     /// Sets the timeout for requests to clearlydefined.io if it is used. Defaults
     /// to 30 seconds.
     pub clearly_defined_timeout_secs: Option<u64>,
+    /// Sets the maximum depth from the root of each crate that will be scanned
+    /// for license files.
+    pub max_depth: Option<u32>,
     /// Ignores any build dependencies in the graph
     #[serde(default)]
     pub ignore_build_dependencies: bool,
