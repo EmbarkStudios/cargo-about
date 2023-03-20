@@ -432,18 +432,19 @@ impl Gatherer {
 
                 let root_path = krate.manifest_path.parent().unwrap();
 
-                let mut license_files = match scan::scan_files(root_path, strategy, threshold, max_depth) {
-                    Ok(files) => files,
-                    Err(err) => {
-                        log::error!(
-                            "unable to scan for license files for crate '{} - {}': {err}",
-                            krate.name,
-                            krate.version,
-                        );
+                let mut license_files =
+                    match scan::scan_files(root_path, strategy, threshold, max_depth) {
+                        Ok(files) => files,
+                        Err(err) => {
+                            log::error!(
+                                "unable to scan for license files for crate '{} - {}': {err}",
+                                krate.name,
+                                krate.version,
+                            );
 
-                        Vec::new()
-                    }
-                };
+                            Vec::new()
+                        }
+                    };
 
                 // Condense each license down to the best candidate if
                 // multiple are found
