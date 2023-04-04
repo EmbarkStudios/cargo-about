@@ -19,8 +19,8 @@ mod spdx_expr {
     where
         D: de::Deserializer<'de>,
     {
-        <&'de str>::deserialize(deserializer)
-            .and_then(|value| Expression::parse(value).map_err(de::Error::custom))
+        <String>::deserialize(deserializer)
+            .and_then(|value| Expression::parse(&value).map_err(de::Error::custom))
     }
 }
 mod spdx_expr_opt {
@@ -42,9 +42,9 @@ mod spdx_expr_opt {
     where
         D: de::Deserializer<'de>,
     {
-        match <Option<&'de str>>::deserialize(deserializer)? {
+        match <Option<String>>::deserialize(deserializer)? {
             Some(value) => Ok(Some(
-                spdx::Expression::parse(value).map_err(de::Error::custom)?,
+                spdx::Expression::parse(&value).map_err(de::Error::custom)?,
             )),
             None => Ok(None),
         }
@@ -73,9 +73,8 @@ where
         {
             let mut vec = Vec::new();
 
-            // Update the max while there are additional values.
-            while let Some(v) = seq.next_element()? {
-                let lic = spdx::Licensee::parse(v).map_err(|e| {
+            while let Some(v) = seq.next_element::<String>()? {
+                let lic = spdx::Licensee::parse(&v).map_err(|e| {
                     de::Error::custom(format!("'{v}' is not a valid SPDX licensee: {e}"))
                 })?;
 

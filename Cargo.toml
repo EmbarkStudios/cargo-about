@@ -52,7 +52,7 @@ home = "0.5"
 # Directory walking
 ignore = "0.4"
 # Dependency graphing
-krates = "0.12"
+krates = "0.13"
 # Logging macros
 log = "0.4"
 # Better heap allocator over system one (usually)
@@ -76,9 +76,9 @@ spdx = { version = "0.10", features = ["text"] }
 # Log timestamps
 time = "0.3"
 # Configuration parsing
-toml = "0.5"
+toml = "0.7"
 # Manipulation of cargo manifests for diagnostic purposes
-toml_edit = "0.17"
+toml_edit = "0.19"
 # Hashing
 twox-hash = "1.6"
 # Url parsing

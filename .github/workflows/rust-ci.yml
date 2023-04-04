@@ -62,20 +62,17 @@ jobs:
 
   build-aarch64-apple-darwin:
     name: Build aarch64-apple-darwin
-    strategy:
-      matrix:
-        include:
-          - os: macOS-12
-          - target: aarch64-apple-darwin
-    runs-on: ${{ matrix.os }}
+    runs-on: macOS-12
+    env:
+      TRIPLE: aarch64-apple-darwin
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: ${{ env.TRIPLE }}
       - uses: Swatinem/rust-cache@v2
-      - run: cargo fetch --target ${{ matrix.target }}
-      - run: cargo build --release --target ${{ matrix.target }}
+      - run: cargo fetch --target ${{ env.TRIPLE }}
+      - run: cargo build --release --target ${{ env.TRIPLE }}
 
   deny-check:
     name: cargo-deny
