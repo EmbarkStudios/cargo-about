@@ -14,8 +14,8 @@ unmaintained = "deny"
 ignore = [
     # atty potential misaligned pointer, not an issue
     "RUSTSEC-2021-0145",
-    # remove_dir_all vuln, dev-dependency, doesn't affect users
-    "RUSTSEC-2023-0018",
+    # rmp-serde, only used to deserialize a valid utf-8 config
+    "RUSTSEC-2022-0092",
 ]
 
 [bans]

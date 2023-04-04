@@ -73,9 +73,8 @@ where
         {
             let mut vec = Vec::new();
 
-            // Update the max while there are additional values.
-            while let Some(v) = seq.next_element()? {
-                let lic = spdx::Licensee::parse(v).map_err(|e| {
+            while let Some(v) = seq.next_element::<String>()? {
+                let lic = spdx::Licensee::parse(&v).map_err(|e| {
                     de::Error::custom(format!("'{v}' is not a valid SPDX licensee: {e}"))
                 })?;
 
