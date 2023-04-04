@@ -64,15 +64,15 @@ jobs:
     name: Build aarch64-apple-darwin
     runs-on: macOS-12
     env:
-      triple: aarch64-apple-darwin
+      TRIPLE: aarch64-apple-darwin
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ env.triple }}
+          targets: ${{ env.TRIPLE }}
       - uses: Swatinem/rust-cache@v2
-      - run: cargo fetch --target $triple
-      - run: cargo build --release --target $triple
+      - run: cargo fetch --target ${{ env.TRIPLE }}
+      - run: cargo build --release --target ${{ env.TRIPLE }}
 
   deny-check:
     name: cargo-deny
