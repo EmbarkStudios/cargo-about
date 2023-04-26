@@ -1,12 +1,29 @@
-use anyhow::{self, bail, Context as _};
+use anyhow::{Context as _};
 use cargo_about::licenses;
 use cargo_about::licenses::LicenseInfo;
 use codespan_reporting::term;
-use handlebars::Handlebars;
 use krates::cm::Package;
 use krates::{Utf8Path as Path, Utf8PathBuf as PathBuf};
 use serde::Serialize;
-use std::collections::BTreeMap;
+use std::{fmt, collections::BTreeMap};
+
+#[derive(clap::ValueEnum, Copy, Clone, Debug, Default)]
+pub enum OutputFormat {
+    /// Uses one or more handlebars templates to transform JSON to the output
+    #[default]
+    Handlebars,
+    /// Outputs the raw JSON of the discovered licenses
+    Json,
+}
+
+impl fmt::Display for OutputFormat {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Handlebars => f.write_str("handlebars"),
+            Self::Json => f.write_str("json"),
+        }
+    }
+}
 
 #[derive(clap::Parser, Debug)]
 pub struct Args {
@@ -23,7 +40,7 @@ pub struct Args {
     /// single template file to `templates` this is not used.
     #[clap(short, long)]
     name: Option<String>,
-    /// A file to write the generated output to.  Typically an .html file.
+    /// A file to write the generated output to. Typically an .html file.
     #[clap(short, long)]
     output_file: Option<PathBuf>,
     /// Space-separated list of features to activate
@@ -46,9 +63,13 @@ pub struct Args {
     /// clarify a license expression for a crate
     #[clap(long)]
     fail: bool,
+    /// The format of the output, defaults to `handlebars`.
+    #[clap(long, default_value_t)]
+    format: OutputFormat,
     /// The template(s) or template directory to use. Must either be a `.hbs`
-    /// file, or have at least one `.hbs` file in it if it is a directory
-    templates: PathBuf,
+    /// file, or have at least one `.hbs` file in it if it is a directory.
+    /// Required if `--format` is not `json`
+    templates: Option<PathBuf>,
 }
 
 fn load_config(manifest_path: &Path) -> anyhow::Result<cargo_about::licenses::config::Config> {
@@ -103,9 +124,7 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
         cwd
     };
 
-    if !manifest_path.exists() {
-        bail!("cargo manifest path '{manifest_path}' does not exist");
-    }
+    anyhow::ensure!(manifest_path.exists(), "cargo manifest path '{manifest_path}' does not exist");
 
     let cfg = match &args.config {
         Some(cfg_path) => {
@@ -117,75 +136,81 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
         None => load_config(&manifest_path)?,
     };
 
-    let (all_crates, store) = rayon::join(
-        || {
+    let mut all_crates = None;
+    let mut store = None;
+    let mut templates = None;
+
+    anyhow::ensure!(matches!(args.format, OutputFormat::Json) || args.templates.is_some(), "handlebars template(s) must be specified when using handlebars output format");
+
+    rayon::scope(|s| {
+        s.spawn(|_| {
             log::info!("gathering crates for {manifest_path}");
-            cargo_about::get_all_crates(
+            all_crates = Some(cargo_about::get_all_crates(
                 &manifest_path,
                 args.no_default_features,
                 args.all_features,
                 args.features.clone(),
                 args.workspace,
                 &cfg,
-            )
-        },
-        || {
+            ));
+        });
+        s.spawn(|_| {
             log::info!("loading license store");
-            cargo_about::licenses::store_from_cache()
-        },
-    );
+            store = Some(cargo_about::licenses::store_from_cache());
+        });
+        s.spawn(|_| {
+            let Some(template_path) = args.templates.as_ref() else {
+                return;
+            };
 
-    let krates = all_crates?;
-    let store = store?;
+            let load_templates = || -> anyhow::Result<_> {
+                let mut reg = Handlebars::new();
+        
+                anyhow::ensure!(template_path.exists(), "template(s) path '{template_path}' does not exist");
+        
+                use handlebars::*;
+        
+                reg.register_helper(
+                    "json",
+                    Box::new(
+                        |h: &Helper<'_, '_>,
+                         _r: &Handlebars<'_>,
+                         _: &Context,
+                         _rc: &mut RenderContext<'_, '_>,
+                         out: &mut dyn Output|
+                         -> HelperResult {
+                            let param = h
+                                .param(0)
+                                .ok_or_else(|| RenderError::new("param not found"))?;
+        
+                            out.write(&serde_json::to_string_pretty(param.value())?)?;
+                            Ok(())
+                        },
+                    ),
+                );
+        
+                if template_path.is_dir() {
+                    reg.register_templates_directory(".hbs", template_path)?;
+        
+                    anyhow::ensure!(!reg.get_templates().is_empty(), "template path '{template_path}' did not contain any hbs files");
+        
+                    Ok((reg, args.name.context("specified a directory for templates, but did not provide the name of the template to use")?))
+                } else {
+                    // Ignore the extension, if the user says they want to use a specific file, that's on them
+                    reg.register_template_file("tmpl", template_path)?;
+        
+                    Ok((reg, "tmpl".to_owned()))
+                }
+            };
+
+            templates = Some(load_templates());
+        });
+    });
+
+    let krates = all_crates.unwrap()?;
+    let store = store.unwrap()?;
 
     log::info!("gathered {} crates", krates.len());
-
-    let (registry, template) = {
-        let mut reg = Handlebars::new();
-
-        if !args.templates.exists() {
-            bail!("template(s) path {} does not exist", args.templates);
-        }
-
-        use handlebars::*;
-
-        reg.register_helper(
-            "json",
-            Box::new(
-                |h: &Helper<'_, '_>,
-                 _r: &Handlebars<'_>,
-                 _: &Context,
-                 _rc: &mut RenderContext<'_, '_>,
-                 out: &mut dyn Output|
-                 -> HelperResult {
-                    let param = h
-                        .param(0)
-                        .ok_or_else(|| RenderError::new("param not found"))?;
-
-                    out.write(&serde_json::to_string_pretty(param.value())?)?;
-                    Ok(())
-                },
-            ),
-        );
-
-        if args.templates.is_dir() {
-            reg.register_templates_directory(".hbs", &args.templates)?;
-
-            if reg.get_templates().is_empty() {
-                bail!(
-                    "template path {} did not contain any hbs files",
-                    args.templates
-                );
-            }
-
-            (reg, args.name.context("specified a directory for templates, but did not provide the name of the template to use")?)
-        } else {
-            // Ignore the extension, if the user says they want to use a specific file, that's on them
-            reg.register_template_file("tmpl", args.templates)?;
-
-            (reg, "tmpl".to_owned())
-        }
-    };
 
     let client = reqwest::blocking::ClientBuilder::new()
         .timeout(std::time::Duration::from_secs(
@@ -216,7 +241,14 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
         crate::Color::Never => ColorChoice::Never,
     });
 
-    let output = generate(&summary, &resolved, &files, stream, &registry, &template)?;
+    let output = if let Some(templates) = templates {
+        let (registry, template_name) = templates?;
+        let input = generate(&summary, &resolved, &files, stream)?;
+        registry.render(&template_name, &input)?
+    } else {
+        let input = generate(&summary, &resolved, &files, stream)?;
+        serde_json::to_string(&input)?
+    };
 
     match args.output_file.as_ref() {
         None => println!("{output}"),
@@ -267,14 +299,12 @@ struct Input<'a> {
     crates: Vec<PackageLicense<'a>>,
 }
 
-fn generate(
-    nfos: &[licenses::KrateLicense<'_>],
+fn generate<'kl>(
+    nfos: &[licenses::KrateLicense<'kl>],
     resolved: &[Option<licenses::Resolved>],
     files: &licenses::resolution::Files,
     stream: term::termcolor::StandardStream,
-    hbs: &Handlebars<'_>,
-    template_name: &str,
-) -> anyhow::Result<String> {
+) -> anyhow::Result<Input<'kl>> {
     use cargo_about::licenses::resolution::Severity;
 
     let mut num_errors = 0;
@@ -428,13 +458,11 @@ fn generate(
             license: nfo.lic_info.to_string(),
         })
         .collect();
-    let nput = Input {
+    Ok(Input {
         overview,
         licenses,
         crates,
-    };
-
-    Ok(hbs.render(template_name, &nput)?)
+    })
 }
 
 #[derive(Serialize)]
