@@ -12,7 +12,7 @@ fn fails_when_templates_arg_missing() -> Result<()> {
         .assert()
         .failure()
         .stderr(predicate::str::is_match(
-            r"required arguments were not provided:\s*<TEMPLATES>",
+            r"handlebars template\(s\) must be specified when using handlebars output format",
         )?);
 
     Ok(())
@@ -73,7 +73,7 @@ fn fails_when_template_file_missing() -> Result<()> {
         .assert()
         .failure()
         .stderr(predicate::str::contains(
-            "template(s) path non-existent-about.hbs does not exist",
+            "template(s) path 'non-existent-about.hbs' does not exist",
         ));
 
     Ok(())
