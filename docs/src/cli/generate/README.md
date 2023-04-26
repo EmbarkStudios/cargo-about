@@ -4,11 +4,11 @@ The generate subcommand is the primary subcommand of `cargo-about`. It attempts 
 
 ## Flags
 
-#### `--all-features` (single crate or workspace)
+### `--all-features` (single crate or workspace)
 
 Enables all features when determining which crates to consider. Works for both single crates and workspaces.
 
-#### `--no-default-features` (single crate only)
+### `--no-default-features` (single crate only)
 
 Disables the `default` feature for a crate when determining which crates to consider.
 
@@ -50,8 +50,12 @@ A file to write the generated output to. Typically an `.html` file.
 
 The confidence threshold required for license files to be positively identified: `0.0 - 1.0`
 
+#### `--format <json|handlebars>` (default: `handlebars`)
+
+The format to output the license + crate data in.
+
 ## Args
 
 ### `<templates>`
 
-The template(s) or template directory to use. Must either be a `.hbs` file, or have at least one `.hbs` file in it if it is a directory.
+The template(s) or template directory to use. Must either be a `.hbs` file, or have at least one `.hbs` file in it if it is a directory. Required if `--format = handlebars` (the default).

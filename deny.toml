@@ -25,8 +25,17 @@ deny = [
     { name = "openssl-sys" },
     # crates should use cc, not big separate build systems
     { name = "cmake" },
+    # Completely unnecessary
+    { name = "windows" },
 ]
-skip = []
+skip = [
+    # ignore pulls in 2 versions, regex uses >1, globset uses <1
+    { name = "aho-corasick", version = "=0.7.20" },
+]
+skip-tree = [
+    # So tired
+    { name = "windows-sys" },
+]
 
 [licenses]
 unlicensed = "deny"

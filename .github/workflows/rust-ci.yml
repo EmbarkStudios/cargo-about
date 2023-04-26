@@ -35,7 +35,7 @@ jobs:
     name: Test
     strategy:
       matrix:
-        os: [ubuntu-22.04, macOS-12, windows-2022]
+        os: [ubuntu-22.04, macos-13-xl, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -62,7 +62,7 @@ jobs:
 
   build-aarch64-apple-darwin:
     name: Build aarch64-apple-darwin
-    runs-on: macOS-12
+    runs-on: macos-13-xl
     env:
       TRIPLE: aarch64-apple-darwin
     steps:

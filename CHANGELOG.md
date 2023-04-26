@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [PR#219](https://github.com/EmbarkStudios/cargo-about/pull/219) added the `clearly-defined-timeout-secs` config option to specify a different timeout when attempting to gather license information from clearly defined. The default is 30 seconds.
 - [PR#219](https://github.com/EmbarkStudios/cargo-about/pull/219) added the `max-depth` config option to specify the maximum depth from a crate's root that are searched for licenses. Most license files will be located at or near the root, so this option allows reducing the time, CPU, and memory costs associated with in-depth file scanning while still retaining the benefits of local file scanning.
+- [PR#224](https://github.com/EmbarkStudios/cargo-about/pull/224) added the `--format` option, allowing users to specify `json` to output the raw JSON used by the (previously) required handlebars templates, closing [#196](https://github.com/EmbarkStudios/cargo-about/issues/196).
 
 ### Changed
 - [PR#219](https://github.com/EmbarkStudios/cargo-about/pull/219) updated dependencies.
