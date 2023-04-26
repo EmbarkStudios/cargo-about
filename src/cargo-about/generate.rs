@@ -1,11 +1,11 @@
-use anyhow::{Context as _};
+use anyhow::Context as _;
 use cargo_about::licenses;
 use cargo_about::licenses::LicenseInfo;
 use codespan_reporting::term;
 use krates::cm::Package;
 use krates::{Utf8Path as Path, Utf8PathBuf as PathBuf};
 use serde::Serialize;
-use std::{fmt, collections::BTreeMap};
+use std::{collections::BTreeMap, fmt};
 
 #[derive(clap::ValueEnum, Copy, Clone, Debug, Default)]
 pub enum OutputFormat {
@@ -124,7 +124,10 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
         cwd
     };
 
-    anyhow::ensure!(manifest_path.exists(), "cargo manifest path '{manifest_path}' does not exist");
+    anyhow::ensure!(
+        manifest_path.exists(),
+        "cargo manifest path '{manifest_path}' does not exist"
+    );
 
     let cfg = match &args.config {
         Some(cfg_path) => {
@@ -140,7 +143,10 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
     let mut store = None;
     let mut templates = None;
 
-    anyhow::ensure!(matches!(args.format, OutputFormat::Json) || args.templates.is_some(), "handlebars template(s) must be specified when using handlebars output format");
+    anyhow::ensure!(
+        matches!(args.format, OutputFormat::Json) || args.templates.is_some(),
+        "handlebars template(s) must be specified when using handlebars output format"
+    );
 
     rayon::scope(|s| {
         s.spawn(|_| {
@@ -165,11 +171,11 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
 
             let load_templates = || -> anyhow::Result<_> {
                 let mut reg = Handlebars::new();
-        
+
                 anyhow::ensure!(template_path.exists(), "template(s) path '{template_path}' does not exist");
-        
+
                 use handlebars::*;
-        
+
                 reg.register_helper(
                     "json",
                     Box::new(
@@ -182,23 +188,23 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
                             let param = h
                                 .param(0)
                                 .ok_or_else(|| RenderError::new("param not found"))?;
-        
+
                             out.write(&serde_json::to_string_pretty(param.value())?)?;
                             Ok(())
                         },
                     ),
                 );
-        
+
                 if template_path.is_dir() {
                     reg.register_templates_directory(".hbs", template_path)?;
-        
+
                     anyhow::ensure!(!reg.get_templates().is_empty(), "template path '{template_path}' did not contain any hbs files");
-        
+
                     Ok((reg, args.name.context("specified a directory for templates, but did not provide the name of the template to use")?))
                 } else {
                     // Ignore the extension, if the user says they want to use a specific file, that's on them
                     reg.register_template_file("tmpl", template_path)?;
-        
+
                     Ok((reg, "tmpl".to_owned()))
                 }
             };
