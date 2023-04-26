@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.5.6] - 2023-04-26
 ## [0.5.5] - 2023-03-20
 ### Added
 - [PR#219](https://github.com/EmbarkStudios/cargo-about/pull/219) added the `clearly-defined-timeout-secs` config option to specify a different timeout when attempting to gather license information from clearly defined. The default is 30 seconds.
@@ -134,7 +135,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.5...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.6...HEAD
+[0.5.6]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.5...0.5.6
 [0.5.5]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.4...0.5.5
 [0.5.4]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.3...0.5.4
 [0.5.3]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.2...0.5.3
