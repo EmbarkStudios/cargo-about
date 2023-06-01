@@ -42,7 +42,7 @@ The path of the Cargo.toml for the root crate, defaults to the current crate or 
 
 The name of the template to use when rendering. If only passing a single template file to [`templates`](#templates) this is not used.
 
-#### `-o, --output`
+#### `-o, --output-file`
 
 A file to write the generated output to. Typically an `.html` file.
 
