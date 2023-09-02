@@ -29,8 +29,11 @@ deny = [
     { name = "windows" },
 ]
 skip = [
-    # ignore pulls in 2 versions, regex uses >1, globset uses <1
-    { name = "aho-corasick", version = "=0.7.20" },
+    { name = "bitflags", version = "=1.3.2" },
+    # reqwest/hyper use older versions :p
+    { name = "hashbrown", version = "=0.12.3" },
+    { name = "indexmap", version = "=1.9.3" },
+    { name = "socket2", version = "=0.5.3" },
 ]
 skip-tree = [
     # So tired

@@ -29,7 +29,7 @@ strip = "debuginfo"
 
 [dependencies]
 # Colorization
-nu-ansi-term = "0.47"
+nu-ansi-term = "0.49"
 # Error facilities
 anyhow = "1.0"
 # License detection
@@ -52,7 +52,7 @@ home = "0.5"
 # Directory walking
 ignore = "0.4"
 # Dependency graphing
-krates = "0.13"
+krates = "0.15"
 # Logging macros
 log = "0.4"
 # Better heap allocator over system one (usually)
