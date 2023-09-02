@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Changed
+- [PR#231](https://github.com/EmbarkStudios/cargo-about/pull/231) updated dependencies, which included fixing [#225](https://github.com/EmbarkStudios/cargo-about/issues/225) by removing yanked crate versions, as well as getting rid of an [advisory](https://rustsec.org/advisories/RUSTSEC-2023-0052).
+- [PR#231](https://github.com/EmbarkStudios/cargo-about/pull/231) updated MSRV to 1.70.0 because a dependency required it, but it also allowed use of the `IsTerminal` trait, meaning we could get rid of `atty` and the associated [advisory](https://rustsec.org/advisories/RUSTSEC-2021-0145).
+
 ## [0.5.6] - 2023-04-26
 ### Added
 - [PR#224](https://github.com/EmbarkStudios/cargo-about/pull/224) added the `--format` option, allowing users to specify `json` to output the raw JSON used by the (previously) required handlebars templates, closing [#196](https://github.com/EmbarkStudios/cargo-about/issues/196).
