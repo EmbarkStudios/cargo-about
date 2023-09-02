@@ -34,8 +34,6 @@ nu-ansi-term = "0.49"
 anyhow = "1.0"
 # License detection
 askalono = "0.4"
-# TTY detection
-atty = "0.2"
 # API helpers for api.clearlydefined.io
 cd = { version = "0.2", features = ["blocking", "rustls"] }
 # Argument parsing

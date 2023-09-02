@@ -237,7 +237,8 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
         crate::Color::Auto => {
             // The termcolor crate doesn't check the stream to see if it's a TTY
             // which doesn't really fit with how the rest of the coloring works
-            if atty::is(atty::Stream::Stderr) {
+            use std::io::IsTerminal;
+            if std::io::stderr().is_terminal() {
                 ColorChoice::Auto
             } else {
                 ColorChoice::Never
