@@ -30,9 +30,10 @@ pub(crate) fn apply_workarounds<'krate>(
     for workaround in &cfg.workarounds {
         let Some(retrieve_workaround) = WORKAROUNDS
             .iter()
-            .find_map(|(name, func)| (workaround == *name).then_some(func)) else {
-                log::warn!("no workaround registered for the '{workaround}' crate");
-                continue;
+            .find_map(|(name, func)| (workaround == *name).then_some(func))
+        else {
+            log::warn!("no workaround registered for the '{workaround}' crate");
+            continue;
         };
 
         for krate in krates.krates() {
