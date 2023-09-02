@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.5.7] - 2023-09-02
 ### Changed
 - [PR#231](https://github.com/EmbarkStudios/cargo-about/pull/231) updated dependencies, which included fixing [#225](https://github.com/EmbarkStudios/cargo-about/issues/225) by removing yanked crate versions, as well as getting rid of an [advisory](https://rustsec.org/advisories/RUSTSEC-2023-0052).
 - [PR#231](https://github.com/EmbarkStudios/cargo-about/pull/231) updated MSRV to 1.70.0 because a dependency required it, but it also allowed use of the `IsTerminal` trait, meaning we could get rid of `atty` and the associated [advisory](https://rustsec.org/advisories/RUSTSEC-2021-0145).
@@ -141,7 +142,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.6...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.7...HEAD
+[0.5.7]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.6...0.5.7
 [0.5.6]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.5...0.5.6
 [0.5.5]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.4...0.5.5
 [0.5.4]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.3...0.5.4
