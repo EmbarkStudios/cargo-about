@@ -50,5 +50,8 @@ accepted = ["ISC"]
 [webpki]
 accepted = ["ISC", "BSD-3-Clause"]
 
+[rustls-webpki]
+accepted = ["ISC"]
+
 [webpki-roots]
 accepted = ["MPL-2.0"]
