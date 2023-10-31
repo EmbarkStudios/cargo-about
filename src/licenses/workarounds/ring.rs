@@ -1,5 +1,6 @@
 use super::ClarificationFile;
 use anyhow::Context as _;
+use krates::cm::semver::Version;
 
 pub fn get(krate: &crate::Krate) -> anyhow::Result<Option<super::Clarification>> {
     if krate.name != "ring" {
@@ -8,8 +9,9 @@ pub fn get(krate: &crate::Krate) -> anyhow::Result<Option<super::Clarification>>
 
     // Older versions of ring tend to get yanked so instead of covering all versions
     // we just cover the current stable version
+    let min_version = Version::new(0, 16, 0);
     anyhow::ensure!(
-        krate.version.minor == 16,
+        krate.version >= min_version,
         "version {} is not covered, please file a PR to add it",
         krate.version
     );
