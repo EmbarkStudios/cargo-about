@@ -453,7 +453,12 @@ fn generate<'kl>(
         }
     }
 
-    overview.iter_mut().for_each(|i| i.count = i.indices.len());
+    overview.iter_mut().for_each(|i| {
+        i.count = i
+            .indices
+            .iter()
+            .fold(0, |acc, ndx| acc + licenses[*ndx].used_by.len())
+    });
     // Show the most used licenses first
     overview.sort_by(|a, b| b.count.cmp(&a.count));
 
