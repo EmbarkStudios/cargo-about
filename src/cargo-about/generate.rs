@@ -437,10 +437,14 @@ fn generate<'kl>(
 
     for (ndx, lic) in licenses.iter().enumerate() {
         match overview.binary_search_by(|i| i.id.cmp(&lic.id)) {
-            Ok(i) => overview[i].indices.push(ndx),
+            Ok(i) => {
+                let ov = &mut overview[i];
+                ov.indices.push(ndx);
+                ov.count += lic.used_by.len();
+            }
             Err(i) => {
                 let mut ls = LicenseSet {
-                    count: 0,
+                    count: lic.used_by.len(),
                     name: lic.name.clone(),
                     id: lic.id.clone(),
                     indices: Vec::with_capacity(10),
@@ -453,12 +457,6 @@ fn generate<'kl>(
         }
     }
 
-    overview.iter_mut().for_each(|i| {
-        i.count = i
-            .indices
-            .iter()
-            .fold(0, |acc, ndx| acc + licenses[*ndx].used_by.len())
-    });
     // Show the most used licenses first
     overview.sort_by(|a, b| b.count.cmp(&a.count));
 
