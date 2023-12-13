@@ -28,14 +28,11 @@ deny = [
 ]
 skip = [
     { name = "bitflags", version = "=1.3.2" },
-    # reqwest/hyper use older versions :p
-    { name = "hashbrown", version = "=0.12.3" },
-    { name = "indexmap", version = "=1.9.3" },
-    { name = "socket2", version = "=0.5.3" },
+    { name = "socket2", version = "=0.4.10" },
 ]
 skip-tree = [
     # So tired
-    { name = "windows-sys" },
+    #{ name = "windows-sys" },
 ]
 
 [licenses]
