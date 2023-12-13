@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [PR#234](https://github.com/EmbarkStudios/cargo-about/pull/234) relaxed the version restriction on the `ring` workaround to account for the 0.17.* versions.
 - [PR#236](https://github.com/EmbarkStudios/cargo-about/pull/236) fixed an issue where the `count` field for each license was the number of unique licenses, rather than the number of unique crates using that license, as intended.
 - [PR#240](https://github.com/EmbarkStudios/cargo-about/pull/240) resolved [#233](https://github.com/EmbarkStudios/cargo-about/issues/233) by publishing a binary for `aarch64-pc-windows-msvc`.
+- [PR#240](https://github.com/EmbarkStudios/cargo-about/pull/240) resolved [#239](https://github.com/EmbarkStudios/cargo-about/issues/239) by correcting the name of the clarification field from `override_git_commit` -> `override-git-commit`.
 
 ### Changed
 - [PR#235](https://github.com/EmbarkStudios/cargo-about/pull/235) and [PR#240](https://github.com/EmbarkStudios/cargo-about/pull/240) updated dependencies.
