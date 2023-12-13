@@ -65,7 +65,7 @@ reqwest = { version = "0.11", default-features = false, features = [
   "rustls-tls",
 ] }
 # Checksum verification (already pulled in via rustls)
-ring = "0.16"
+ring = "0.17"
 # Oh gee what could it be
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -76,7 +76,7 @@ time = "0.3"
 # Configuration parsing
 toml = "0.8"
 # Manipulation of cargo manifests for diagnostic purposes
-toml_edit = "0.20"
+toml_edit = "0.21"
 # Hashing
 twox-hash = "1.6"
 # Url parsing
