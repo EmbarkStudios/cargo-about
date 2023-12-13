@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.6.0] - 2023-12-13
 ### Fixed
 - [PR#234](https://github.com/EmbarkStudios/cargo-about/pull/234) relaxed the version restriction on the `ring` workaround to account for the 0.17.* versions.
 - [PR#236](https://github.com/EmbarkStudios/cargo-about/pull/236) fixed an issue where the `count` field for each license was the number of unique licenses, rather than the number of unique crates using that license, as intended.
@@ -151,7 +152,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.7...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.0...HEAD
+[0.6.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.7...0.6.0
 [0.5.7]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.6...0.5.7
 [0.5.6]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.5...0.5.6
 [0.5.5]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.4...0.5.5
