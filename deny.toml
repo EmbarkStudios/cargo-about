@@ -32,7 +32,7 @@ skip = [
 ]
 skip-tree = [
     # So tired
-    #{ name = "windows-sys" },
+    { name = "windows-sys" },
 ]
 
 [licenses]
