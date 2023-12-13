@@ -147,7 +147,11 @@ pub struct Clarification {
     /// case, as otherwise it is possible for a drift between the license as it
     /// was at the time of the actual publish of the crate, and the revision
     /// specified here.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        rename = "override-git-commit",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub override_git_commit: Option<String>,
     /// 1 or more files that are used as the source of truth for the license
     /// expression
