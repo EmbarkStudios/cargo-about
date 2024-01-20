@@ -261,9 +261,9 @@ dependencies = [
 
 [[package]]
 name = "cargo_metadata"
-version = "0.17.0"
+version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7daec1a2a2129eeba1644b220b4647ec537b0b5d4bfd6876fcc5a540056b592"
+checksum = "2d886547e41f740c616ae73108f6eb70afe6d940c7bc697cb30f13daec073037"
 dependencies = [
  "camino",
  "cargo-platform",
@@ -884,9 +884,9 @@ dependencies = [
 
 [[package]]
 name = "krates"
-version = "0.15.1"
+version = "0.16.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "574af0483e3c16756f0e5cd82f394be0fb1c898397fd61fdcbd26575457be5d0"
+checksum = "ade27d3affcd8dd7d9cf749e3f631a2ef146153ad43dfca7fc0deb9aec162c9f"
 dependencies = [
  "cargo_metadata",
  "cfg-expr",
