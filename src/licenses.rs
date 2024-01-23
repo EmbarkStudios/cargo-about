@@ -6,7 +6,7 @@ mod workarounds;
 
 use crate::{Krate, Krates};
 use anyhow::Context as _;
-use krates::Utf8PathBuf as PathBuf;
+use krates::{KrateMatch, Utf8PathBuf as PathBuf};
 use rayon::prelude::*;
 pub use resolution::Resolved;
 use std::{cmp, fmt, sync::Arc};
@@ -313,7 +313,7 @@ impl Gatherer {
                             }
                         };
 
-                        let krate = krates.krates_by_name(def.coordinates.name).find_map(move |(_, krate)| {
+                        let krate = krates.krates_by_name(def.coordinates.name).find_map(move |KrateMatch { krate, .. }| {
                             if krate.version == version {
                                 Some(krate)
                             } else {

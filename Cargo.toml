@@ -50,7 +50,7 @@ home = "0.5"
 # Directory walking
 ignore = "0.4"
 # Dependency graphing
-krates = "0.15"
+krates = "0.16.4"
 # Logging macros
 log = "0.4"
 # Better heap allocator over system one (usually)
