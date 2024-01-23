@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.6.1] - 2024-01-23
 ### Changed
 - [PR#244](https://github.com/EmbarkStudios/cargo-about/pull/244) updated `krates` => 0.16. Thanks [@kpreid](https://github.com/kpreid)!
 - [PR#245](https://github.com/EmbarkStudios/cargo-about/pull/245) updated crates, notably `handlebars`.
@@ -156,7 +157,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.0...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.1...HEAD
+[0.6.1]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.0...0.6.1
 [0.6.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.7...0.6.0
 [0.5.7]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.6...0.5.7
 [0.5.6]: https://github.com/EmbarkStudios/cargo-about/compare/0.5.5...0.5.6
