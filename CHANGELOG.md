@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Changed
+- [PR#244](https://github.com/EmbarkStudios/cargo-about/pull/244) updated `krates` => 0.16. Thanks [@kpreid](https://github.com/kpreid)!
+- [PR#245](https://github.com/EmbarkStudios/cargo-about/pull/245) updated crates, notably `handlebars`.
+
 ## [0.6.0] - 2023-12-13
 ### Fixed
 - [PR#234](https://github.com/EmbarkStudios/cargo-about/pull/234) relaxed the version restriction on the `ring` workaround to account for the 0.17.* versions.
