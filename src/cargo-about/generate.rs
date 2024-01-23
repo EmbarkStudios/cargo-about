@@ -179,24 +179,28 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
                 reg.register_helper(
                     "json",
                     Box::new(
-                        |h: &Helper<'_, '_>,
+                        |h: &Helper<'_, >,
                          _r: &Handlebars<'_>,
-                         _: &Context,
+                         _c: &Context,
                          _rc: &mut RenderContext<'_, '_>,
                          out: &mut dyn Output|
                          -> HelperResult {
                             let param = h
                                 .param(0)
-                                .ok_or_else(|| RenderError::new("param not found"))?;
+                                .ok_or_else(|| RenderErrorReason::ParamNotFoundForIndex("json", 0))?;
 
-                            out.write(&serde_json::to_string_pretty(param.value())?)?;
-                            Ok(())
+                            match serde_json::to_string_pretty(param.value()) {
+                                Ok(json) => Ok(out.write(&json)?),
+                                Err(err) => {
+                                    Err(RenderErrorReason::Other(err.to_string()).into())
+                                }
+                            }
                         },
                     ),
                 );
 
                 if template_path.is_dir() {
-                    reg.register_templates_directory(".hbs", template_path)?;
+                    reg.register_templates_directory( template_path, handlebars::DirectorySourceOptions::default())?;
 
                     anyhow::ensure!(!reg.get_templates().is_empty(), "template path '{template_path}' did not contain any hbs files");
 
