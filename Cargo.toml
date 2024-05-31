@@ -35,7 +35,7 @@ anyhow = "1.0"
 # License detection
 askalono = "0.4"
 # API helpers for api.clearlydefined.io
-cd = { version = "0.2", features = ["blocking", "rustls"] }
+cd = { version = "0.3", features = ["blocking"] }
 # Argument parsing
 clap = { version = "4.0", features = ["derive"] }
 # Diagnostic reporting
@@ -60,7 +60,7 @@ parking_lot = "0.12"
 # brrrr
 rayon = "1.5"
 # HTTP requests
-reqwest = { version = "0.11", default-features = false, features = [
+reqwest = { version = "0.12", default-features = false, features = [
   "blocking",
   "rustls-tls",
 ] }
@@ -76,7 +76,7 @@ time = "0.3"
 # Configuration parsing
 toml = "0.8"
 # Manipulation of cargo manifests for diagnostic purposes
-toml_edit = "0.21"
+toml_edit = "0.22"
 # Hashing
 twox-hash = "1.6"
 # Url parsing
