@@ -1,0 +1,543 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>cargo-about</title>
+        <meta name="robots" content="noindex" />
+        <!-- Custom HTML head -->
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> cargo-about</a></li><li class="chapter-item expanded "><a href="cli/index.html"><strong aria-hidden="true">2.</strong> Commands</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="cli/common.html"><strong aria-hidden="true">2.1.</strong> common</a></li><li class="chapter-item expanded "><a href="cli/init.html"><strong aria-hidden="true">2.2.</strong> init</a></li><li class="chapter-item expanded "><a href="cli/generate/index.html"><strong aria-hidden="true">2.3.</strong> generate</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="cli/generate/config.html"><strong aria-hidden="true">2.3.1.</strong> config</a></li><li class="chapter-item expanded "><a href="cli/generate/workarounds.html"><strong aria-hidden="true">2.3.2.</strong> workarounds</a></li><li class="chapter-item expanded "><a href="cli/generate/output.html"><strong aria-hidden="true">2.3.3.</strong> output</a></li></ol></li><li class="chapter-item expanded "><a href="cli/clarify.html"><strong aria-hidden="true">2.4.</strong> clarify</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">cargo-about</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="cargo-about"><a class="header" href="#cargo-about"><a href="https://github.com/EmbarkStudios/cargo-about">cargo-about</a></a></h1>
+<p><code>cargo-about</code> is a cargo plugin that lets you generate license information for all crates in a dependency graph.</p>
+<h2 id="quickstart"><a class="header" href="#quickstart">Quickstart</a></h2>
+<p>Installs cargo-about, initializes your project with a default configuration, then generates a licenses.html file.</p>
+<pre><code class="language-bash">cargo install --locked cargo-about &amp;&amp; cargo about init &amp;&amp; cargo about generate -o licenses.html about.hbs
+</code></pre>
+<h2 id="command-line-interface"><a class="header" href="#command-line-interface">Command Line Interface</a></h2>
+<p>cargo-about is intended to be used as a <a href="cli/index.html">Command Line Tool</a>, see the link for the available commands and options.</p>
+<h2 id="api"><a class="header" href="#api">API</a></h2>
+<p>cargo-about is primarily meant to be used as a cargo plugin, but a majority of its functionality is within a library whose docs you may view on <a href="https://docs.rs/cargo-about">docs.rs</a></p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="commands"><a class="header" href="#commands">Commands</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="common"><a class="header" href="#common">common</a></h1>
+<h2 id="-l---log-level"><a class="header" href="#-l---log-level"><code>-L, --log-level</code></a></h2>
+<p>The log level for messages, only log messages at or above the level will be emitted.</p>
+<p>Possible values:</p>
+<ul>
+<li><code>off</code> - No output will be emitted</li>
+<li><code>error</code></li>
+<li><code>warn</code> (default)</li>
+<li><code>info</code></li>
+<li><code>debug</code></li>
+<li><code>trace</code></li>
+</ul>
+<h2 id="--color"><a class="header" href="#--color"><code>--color</code></a></h2>
+<p>Whether coloring is applied to human-formatted output, using it on JSON output has no effect.</p>
+<p>Possible values:</p>
+<ul>
+<li><code>auto</code> (default) - Coloring is applied if the output stream is a TTY</li>
+<li><code>always</code> - Coloring is always applied</li>
+<li><code>never</code> - No coloring is applied for any output</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="init"><a class="header" href="#init">init</a></h1>
+<p>Initializes an about.toml configuration.</p>
+<h2 id="flags"><a class="header" href="#flags">Flags</a></h2>
+<h3 id="--no-handlebars"><a class="header" href="#--no-handlebars"><code>--no-handlebars</code></a></h3>
+<p>Disables the generation of the default handlebars template.</p>
+<h3 id="--overwrite"><a class="header" href="#--overwrite"><code>--overwrite</code></a></h3>
+<p>Overwrites an existing <code>about.toml</code> file with the default configuration.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="generate"><a class="header" href="#generate">generate</a></h1>
+<p>The generate subcommand is the primary subcommand of <code>cargo-about</code>. It attempts to find and satisfy all license requirements for a crate's or workspace's dependency graph and generate licensing output based on one or more handlebar templates.</p>
+<h2 id="flags-1"><a class="header" href="#flags-1">Flags</a></h2>
+<h3 id="--all-features-single-crate-or-workspace"><a class="header" href="#--all-features-single-crate-or-workspace"><code>--all-features</code> (single crate or workspace)</a></h3>
+<p>Enables all features when determining which crates to consider. Works for both single crates and workspaces.</p>
+<h3 id="--no-default-features-single-crate-only"><a class="header" href="#--no-default-features-single-crate-only"><code>--no-default-features</code> (single crate only)</a></h3>
+<p>Disables the <code>default</code> feature for a crate when determining which crates to consider.</p>
+<h3 id="--workspace"><a class="header" href="#--workspace"><code>--workspace</code></a></h3>
+<p>Scan licenses for the entire workspace, not just the active package.</p>
+<h3 id="--fail"><a class="header" href="#--fail"><code>--fail</code></a></h3>
+<p>Exits with a non-zero exit code if any crate's license cannot be reasonably determined</p>
+<h2 id="options"><a class="header" href="#options">Options</a></h2>
+<h3 id="-c---config"><a class="header" href="#-c---config"><code>-c, --config</code></a></h3>
+<p>Path to the <a href="cli/generate/config.html">config</a> to use. Will default to <code>&lt;manifest_root/about.toml&gt;</code> if not specified.</p>
+<h4 id="--features-single-crate-only"><a class="header" href="#--features-single-crate-only"><code>--features</code> (single crate only)</a></h4>
+<p>Space-separated list of features to enable when determining which crates to consider.</p>
+<h4 id="-i---include-local"><a class="header" href="#-i---include-local"><code>-i, --include-local</code></a></h4>
+<p>Include local crates beneath one or more directories, local crates are disregarded by default.</p>
+<h4 id="-m---manifest-path"><a class="header" href="#-m---manifest-path"><code>-m, --manifest-path</code></a></h4>
+<p>The path of the Cargo.toml for the root crate, defaults to the current crate or workspace in the current working directory.</p>
+<h4 id="-n---name"><a class="header" href="#-n---name"><code>-n, --name</code></a></h4>
+<p>The name of the template to use when rendering. If only passing a single template file to <a href="cli/generate/index.html#templates"><code>templates</code></a> this is not used.</p>
+<h4 id="-o---output-file"><a class="header" href="#-o---output-file"><code>-o, --output-file</code></a></h4>
+<p>A file to write the generated output to. Typically an <code>.html</code> file.</p>
+<h4 id="--threshold-default-08"><a class="header" href="#--threshold-default-08"><code>--threshold</code> (default: 0.8)</a></h4>
+<p>The confidence threshold required for license files to be positively identified: <code>0.0 - 1.0</code></p>
+<h4 id="--format-jsonhandlebars-default-handlebars"><a class="header" href="#--format-jsonhandlebars-default-handlebars"><code>--format &lt;json|handlebars&gt;</code> (default: <code>handlebars</code>)</a></h4>
+<p>The format to output the license + crate data in.</p>
+<h2 id="args"><a class="header" href="#args">Args</a></h2>
+<h3 id="templates"><a class="header" href="#templates"><code>&lt;templates&gt;</code></a></h3>
+<p>The template(s) or template directory to use. Must either be a <code>.hbs</code> file, or have at least one <code>.hbs</code> file in it if it is a directory. Required if <code>--format = handlebars</code> (the default).</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="config"><a class="header" href="#config">Config</a></h1>
+<p>Contains all of the configuration options used when running <code>generate</code></p>
+<h2 id="the-accepted-field"><a class="header" href="#the-accepted-field">The <code>accepted</code> field</a></h2>
+<p>Priority list of all the accepted licenses for a project. <code>cargo-about</code> will try to satisfy the licenses in the order that they are declared in this list. So in the below example, if a crate is licensed with the typical <code>Apache-2.0 OR MIT</code> license expression, only the <code>Apache-2.0</code> license would be used as it has higher priority than <code>MIT</code> only one of them is required. This list applies globally to all crates. The licenses specified here are used to satisfy the license expressions for every crate, if they can't be satisfied then <code>cargo-about</code> will emit an error for why.</p>
+<pre><code class="language-ini">accepted = [
+    &quot;Apache-2.0&quot;,
+    &quot;MIT&quot;,
+]
+</code></pre>
+<h2 id="the-targets-field-optional"><a class="header" href="#the-targets-field-optional">The <code>targets</code> field (optional)</a></h2>
+<p>A list of targets that are actually building for. Crates which are only included via <code>cfg()</code> expressions that don't match one or more of the listed targets will be ignored. Note that currently the targets are evaluated all at once, so there might be cases where a crate is included that is actually impossible for any one target alone.</p>
+<pre><code class="language-ini">targets = [
+    &quot;x86_64-unknown-linux-gnu&quot;,
+    &quot;x86_64-unknown-linux-musl&quot;,
+    &quot;x86_64-pc-windows-msvc&quot;,
+    &quot;x86_64-apple-darwin&quot;,
+]
+</code></pre>
+<h2 id="the-ignore-build-dependencies-field-optional"><a class="header" href="#the-ignore-build-dependencies-field-optional">The <code>ignore-build-dependencies</code> field (optional)</a></h2>
+<p>If true, all crates that are only used as build dependencies will be ignored.</p>
+<pre><code class="language-ini">ignore-build-dependencies = true
+</code></pre>
+<h2 id="the-ignore-dev-dependencies-field-optional"><a class="header" href="#the-ignore-dev-dependencies-field-optional">The <code>ignore-dev-dependencies</code> field (optional)</a></h2>
+<p>If true, all crates that are only used as dev dependencies will be ignored.</p>
+<pre><code class="language-ini">ignore-dev-dependencies = true
+</code></pre>
+<h2 id="the-ignore-transitive-dependencies-field-optional"><a class="header" href="#the-ignore-transitive-dependencies-field-optional">The <code>ignore-transitive-dependencies</code> field (optional)</a></h2>
+<p>If true, only direct dependencies of crates in the workspace will be included in the graph, transitive dependencies (dependencies of dependencies) will be ignored.</p>
+<pre><code class="language-ini">ignore-transitive-dependencies = true
+</code></pre>
+<h2 id="the-no-clearly-defined-field-optional"><a class="header" href="#the-no-clearly-defined-field-optional">The <code>no-clearly-defined</code> field (optional)</a></h2>
+<p>If true, will not attempt to lookup licensing information for any crate from <a href="https://clearlydefined.io">https://clearlydefined.io</a>, only user clarifications, workarounds, and local file scanning will be used to determine licensing information.</p>
+<h2 id="the-filter-noassertion-field-optional"><a class="header" href="#the-filter-noassertion-field-optional">The <code>filter-noassertion</code> field (optional)</a></h2>
+<p>If using <a href="https://clearlydefined.io">https://clearlydefined.io</a> to gather license information, that service will conservatively add <a href="https://docs.clearlydefined.io/curation-guidelines"><code>NOASSERTION</code></a> to the expression for files that contain license like data, but an SPDX license ID could not be confidently ascribed to it. This can result in the license expression for the crate to contain 1 or more <code>NOASSERTION</code> identifiers, which would require the user to accept that (not really valid) ID to pass the license check. By setting this field to <code>true</code>, files that have a <code>NOASSERTION</code> id will instead be scanned locally, which will generally either figure out the license, or else skip that file.</p>
+<p>For a real world example of what this looks like, <a href="https://crates.io/crates/webpki/0.22.0"><code>webpki:0.22.0</code></a>'s <a href="https://clearlydefined.io/file/5b698ca13897be3afdb7174256fa1574f8c6892b8bea1a66dd6469d3fe27885a">LICENSE</a> file is an ISC license, however it has a preamble that is not part of the ISC license that trips up clearly defined's inspection, causing it to be attributed with <code>ISC AND NOASSERTION</code>. Locally scanning the file will be more tolerant and just attribute it with <code>ISC</code>.</p>
+<h2 id="the-workarounds-field-optional"><a class="header" href="#the-workarounds-field-optional">The <code>workarounds</code> field (optional)</a></h2>
+<p>Unfortunately, not all crates properly package their licenses, or if they do, sometimes in a non-machine readable format, or in a few cases, are slightly wrong. These can be clarified manually via configuration, but some crates that are widely used in the Rust ecosystem have these issues, and rather than require that every cargo-about user who happens to have a dependency on one or more of these crates specify the same config to get it working, cargo-about instead includes a few built-in clarifications that can be opted into with a single config entry rather than redoing work.</p>
+<p>See <a href="cli/generate/./workarounds.html">Workarounds</a> for a list of the workarounds currently built-in to cargo-about</p>
+<pre><code class="language-ini">workarounds = [
+    &quot;ring&quot;,
+    &quot;rustls&quot;,
+]
+</code></pre>
+<h2 id="the-private-field-optional"><a class="header" href="#the-private-field-optional">The <code>private</code> field (optional)</a></h2>
+<p>It's often not useful or wanted to check for licenses in your own private workspace crates. So the private field allows you to do so.</p>
+<h3 id="the-ignore-field"><a class="header" href="#the-ignore-field">The <code>ignore</code> field</a></h3>
+<p>If <code>true</code>, workspace members will not have their license expression checked, <em>if</em> they are not published.</p>
+<pre><code class="language-ini"># Cargo.toml
+[package]
+name = &quot;sekret&quot;
+license = &quot;¯\_(ツ)_/¯&quot;
+publish = false # &quot;private&quot;!
+</code></pre>
+<pre><code class="language-ini"># about.toml
+
+# The sekret package would be ignored now
+private = { ignore = true }
+</code></pre>
+<h3 id="the-registries-field"><a class="header" href="#the-registries-field">The <code>registries</code> field</a></h3>
+<p>A list of private registries you may publish your workspace crates to. If a workspace member <strong>only</strong> publishes to private registries, it will also be ignored if <code>private.ignore = true</code></p>
+<pre><code class="language-ini"># Cargo.toml
+[package]
+name = &quot;sekret&quot;
+license = &quot;¯\_(ツ)_/¯&quot;
+publish = [&quot;sauce&quot;]
+</code></pre>
+<pre><code class="language-ini"># about.toml
+
+# Still ignored!
+private = { ignore = true, registries = [&quot;sauce&quot;] }
+</code></pre>
+<h2 id="crate-configuration"><a class="header" href="#crate-configuration">Crate configuration</a></h2>
+<p>Along with the global options, crates can be individually configured as well, using the name of the crate as the key. Crate specific configuration <em>must</em> come last in the config file.</p>
+<h3 id="the-accepted-field-optional"><a class="header" href="#the-accepted-field-optional">The <code>accepted</code> field (optional)</a></h3>
+<p>Just as with the global <a href="cli/generate/config.html#the-accepted-field"><code>accepted</code></a> field, this accepts specific licenses for the crate. These licenses are appended to the global list, and are again in priority order. So for example, if the global accept was like this:</p>
+<pre><code class="language-ini">accepted = [&quot;MIT&quot;, &quot;ISC&quot;]
+</code></pre>
+<p>And we are using <code>ring</code>, which also is licensed under the <a href="https://spdx.org/licenses/OpenSSL.html"><code>OpenSSL</code></a> license, we could use the following configuration to satisfy the license requirements of <code>ring</code>.</p>
+<pre><code class="language-ini">accepted = [&quot;MIT&quot;, &quot;ISC&quot;]
+
+[ring]
+accepted = [&quot;OpenSSL&quot;]
+</code></pre>
+<h3 id="the-clarify-field-optional"><a class="header" href="#the-clarify-field-optional">The <code>clarify</code> field (optional)</a></h3>
+<p>As noted in the <a href="cli/generate/config.html#the-workarounds-field-optional"><code>workarounds</code></a>, some crates have complicated or incomplete licensing that messes up the harvesting of the license info in an automated fashion. While the <code>workarounds</code> exists for popular crates (and can always be expanded with PRs!) there are often going to be crates that you will need to clarify yourself until a new release of the crate, etc, which is the purpose of the <code>clarify</code> field, to specify exactly what the license information is, and how to verify that the license terms are still the same as when they were clarified, using hashes of the input files.</p>
+<p>Note that since clarifications are human supplied in your project's own configuration, they take precedence over all other methods. If a crate is clarified, it will not be retrieved from clearlydefined.io nor via local file harvesting.</p>
+<h4 id="the-license-field"><a class="header" href="#the-license-field">The <code>license</code> field</a></h4>
+<p>This is the top level SPDX expression for the crate as a whole. It should be noted that this actually overrides the <code>license</code> expression of the crate itself if it exists, though in most cases this will be the same as the stated <code>license</code>, it is simply required so that you can't accidentally forget it in the cases where it <em>does</em> differ.</p>
+<pre><code class="language-ini">[ring.clarify]
+license = &quot;ISC AND MIT AND OpenSSL&quot;
+</code></pre>
+<h4 id="the-override-git-commit-field-optional"><a class="header" href="#the-override-git-commit-field-optional">The <code>override-git-commit</code> field (optional)</a></h4>
+<p>When clarifying a crate with files pulled from its source git repository, cargo-about will normally read the contents of the <code>.cargo_vcs_info.json</code> file that is usually part of a published crate's contents, which includes the full commit hash at the time the crate was published. However, this file is not guaranteed to be present (eg, if the crate is published with <code>cargo publish --allow-dirty</code>), so in that case the git ref to pull the license file contents must be supplied. This can either be a full git revision, or a git tag.</p>
+<pre><code class="language-ini">[core-graphics-types.clarify]
+override-git-commit = &quot;3841d2bb3aa76dec2ea6319e757603fb923b5a50&quot;
+</code></pre>
+<h4 id="the-files-andor-git-field"><a class="header" href="#the-files-andor-git-field">The <code>files</code> and/or <code>git</code> field</a></h4>
+<p>When clarifying the license of a crate, it is <strong>required</strong> to give a source of truth for the licenses in the expression, to prevent drift between the clarification and the actual licensing of the crate in question. For example, if a crate uses the <code>Zlib</code> license, then changes between releases to use the <code>MIT</code> license instead, the source of truth (eg. the <code>LICENSE</code> file) would also (hopefully...) change resulting in a hash mismatch that means the clarification would not be used.</p>
+<p>We'll be using this example for the <code>ring</code> crate</p>
+<pre><code class="language-ini">[ring.clarify]
+license = &quot;ISC AND MIT AND OpenSSL&quot;
+
+[[ring.clarify.files]]
+path = 'LICENSE'
+license = 'OpenSSL'
+checksum = '53552a9b197cd0db29bd085d81253e67097eedd713706e8cd2a3cc6c29850ceb'
+start = '/* ===================================================================='
+end = '\n * Hudson (tjh@cryptsoft.com).\n *\n */'
+</code></pre>
+<h5 id="the-path-field"><a class="header" href="#the-path-field">The <code>path</code> field</a></h5>
+<p>This is the relative path to the file from the root. For <code>files</code> this is the root of the crate, but for <code>git</code> this is the repo root.</p>
+<h5 id="the-license-field-optional"><a class="header" href="#the-license-field-optional">The <code>license</code> field (optional)</a></h5>
+<p>In a multiple license situation it can be useful to supply the exact license for the file. If this is not supplied the parent <code>clarify.license</code> expression is used instead.</p>
+<h5 id="the-checksum-field"><a class="header" href="#the-checksum-field">The <code>checksum</code> field</a></h5>
+<p>This is the full sha-256 checksum of the contents. If this doesn't match the computed checksum, the clarification will not be used.</p>
+<h5 id="the-start-field-optional"><a class="header" href="#the-start-field-optional">The <code>start</code> field (optional)</a></h5>
+<p>In some cases, crates concatenate multiple licenses together into a single file, which confuses machine readers, and makes splatting the license text into the final generated template a pain, so in those cases you need to supply a place in the text that a license starts and/or ends from. This is just a simple substring find.</p>
+<h5 id="the-end-field-optional"><a class="header" href="#the-end-field-optional">The <code>end</code> field (optional)</a></h5>
+<p>Just as with start, this is just a simple substring find, however, it will only match text that comes <em>after</em> the position the start text (or beginning of the file) was found.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="workarounds"><a class="header" href="#workarounds">Workarounds</a></h1>
+<p>Here's a list of the current set of workarounds, the crates they apply to, and why the workaround is needed</p>
+<h2 id="bitvec"><a class="header" href="#bitvec"><code>bitvec</code></a></h2>
+<p>The <code>bitvec</code> crate and one of its dependencies by the same author don't include the license information in the crate source.</p>
+<ul>
+<li><a href="https://crates.io/crates/bitvec"><code>bitvec</code></a></li>
+<li><a href="https://crates.io/crates/wyz"><code>wyz</code></a></li>
+</ul>
+<h2 id="chrono"><a class="header" href="#chrono"><code>chrono</code></a></h2>
+<p>The <code>chrono</code> crate puts both the <code>Apache-2.0</code> and <code>MIT</code> license texts in the same file, which confuses <code>askalono</code> and also means the SPDX expression is not machine readable.</p>
+<ul>
+<li><a href="https://crates.io/crates/chrono"><code>chrono</code></a></li>
+</ul>
+<h2 id="cocoa"><a class="header" href="#cocoa"><code>cocoa</code></a></h2>
+<p>Some of the crates published from <a href="https://github.com/servo/core-foundation-rs">https://github.com/servo/core-foundation-rs</a> do not properly package the license text when publishing the crate.</p>
+<ul>
+<li><a href="https://crates.io/crates/cocoa-foundation"><code>cocoa-foundation</code></a></li>
+<li><a href="https://crates.io/crates/core-foundation"><code>core-foundation</code></a></li>
+<li><a href="https://crates.io/crates/core-foundation-sys"><code>core-foundation-sys</code></a></li>
+<li><a href="https://crates.io/crates/core-graphics-types"><code>core-graphics-types</code></a></li>
+</ul>
+<h2 id="gtk"><a class="header" href="#gtk"><code>gtk</code></a></h2>
+<p>The various <code>gtk</code> crates don't include the license text in older versions, though versions published after 2021-10-21 will have the license information in the packaged source so the workaround is not needed for those versions.</p>
+<ul>
+<li><a href="https://crates.io/crates/atk-sys"><code>atk-sys</code></a></li>
+<li><a href="https://crates.io/crates/cairo-sys-rs"><code>cairo-sys-rs</code></a></li>
+<li><a href="https://crates.io/crates/gdk-pixbuf-sys"><code>gdk-pixbuf-sys</code></a></li>
+<li><a href="https://crates.io/crates/gdk-sys"><code>gdk-sys</code></a></li>
+<li><a href="https://crates.io/crates/gio-sys"><code>gio-sys</code></a></li>
+<li><a href="https://crates.io/crates/glib-sys"><code>glib-sys</code></a></li>
+<li><a href="https://crates.io/crates/gobject-sys"><code>gobject-sys</code></a></li>
+<li><a href="https://crates.io/crates/gtk-sys"><code>gtk-sys</code></a></li>
+</ul>
+<h2 id="prost"><a class="header" href="#prost"><code>prost</code></a></h2>
+<p>The various <code>prost</code> crates don't include the license text in the published crates.</p>
+<ul>
+<li><a href="https://crates.io/crates/prost"><code>prost</code></a></li>
+<li><a href="https://crates.io/crates/prost-build"><code>prost-build</code></a></li>
+<li><a href="https://crates.io/crates/prost-derive"><code>prost-derive</code></a></li>
+<li><a href="https://crates.io/crates/prost-types"><code>prost-types</code></a></li>
+</ul>
+<h2 id="ring"><a class="header" href="#ring"><code>ring</code></a></h2>
+<p>The <code>ring</code> crate puts puts 4 different licenses in a single file which confuses tools and also doesn't declare its expression in the Cargo.toml manifest.</p>
+<ul>
+<li><a href="https://crates.io/crates/ring"><code>ring</code></a></li>
+</ul>
+<h2 id="rustls"><a class="header" href="#rustls"><code>rustls</code></a></h2>
+<p>The <code>rustls</code> crate puts puts 3 different licenses in a single file which confuses tools. This should be fixed in later versions.</p>
+<ul>
+<li><a href="https://crates.io/crates/rustls"><code>rustls</code></a></li>
+</ul>
+<h2 id="sentry"><a class="header" href="#sentry"><code>sentry</code></a></h2>
+<p>None of the crates published from <a href="https://github.com/getsentry/sentry-rust">https://github.com/getsentry/sentry-rust</a> include the license text.</p>
+<ul>
+<li><a href="https://crates.io/crates/sentry-actix"><code>sentry-actix</code></a></li>
+<li><a href="https://crates.io/crates/sentry-anyhow"><code>sentry-anyhow</code></a></li>
+<li><a href="https://crates.io/crates/sentry-backtrace"><code>sentry-backtrace</code></a></li>
+<li><a href="https://crates.io/crates/sentry-contexts"><code>sentry-contexts</code></a></li>
+<li><a href="https://crates.io/crates/sentry-core"><code>sentry-core</code></a></li>
+<li><a href="https://crates.io/crates/sentry-debug-images"><code>sentry-debug-images</code></a></li>
+<li><a href="https://crates.io/crates/sentry-log"><code>sentry-log</code></a></li>
+<li><a href="https://crates.io/crates/sentry-panic"><code>sentry-panic</code></a></li>
+<li><a href="https://crates.io/crates/sentry-slog"><code>sentry-slog</code></a></li>
+<li><a href="https://crates.io/crates/sentry-tower"><code>sentry-tower</code></a></li>
+<li><a href="https://crates.io/crates/sentry-tracing"><code>sentry-tracing</code></a></li>
+<li><a href="https://crates.io/crates/sentry-types"><code>sentry-types</code></a></li>
+<li><a href="https://crates.io/crates/sentry"><code>sentry</code></a></li>
+</ul>
+<h2 id="tonic"><a class="header" href="#tonic"><code>tonic</code></a></h2>
+<p>None of the crates published from <a href="https://github.com/hyperium/tonic">https://github.com/hyperium/tonic</a> include the license text.</p>
+<ul>
+<li><a href="https://crates.io/crates/tonic"><code>tonic</code></a></li>
+<li><a href="https://crates.io/crates/tonic-build"><code>tonic-build</code></a></li>
+<li><a href="https://crates.io/crates/tonic-health"><code>tonic-health</code></a></li>
+<li><a href="https://crates.io/crates/tonic-types"><code>tonic-types</code></a></li>
+<li><a href="https://crates.io/crates/tonic-reflection"><code>tonic-reflection</code></a></li>
+</ul>
+<h2 id="tract"><a class="header" href="#tract"><code>tract</code></a></h2>
+<p>None of the crates published from <a href="https://github.com/sonos/tract">https://github.com/sonos/tract</a> included the license text previous to versions 0.15.4. Versions after this do include the license text and this workaround is not needed</p>
+<ul>
+<li><a href="https://crates.io/crates/tract-data"><code>tract-data</code></a></li>
+<li><a href="https://crates.io/crates/tract-linalg"><code>tract-linalg</code></a></li>
+<li><a href="https://crates.io/crates/tract-core"><code>tract-core</code></a></li>
+<li><a href="https://crates.io/crates/tract-pulse"><code>tract-pulse</code></a></li>
+<li><a href="https://crates.io/crates/tract-pulse-opl"><code>tract-pulse-opl</code></a></li>
+<li><a href="https://crates.io/crates/tract-hir"><code>tract-hir</code></a></li>
+<li><a href="https://crates.io/crates/tract-nnef"><code>tract-nnef</code></a></li>
+<li><a href="https://crates.io/crates/tract-tensorflow"><code>tract-tensorflow</code></a></li>
+<li><a href="https://crates.io/crates/tract-onnx-opl"><code>tract-onnx-opl</code></a></li>
+<li><a href="https://crates.io/crates/tract-onnx"><code>tract-onnx</code></a></li>
+<li><a href="https://crates.io/crates/tract-kaldi"><code>tract-kaldi</code></a></li>
+<li><a href="https://crates.io/crates/tract-cli"><code>tract-cli</code></a></li>
+</ul>
+<h2 id="wasmtime"><a class="header" href="#wasmtime"><code>wasmtime</code></a></h2>
+<p>The crates around <code>wasmtime</code> and <code>cranelift</code>, many but not all of which are published from <a href="https://github.com/bytecodealliance/wasmtime">https://github.com/bytecodealliance/wasmtime</a>, use the <code>Apache-2.0 WITH LLVM-exception</code>, and the license text reflects this. However, neither <code>clearlydefined.io</code> nor <code>askalono</code> report the inclusion of the <code>LLVM-exception</code>, so this workaround just clarifies that.</p>
+<ul>
+<li><a href="https://crates.io/crates/cranelift-bforest"><code>cranelift-bforest</code></a></li>
+<li><a href="https://crates.io/crates/cranelift-codegen"><code>cranelift-codegen</code></a></li>
+<li><a href="https://crates.io/crates/cranelift-codegen-meta"><code>cranelift-codegen-meta</code></a></li>
+<li><a href="https://crates.io/crates/cranelift-codegen-shared"><code>cranelift-codegen-shared</code></a></li>
+<li><a href="https://crates.io/crates/cranelift-entity"><code>cranelift-entity</code></a></li>
+<li><a href="https://crates.io/crates/cranelift-frontend"><code>cranelift-frontend</code></a></li>
+<li><a href="https://crates.io/crates/cranelift-native"><code>cranelift-native</code></a></li>
+<li><a href="https://crates.io/crates/cranelift-wasm"><code>cranelift-wasm</code></a></li>
+<li><a href="https://crates.io/crates/regalloc"><code>regalloc</code></a></li>
+<li><a href="https://crates.io/crates/wasi-cap-std-sync"><code>wasi-cap-std-sync</code></a></li>
+<li><a href="https://crates.io/crates/wasi-common"><code>wasi-common</code></a></li>
+<li><a href="https://crates.io/crates/wasmparser"><code>wasmparser</code></a></li>
+<li><a href="https://crates.io/crates/wasmtime-environ"><code>wasmtime-environ</code></a></li>
+<li><a href="https://crates.io/crates/wasmtime-jit"><code>wasmtime-jit</code></a></li>
+<li><a href="https://crates.io/crates/wasmtime-runtime"><code>wasmtime-runtime</code></a></li>
+<li><a href="https://crates.io/crates/wasmtime-types"><code>wasmtime-types</code></a></li>
+<li><a href="https://crates.io/crates/wasmtime-wasi"><code>wasmtime-wasi</code></a></li>
+<li><a href="https://crates.io/crates/wast"><code>wast</code></a></li>
+<li><a href="https://crates.io/crates/wiggle"><code>wiggle</code></a></li>
+<li><a href="https://crates.io/crates/wiggle-generate"><code>wiggle-generate</code></a></li>
+<li><a href="https://crates.io/crates/wiggle-macro"><code>wiggle-macro</code></a></li>
+<li><a href="https://crates.io/crates/winx"><code>winx</code></a></li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="output-template"><a class="header" href="#output-template">Output template</a></h1>
+<p>cargo-about uses handlebars templates to take the output of license gathering and transform it into your desired output. See <a href="https://handlebarsjs.com">handlebars</a> for how handlebar templates work generally.</p>
+<h2 id="types"><a class="header" href="#types">Types</a></h2>
+<h3 id="licenseset"><a class="header" href="#licenseset"><code>LicenseSet</code></a></h3>
+<ul>
+<li><code>count</code> - The number of times the license was used to satisfy a license expression for a crate</li>
+<li><code>name</code> - The name of the license</li>
+<li><code>id</code> - The <code>id</code> of the license</li>
+</ul>
+<h3 id="license"><a class="header" href="#license"><code>License</code></a></h3>
+<ul>
+<li><code>name</code> - The full name of the license</li>
+<li><code>id</code> - The <a href="https://spdx.dev/ids/">SPDX</a> identifier</li>
+<li><code>text</code> - The full license text</li>
+<li><code>source_path</code> - The path of the license if it was pulled from the source code of the crate</li>
+<li><code>used_by</code> A list of <a href="cli/generate/output.html#usedby"><code>UsedBy</code></a></li>
+</ul>
+<h3 id="usedby"><a class="header" href="#usedby"><code>UsedBy</code></a></h3>
+<ul>
+<li><code>crate</code> - Metadata for a cargo <a href="https://docs.rs/cargo_metadata/newest/cargo_metadata/struct.Package.html">package</a></li>
+<li><code>path</code> - Optional path of the dependency that is being used by the license</li>
+</ul>
+<h2 id="variables"><a class="header" href="#variables">Variables</a></h2>
+<p>These are the variables that are exposed to the templates</p>
+<ul>
+<li><code>overview</code> - A list of <a href="cli/generate/output.html#licenseset"><code>LicenseSet</code></a></li>
+<li><code>licenses</code> - A list of <a href="cli/generate/output.html#license"><code>License</code></a></li>
+</ul>
+<h2 id="example"><a class="header" href="#example">Example</a></h2>
+<pre><code class="language-hbs">&lt;ul class=&quot;licenses-overview&quot;&gt;
+    {{#each overview}}
+    &lt;li&gt;&lt;a href=&quot;#{{id}}&quot;&gt;{{name}}&lt;/a&gt; ({{count}})&lt;/li&gt;
+    {{/each}}
+&lt;/ul&gt;
+</code></pre>
+<h2 id="preview-of-the-default-abouthbs"><a class="header" href="#preview-of-the-default-abouthbs">Preview of the default <code>about.hbs</code></a></h2>
+<p><img src="https://i.imgur.com/pvOjj06.png" alt="license" /></p>
+<p>You can view the full license <a href="cli/generate/default-example.html">here</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="clarify"><a class="header" href="#clarify">clarify</a></h1>
+<p>Computes a clarification for a file</p>
+<h2 id="options-1"><a class="header" href="#options-1">Options</a></h2>
+<h2 id="-s---subsections"><a class="header" href="#-s---subsections"><code>-s, --subsections</code></a></h2>
+<p>One or more subsections in the file which is itself its own license. Uses <code>!!</code> as the separator between the start and end of the subsection.</p>
+<h2 id="--threshold-default-08-1"><a class="header" href="#--threshold-default-08-1"><code>--threshold</code> (default: 0.8)</a></h2>
+<p>The minimum confidence score a license must have</p>
+<h2 id="args-1"><a class="header" href="#args-1">Args</a></h2>
+<h3 id="path"><a class="header" href="#path"><code>&lt;path&gt;</code></a></h3>
+<p>The relative path from the root of the source of the file to clarify.</p>
+<h2 id="subcommands"><a class="header" href="#subcommands">Subcommands</a></h2>
+<h3 id="crate"><a class="header" href="#crate"><code>crate</code></a></h3>
+<p>Retrieves the file from the git repository and commit associated with the specified crate and version.</p>
+<h4 id="args-2"><a class="header" href="#args-2">Args</a></h4>
+<h5 id="spec"><a class="header" href="#spec"><code>&lt;spec&gt;</code></a></h5>
+<p>The crate's <code>&lt;name&gt;-&lt;version&gt;</code> spec to retrieve. The crate source must already be downloaded.</p>
+<h3 id="repo"><a class="header" href="#repo"><code>repo</code></a></h3>
+<p>Pulls the file from a git repository rather than the file system.</p>
+<h4 id="args-3"><a class="header" href="#args-3">Args</a></h4>
+<h5 id="rev"><a class="header" href="#rev"><code>&lt;rev&gt;</code></a></h5>
+<p>The git revision to retrieve. Can either be a commit hash or a tag.</p>
+<h5 id="repo-1"><a class="header" href="#repo-1"><code>&lt;repo&gt;</code></a></h5>
+<p>The full URL to the git repo. Only <code>github.com</code>, <code>gitlab.com</code>, and <code>bitbucket.org</code> are currently supported.</p>
+<h3 id="path-1"><a class="header" href="#path-1"><code>path</code></a></h3>
+<p>Reads the license information from a path on disk.</p>
+<h4 id="args-4"><a class="header" href="#args-4">Args</a></h4>
+<h5 id="root"><a class="header" href="#root"><code>&lt;root&gt;</code></a></h5>
+<p>The path root.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+            </nav>
+
+        </div>
+
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        <script type="text/javascript">
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+    </body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>config - cargo-about</title>
+        <!-- Custom HTML head -->
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../highlight.css">
+        <link rel="stylesheet" href="../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../../index.html"><strong aria-hidden="true">1.</strong> cargo-about</a></li><li class="chapter-item expanded "><a href="../../cli/index.html"><strong aria-hidden="true">2.</strong> Commands</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../cli/common.html"><strong aria-hidden="true">2.1.</strong> common</a></li><li class="chapter-item expanded "><a href="../../cli/init.html"><strong aria-hidden="true">2.2.</strong> init</a></li><li class="chapter-item expanded "><a href="../../cli/generate/index.html"><strong aria-hidden="true">2.3.</strong> generate</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../cli/generate/config.html" class="active"><strong aria-hidden="true">2.3.1.</strong> config</a></li><li class="chapter-item expanded "><a href="../../cli/generate/workarounds.html"><strong aria-hidden="true">2.3.2.</strong> workarounds</a></li><li class="chapter-item expanded "><a href="../../cli/generate/output.html"><strong aria-hidden="true">2.3.3.</strong> output</a></li></ol></li><li class="chapter-item expanded "><a href="../../cli/clarify.html"><strong aria-hidden="true">2.4.</strong> clarify</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">cargo-about</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="config"><a class="header" href="#config">Config</a></h1>
+<p>Contains all of the configuration options used when running <code>generate</code></p>
+<h2 id="the-accepted-field"><a class="header" href="#the-accepted-field">The <code>accepted</code> field</a></h2>
+<p>Priority list of all the accepted licenses for a project. <code>cargo-about</code> will try to satisfy the licenses in the order that they are declared in this list. So in the below example, if a crate is licensed with the typical <code>Apache-2.0 OR MIT</code> license expression, only the <code>Apache-2.0</code> license would be used as it has higher priority than <code>MIT</code> only one of them is required. This list applies globally to all crates. The licenses specified here are used to satisfy the license expressions for every crate, if they can't be satisfied then <code>cargo-about</code> will emit an error for why.</p>
+<pre><code class="language-ini">accepted = [
+    &quot;Apache-2.0&quot;,
+    &quot;MIT&quot;,
+]
+</code></pre>
+<h2 id="the-targets-field-optional"><a class="header" href="#the-targets-field-optional">The <code>targets</code> field (optional)</a></h2>
+<p>A list of targets that are actually building for. Crates which are only included via <code>cfg()</code> expressions that don't match one or more of the listed targets will be ignored. Note that currently the targets are evaluated all at once, so there might be cases where a crate is included that is actually impossible for any one target alone.</p>
+<pre><code class="language-ini">targets = [
+    &quot;x86_64-unknown-linux-gnu&quot;,
+    &quot;x86_64-unknown-linux-musl&quot;,
+    &quot;x86_64-pc-windows-msvc&quot;,
+    &quot;x86_64-apple-darwin&quot;,
+]
+</code></pre>
+<h2 id="the-ignore-build-dependencies-field-optional"><a class="header" href="#the-ignore-build-dependencies-field-optional">The <code>ignore-build-dependencies</code> field (optional)</a></h2>
+<p>If true, all crates that are only used as build dependencies will be ignored.</p>
+<pre><code class="language-ini">ignore-build-dependencies = true
+</code></pre>
+<h2 id="the-ignore-dev-dependencies-field-optional"><a class="header" href="#the-ignore-dev-dependencies-field-optional">The <code>ignore-dev-dependencies</code> field (optional)</a></h2>
+<p>If true, all crates that are only used as dev dependencies will be ignored.</p>
+<pre><code class="language-ini">ignore-dev-dependencies = true
+</code></pre>
+<h2 id="the-ignore-transitive-dependencies-field-optional"><a class="header" href="#the-ignore-transitive-dependencies-field-optional">The <code>ignore-transitive-dependencies</code> field (optional)</a></h2>
+<p>If true, only direct dependencies of crates in the workspace will be included in the graph, transitive dependencies (dependencies of dependencies) will be ignored.</p>
+<pre><code class="language-ini">ignore-transitive-dependencies = true
+</code></pre>
+<h2 id="the-no-clearly-defined-field-optional"><a class="header" href="#the-no-clearly-defined-field-optional">The <code>no-clearly-defined</code> field (optional)</a></h2>
+<p>If true, will not attempt to lookup licensing information for any crate from <a href="https://clearlydefined.io">https://clearlydefined.io</a>, only user clarifications, workarounds, and local file scanning will be used to determine licensing information.</p>
+<h2 id="the-filter-noassertion-field-optional"><a class="header" href="#the-filter-noassertion-field-optional">The <code>filter-noassertion</code> field (optional)</a></h2>
+<p>If using <a href="https://clearlydefined.io">https://clearlydefined.io</a> to gather license information, that service will conservatively add <a href="https://docs.clearlydefined.io/curation-guidelines"><code>NOASSERTION</code></a> to the expression for files that contain license like data, but an SPDX license ID could not be confidently ascribed to it. This can result in the license expression for the crate to contain 1 or more <code>NOASSERTION</code> identifiers, which would require the user to accept that (not really valid) ID to pass the license check. By setting this field to <code>true</code>, files that have a <code>NOASSERTION</code> id will instead be scanned locally, which will generally either figure out the license, or else skip that file.</p>
+<p>For a real world example of what this looks like, <a href="https://crates.io/crates/webpki/0.22.0"><code>webpki:0.22.0</code></a>'s <a href="https://clearlydefined.io/file/5b698ca13897be3afdb7174256fa1574f8c6892b8bea1a66dd6469d3fe27885a">LICENSE</a> file is an ISC license, however it has a preamble that is not part of the ISC license that trips up clearly defined's inspection, causing it to be attributed with <code>ISC AND NOASSERTION</code>. Locally scanning the file will be more tolerant and just attribute it with <code>ISC</code>.</p>
+<h2 id="the-workarounds-field-optional"><a class="header" href="#the-workarounds-field-optional">The <code>workarounds</code> field (optional)</a></h2>
+<p>Unfortunately, not all crates properly package their licenses, or if they do, sometimes in a non-machine readable format, or in a few cases, are slightly wrong. These can be clarified manually via configuration, but some crates that are widely used in the Rust ecosystem have these issues, and rather than require that every cargo-about user who happens to have a dependency on one or more of these crates specify the same config to get it working, cargo-about instead includes a few built-in clarifications that can be opted into with a single config entry rather than redoing work.</p>
+<p>See <a href="./workarounds.html">Workarounds</a> for a list of the workarounds currently built-in to cargo-about</p>
+<pre><code class="language-ini">workarounds = [
+    &quot;ring&quot;,
+    &quot;rustls&quot;,
+]
+</code></pre>
+<h2 id="the-private-field-optional"><a class="header" href="#the-private-field-optional">The <code>private</code> field (optional)</a></h2>
+<p>It's often not useful or wanted to check for licenses in your own private workspace crates. So the private field allows you to do so.</p>
+<h3 id="the-ignore-field"><a class="header" href="#the-ignore-field">The <code>ignore</code> field</a></h3>
+<p>If <code>true</code>, workspace members will not have their license expression checked, <em>if</em> they are not published.</p>
+<pre><code class="language-ini"># Cargo.toml
+[package]
+name = &quot;sekret&quot;
+license = &quot;¯\_(ツ)_/¯&quot;
+publish = false # &quot;private&quot;!
+</code></pre>
+<pre><code class="language-ini"># about.toml
+
+# The sekret package would be ignored now
+private = { ignore = true }
+</code></pre>
+<h3 id="the-registries-field"><a class="header" href="#the-registries-field">The <code>registries</code> field</a></h3>
+<p>A list of private registries you may publish your workspace crates to. If a workspace member <strong>only</strong> publishes to private registries, it will also be ignored if <code>private.ignore = true</code></p>
+<pre><code class="language-ini"># Cargo.toml
+[package]
+name = &quot;sekret&quot;
+license = &quot;¯\_(ツ)_/¯&quot;
+publish = [&quot;sauce&quot;]
+</code></pre>
+<pre><code class="language-ini"># about.toml
+
+# Still ignored!
+private = { ignore = true, registries = [&quot;sauce&quot;] }
+</code></pre>
+<h2 id="crate-configuration"><a class="header" href="#crate-configuration">Crate configuration</a></h2>
+<p>Along with the global options, crates can be individually configured as well, using the name of the crate as the key. Crate specific configuration <em>must</em> come last in the config file.</p>
+<h3 id="the-accepted-field-optional"><a class="header" href="#the-accepted-field-optional">The <code>accepted</code> field (optional)</a></h3>
+<p>Just as with the global <a href="#the-accepted-field"><code>accepted</code></a> field, this accepts specific licenses for the crate. These licenses are appended to the global list, and are again in priority order. So for example, if the global accept was like this:</p>
+<pre><code class="language-ini">accepted = [&quot;MIT&quot;, &quot;ISC&quot;]
+</code></pre>
+<p>And we are using <code>ring</code>, which also is licensed under the <a href="https://spdx.org/licenses/OpenSSL.html"><code>OpenSSL</code></a> license, we could use the following configuration to satisfy the license requirements of <code>ring</code>.</p>
+<pre><code class="language-ini">accepted = [&quot;MIT&quot;, &quot;ISC&quot;]
+
+[ring]
+accepted = [&quot;OpenSSL&quot;]
+</code></pre>
+<h3 id="the-clarify-field-optional"><a class="header" href="#the-clarify-field-optional">The <code>clarify</code> field (optional)</a></h3>
+<p>As noted in the <a href="#the-workarounds-field-optional"><code>workarounds</code></a>, some crates have complicated or incomplete licensing that messes up the harvesting of the license info in an automated fashion. While the <code>workarounds</code> exists for popular crates (and can always be expanded with PRs!) there are often going to be crates that you will need to clarify yourself until a new release of the crate, etc, which is the purpose of the <code>clarify</code> field, to specify exactly what the license information is, and how to verify that the license terms are still the same as when they were clarified, using hashes of the input files.</p>
+<p>Note that since clarifications are human supplied in your project's own configuration, they take precedence over all other methods. If a crate is clarified, it will not be retrieved from clearlydefined.io nor via local file harvesting.</p>
+<h4 id="the-license-field"><a class="header" href="#the-license-field">The <code>license</code> field</a></h4>
+<p>This is the top level SPDX expression for the crate as a whole. It should be noted that this actually overrides the <code>license</code> expression of the crate itself if it exists, though in most cases this will be the same as the stated <code>license</code>, it is simply required so that you can't accidentally forget it in the cases where it <em>does</em> differ.</p>
+<pre><code class="language-ini">[ring.clarify]
+license = &quot;ISC AND MIT AND OpenSSL&quot;
+</code></pre>
+<h4 id="the-override-git-commit-field-optional"><a class="header" href="#the-override-git-commit-field-optional">The <code>override-git-commit</code> field (optional)</a></h4>
+<p>When clarifying a crate with files pulled from its source git repository, cargo-about will normally read the contents of the <code>.cargo_vcs_info.json</code> file that is usually part of a published crate's contents, which includes the full commit hash at the time the crate was published. However, this file is not guaranteed to be present (eg, if the crate is published with <code>cargo publish --allow-dirty</code>), so in that case the git ref to pull the license file contents must be supplied. This can either be a full git revision, or a git tag.</p>
+<pre><code class="language-ini">[core-graphics-types.clarify]
+override-git-commit = &quot;3841d2bb3aa76dec2ea6319e757603fb923b5a50&quot;
+</code></pre>
+<h4 id="the-files-andor-git-field"><a class="header" href="#the-files-andor-git-field">The <code>files</code> and/or <code>git</code> field</a></h4>
+<p>When clarifying the license of a crate, it is <strong>required</strong> to give a source of truth for the licenses in the expression, to prevent drift between the clarification and the actual licensing of the crate in question. For example, if a crate uses the <code>Zlib</code> license, then changes between releases to use the <code>MIT</code> license instead, the source of truth (eg. the <code>LICENSE</code> file) would also (hopefully...) change resulting in a hash mismatch that means the clarification would not be used.</p>
+<p>We'll be using this example for the <code>ring</code> crate</p>
+<pre><code class="language-ini">[ring.clarify]
+license = &quot;ISC AND MIT AND OpenSSL&quot;
+
+[[ring.clarify.files]]
+path = 'LICENSE'
+license = 'OpenSSL'
+checksum = '53552a9b197cd0db29bd085d81253e67097eedd713706e8cd2a3cc6c29850ceb'
+start = '/* ===================================================================='
+end = '\n * Hudson (tjh@cryptsoft.com).\n *\n */'
+</code></pre>
+<h5 id="the-path-field"><a class="header" href="#the-path-field">The <code>path</code> field</a></h5>
+<p>This is the relative path to the file from the root. For <code>files</code> this is the root of the crate, but for <code>git</code> this is the repo root.</p>
+<h5 id="the-license-field-optional"><a class="header" href="#the-license-field-optional">The <code>license</code> field (optional)</a></h5>
+<p>In a multiple license situation it can be useful to supply the exact license for the file. If this is not supplied the parent <code>clarify.license</code> expression is used instead.</p>
+<h5 id="the-checksum-field"><a class="header" href="#the-checksum-field">The <code>checksum</code> field</a></h5>
+<p>This is the full sha-256 checksum of the contents. If this doesn't match the computed checksum, the clarification will not be used.</p>
+<h5 id="the-start-field-optional"><a class="header" href="#the-start-field-optional">The <code>start</code> field (optional)</a></h5>
+<p>In some cases, crates concatenate multiple licenses together into a single file, which confuses machine readers, and makes splatting the license text into the final generated template a pain, so in those cases you need to supply a place in the text that a license starts and/or ends from. This is just a simple substring find.</p>
+<h5 id="the-end-field-optional"><a class="header" href="#the-end-field-optional">The <code>end</code> field (optional)</a></h5>
+<p>Just as with start, this is just a simple substring find, however, it will only match text that comes <em>after</em> the position the start text (or beginning of the file) was found.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../cli/generate/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                            <a rel="next" href="../../cli/generate/workarounds.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../cli/generate/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                    <a rel="next" href="../../cli/generate/workarounds.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        <script src="../../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+    </body>
+</html>

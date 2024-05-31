@@ -1,0 +1,207 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>generate - cargo-about</title>
+        <!-- Custom HTML head -->
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../highlight.css">
+        <link rel="stylesheet" href="../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../../index.html"><strong aria-hidden="true">1.</strong> cargo-about</a></li><li class="chapter-item expanded "><a href="../../cli/index.html"><strong aria-hidden="true">2.</strong> Commands</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../cli/common.html"><strong aria-hidden="true">2.1.</strong> common</a></li><li class="chapter-item expanded "><a href="../../cli/init.html"><strong aria-hidden="true">2.2.</strong> init</a></li><li class="chapter-item expanded "><a href="../../cli/generate/index.html" class="active"><strong aria-hidden="true">2.3.</strong> generate</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../cli/generate/config.html"><strong aria-hidden="true">2.3.1.</strong> config</a></li><li class="chapter-item expanded "><a href="../../cli/generate/workarounds.html"><strong aria-hidden="true">2.3.2.</strong> workarounds</a></li><li class="chapter-item expanded "><a href="../../cli/generate/output.html"><strong aria-hidden="true">2.3.3.</strong> output</a></li></ol></li><li class="chapter-item expanded "><a href="../../cli/clarify.html"><strong aria-hidden="true">2.4.</strong> clarify</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">cargo-about</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="generate"><a class="header" href="#generate">generate</a></h1>
+<p>The generate subcommand is the primary subcommand of <code>cargo-about</code>. It attempts to find and satisfy all license requirements for a crate's or workspace's dependency graph and generate licensing output based on one or more handlebar templates.</p>
+<h2 id="flags"><a class="header" href="#flags">Flags</a></h2>
+<h3 id="--all-features-single-crate-or-workspace"><a class="header" href="#--all-features-single-crate-or-workspace"><code>--all-features</code> (single crate or workspace)</a></h3>
+<p>Enables all features when determining which crates to consider. Works for both single crates and workspaces.</p>
+<h3 id="--no-default-features-single-crate-only"><a class="header" href="#--no-default-features-single-crate-only"><code>--no-default-features</code> (single crate only)</a></h3>
+<p>Disables the <code>default</code> feature for a crate when determining which crates to consider.</p>
+<h3 id="--workspace"><a class="header" href="#--workspace"><code>--workspace</code></a></h3>
+<p>Scan licenses for the entire workspace, not just the active package.</p>
+<h3 id="--fail"><a class="header" href="#--fail"><code>--fail</code></a></h3>
+<p>Exits with a non-zero exit code if any crate's license cannot be reasonably determined</p>
+<h2 id="options"><a class="header" href="#options">Options</a></h2>
+<h3 id="-c---config"><a class="header" href="#-c---config"><code>-c, --config</code></a></h3>
+<p>Path to the <a href="config.html">config</a> to use. Will default to <code>&lt;manifest_root/about.toml&gt;</code> if not specified.</p>
+<h4 id="--features-single-crate-only"><a class="header" href="#--features-single-crate-only"><code>--features</code> (single crate only)</a></h4>
+<p>Space-separated list of features to enable when determining which crates to consider.</p>
+<h4 id="-i---include-local"><a class="header" href="#-i---include-local"><code>-i, --include-local</code></a></h4>
+<p>Include local crates beneath one or more directories, local crates are disregarded by default.</p>
+<h4 id="-m---manifest-path"><a class="header" href="#-m---manifest-path"><code>-m, --manifest-path</code></a></h4>
+<p>The path of the Cargo.toml for the root crate, defaults to the current crate or workspace in the current working directory.</p>
+<h4 id="-n---name"><a class="header" href="#-n---name"><code>-n, --name</code></a></h4>
+<p>The name of the template to use when rendering. If only passing a single template file to <a href="#templates"><code>templates</code></a> this is not used.</p>
+<h4 id="-o---output-file"><a class="header" href="#-o---output-file"><code>-o, --output-file</code></a></h4>
+<p>A file to write the generated output to. Typically an <code>.html</code> file.</p>
+<h4 id="--threshold-default-08"><a class="header" href="#--threshold-default-08"><code>--threshold</code> (default: 0.8)</a></h4>
+<p>The confidence threshold required for license files to be positively identified: <code>0.0 - 1.0</code></p>
+<h4 id="--format-jsonhandlebars-default-handlebars"><a class="header" href="#--format-jsonhandlebars-default-handlebars"><code>--format &lt;json|handlebars&gt;</code> (default: <code>handlebars</code>)</a></h4>
+<p>The format to output the license + crate data in.</p>
+<h2 id="args"><a class="header" href="#args">Args</a></h2>
+<h3 id="templates"><a class="header" href="#templates"><code>&lt;templates&gt;</code></a></h3>
+<p>The template(s) or template directory to use. Must either be a <code>.hbs</code> file, or have at least one <code>.hbs</code> file in it if it is a directory. Required if <code>--format = handlebars</code> (the default).</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../cli/init.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                            <a rel="next" href="../../cli/generate/config.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../cli/init.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                    <a rel="next" href="../../cli/generate/config.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        <script src="../../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+    </body>
+</html>
