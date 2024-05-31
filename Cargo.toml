@@ -7,7 +7,7 @@ authors = [
   "Jake Shadle <jake.shadle@embark-studios.com>",
 ]
 edition = "2021"
-rust-version = "1.70.0"
+rust-version = "1.73.0"
 repository = "https://github.com/EmbarkStudios/cargo-about"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
