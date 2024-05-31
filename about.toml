@@ -1,4 +1,4 @@
-accepted = ["Apache-2.0", "MIT"]
+accepted = ["Apache-2.0", "MIT", "BSD-3-Clause", "ISC"]
 targets = [
     "x86_64-unknown-linux-gnu",
     "x86_64-unknown-linux-musl",
@@ -32,26 +32,11 @@ license = "Apache-2.0 OR MIT"
 path = "LICENSE"
 checksum = "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
 
-[encoding_rs]
-accepted = ["BSD-3-Clause"]
-
-[instant]
-accepted = ["BSD-3-Clause"]
-
 [ring]
-accepted = ["ISC", "OpenSSL"]
+accepted = ["OpenSSL"]
 
 [unicode-ident]
 accepted = ["Unicode-DFS-2016"]
-
-[untrusted]
-accepted = ["ISC"]
-
-[webpki]
-accepted = ["ISC", "BSD-3-Clause"]
-
-[rustls-webpki]
-accepted = ["ISC"]
 
 [webpki-roots]
 accepted = ["MPL-2.0"]
