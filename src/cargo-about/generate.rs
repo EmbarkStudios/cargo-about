@@ -29,7 +29,7 @@ impl fmt::Display for OutputFormat {
 pub struct Args {
     /// Path to the config to use
     ///
-    /// Defaults to <manifest_root>/about.toml if not specified
+    /// Defaults to `<manifest_root>/about.toml` if not specified
     #[clap(short, long)]
     config: Option<PathBuf>,
     /// The confidence threshold required for license files

@@ -68,13 +68,13 @@ pub struct Resolved {
 /// Synthesizes a package manifest for a krate with the specified license expression
 fn synthesize_manifest(
     krate: &Krate,
-    existing: Option<toml_edit::Document>,
+    existing: Option<toml_edit::DocumentMut>,
     expression: &spdx::Expression,
 ) -> (String, usize) {
     let mut doc = if let Some(existing) = existing {
         existing
     } else {
-        let mut doc = toml_edit::Document::new();
+        let mut doc = toml_edit::DocumentMut::new();
 
         let package = &mut doc["package"];
         package["name"] = toml_edit::value(krate.name.clone());
@@ -202,7 +202,7 @@ pub fn resolve(
             let (manifest, expr_offset) = match (manifest, expr_offset) {
                 (Some(manifest), Some(expr_offset)) => (manifest, expr_offset),
                 (Some(manifest), None) => {
-                    let doc: Option<toml_edit::Document> = manifest
+                    let doc: Option<toml_edit::DocumentMut> = manifest
                         .parse()
                         .map_err(|e| {
                             log::error!(

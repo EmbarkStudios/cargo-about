@@ -149,7 +149,7 @@ impl<'a> PackageBuilder<'a> {
 
     fn write_default_cargo_manifest(&self, dir: &TempDir) -> Result<()> {
         if self.not_overridden_or_excluded(CARGO_MANIFEST_FILENAME) {
-            let mut manifest = toml_edit::Document::new();
+            let mut manifest = toml_edit::DocumentMut::new();
             let package = &mut manifest["package"];
             *package = toml_edit::table();
 
@@ -183,7 +183,7 @@ impl<'a> PackageBuilder<'a> {
 
     fn write_default_about_config(&self, dir: &TempDir) -> Result<()> {
         if self.not_overridden_or_excluded(ABOUT_CONFIG_FILENAME) {
-            let mut config = toml_edit::Document::new();
+            let mut config = toml_edit::DocumentMut::new();
             config["accepted"] =
                 toml_edit::value(self.accepted.iter().collect::<toml_edit::Array>());
 
