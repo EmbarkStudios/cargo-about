@@ -60,20 +60,6 @@ jobs:
       - name: cargo check
         run: cargo check --all-targets
 
-  build-aarch64-apple-darwin:
-    name: Build aarch64-apple-darwin
-    runs-on: macos-13-xl
-    env:
-      TRIPLE: aarch64-apple-darwin
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ env.TRIPLE }}
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo fetch --target ${{ env.TRIPLE }}
-      - run: cargo build --release --target ${{ env.TRIPLE }}
-
   deny-check:
     name: cargo-deny
     runs-on: ubuntu-22.04
@@ -129,7 +115,7 @@ jobs:
 
   release:
     name: Release
-    if: startsWith(github.ref, 'refs/tags/')
+    #if: startsWith(github.ref, 'refs/tags/')
     strategy:
       matrix:
         include:
@@ -142,9 +128,9 @@ jobs:
             target: x86_64-pc-windows-msvc
           - os: windows-2022
             target: aarch64-pc-windows-msvc
-          - os: macOS-12
+          - os: macOS-13
             target: x86_64-apple-darwin
-          - os: macOS-12
+          - os: macOS-14
             target: aarch64-apple-darwin
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
@@ -168,13 +154,13 @@ jobs:
           NAME: cargo-about
           TARGET: ${{ matrix.target }}
         run: .github/scripts/package.sh
-      - name: Publish
-        uses: softprops/action-gh-release@v1
-        with:
-          draft: true
-          files: "cargo-about*"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Publish
+      #   uses: softprops/action-gh-release@v1
+      #   with:
+      #     draft: true
+      #     files: "cargo-about*"
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish:
     name: Publish Docs
@@ -200,3 +186,9 @@ jobs:
           GITHUB_DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
           BUILD_REPOSITORY_ID: ${{ github.repository }}
           BUILD_SOURCEVERSION: ${{ github.sha }}
+
+  test_success:
+    runs-on: ubuntu-22.04
+    needs: [lint, test, check-self, deny-check, publish-check, doc-book]
+    steps:
+      - run: echo "All test jobs passed"
