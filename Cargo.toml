@@ -44,7 +44,7 @@ codespan-reporting = "0.11"
 # Logging helpers
 fern = "0.6"
 # Template engine for output
-handlebars = { version = "5.1", features = ["dir_source"] }
+handlebars = { version = "6.0", features = ["dir_source"] }
 # $HOME retrieval
 home = "0.5"
 # Directory walking
@@ -69,6 +69,8 @@ ring = "0.17"
 # Oh gee what could it be
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+# Used for checking version requirements
+semver = { version = "1.0", features = ["serde"] }
 # License expression parsing and evaluation
 spdx = { version = "0.10", features = ["text"] }
 # Log timestamps

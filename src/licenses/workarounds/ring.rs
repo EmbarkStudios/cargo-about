@@ -1,6 +1,6 @@
 use super::ClarificationFile;
 use anyhow::Context as _;
-use krates::cm::semver::Version;
+use semver::Version;
 
 pub fn get(krate: &crate::Krate) -> anyhow::Result<Option<super::Clarification>> {
     if krate.name != "ring" {
