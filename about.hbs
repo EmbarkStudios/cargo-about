@@ -48,7 +48,7 @@
         <h2>Overview of licenses:</h2>
         <ul class="licenses-overview">
             {{#each overview}}
-            <li><a href="#{{short_id}}">{{name}}</a> ({{count}})</li>
+            <li><a href="#{{id}}">{{name}}</a> ({{count}})</li>
             {{/each}}
         </ul>
 
@@ -57,10 +57,10 @@
             {{#each licenses}}
                 <!-- Write out a header for each block of the same license -->
                 {{#if first_of_kind}}
-                    <h3 id="{{short_id}}">{{name}}</h3>
+                    <h3 id="{{id}}">{{name}}</h3>
                 {{/if}}
                 <li class="license">
-                    <h4 id="{{short_id}}-{{@index}}">{{name}}</h>
+                    <h4 id="{{id}}-{{@index}}">{{name}}</h>
                     <h5>Used by:</h5>
                     <ul class="license-used-by">
                         {{#each used_by}}

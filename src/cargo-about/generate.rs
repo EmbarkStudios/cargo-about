@@ -285,7 +285,7 @@ struct License<'a> {
     /// The full name of the license
     name: String,
     /// The SPDX short identifier for the license
-    short_id: String,
+    id: String,
     /// True if this is the first license of its kind in the flat array
     first_of_kind: bool,
     /// The full license text
@@ -300,7 +300,7 @@ struct License<'a> {
 struct LicenseSet {
     count: usize,
     name: String,
-    short_id: String,
+    id: String,
     indices: Vec<usize>,
     text: String,
 }
@@ -367,7 +367,7 @@ fn generate<'kl>(
                                     | licenses::LicenseFileKind::AddendumText(text, _) => {
                                         let license = License {
                                             name: id.full_name.to_owned(),
-                                            short_id: id.name.to_owned(),
+                                            id: id.name.to_owned(),
                                             text: text.clone(),
                                             source_path: Some(lf.path.clone()),
                                             used_by: Vec::new(),
@@ -389,7 +389,7 @@ fn generate<'kl>(
                             // fallback to the canonical license text and emit a warning
                             license_texts.push(License {
                                 name: id.full_name.to_owned(),
-                                short_id: id.name.to_owned(),
+                                id: id.name.to_owned(),
                                 text: id.text().to_owned(),
                                 source_path: None,
                                 used_by: Vec::new(),
@@ -431,7 +431,7 @@ fn generate<'kl>(
             lic.used_by.sort_by(|a, b| a.krate.id.cmp(&b.krate.id));
         }
 
-        licenses.sort_by(|a, b| a.short_id.cmp(&b.short_id));
+        licenses.sort_by(|a, b| a.id.cmp(&b.id));
         licenses
     };
 
@@ -444,7 +444,7 @@ fn generate<'kl>(
     let mut overview: Vec<LicenseSet> = Vec::with_capacity(256);
 
     for (ndx, lic) in licenses.iter_mut().enumerate() {
-        match overview.binary_search_by(|i| i.short_id.cmp(&lic.short_id)) {
+        match overview.binary_search_by(|i| i.id.cmp(&lic.id)) {
             Ok(i) => {
                 let ov = &mut overview[i];
                 ov.indices.push(ndx);
@@ -454,7 +454,7 @@ fn generate<'kl>(
                 let mut ls = LicenseSet {
                     count: lic.used_by.len(),
                     name: lic.name.clone(),
-                    short_id: lic.short_id.clone(),
+                    id: lic.id.clone(),
                     indices: Vec::with_capacity(10),
                     text: lic.text.clone(),
                 };
