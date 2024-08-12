@@ -8,7 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
-## [0.6.3] - 2024-08-12
+### Fixed
+- [PR#254](https://github.com/EmbarkStudios/cargo-about/pull/254) reverted unintended `id` -> `short_id` field rename.
+
+## [0.6.3] **yanked** - 2024-08-12
 ### Changed
 - [PR#251](https://github.com/EmbarkStudios/cargo-about/pull/251) updated crates and directly depend on `semver`.
 
