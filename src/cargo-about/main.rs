@@ -119,7 +119,23 @@ fn real_main() -> anyhow::Result<()> {
     }
 }
 
+/// Ignore SIGPIPE due to std library deficiency <https://github.com/rust-lang/rust/issues/46016>
+#[cfg(unix)]
+fn ignore_sigpipe() {
+    extern "C" {
+        fn signal(signum: i32, handler: usize) -> usize;
+    }
+
+    #[allow(unsafe_code)]
+    unsafe {
+        signal(13 /*SIGPIPE*/, 0 /*SIG_DFL*/);
+    }
+}
+
 fn main() {
+    #[cfg(unix)]
+    ignore_sigpipe();
+
     match real_main() {
         Ok(_) => {}
         Err(e) => {

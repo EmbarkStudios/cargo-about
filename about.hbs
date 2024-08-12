@@ -48,23 +48,27 @@
         <h2>Overview of licenses:</h2>
         <ul class="licenses-overview">
             {{#each overview}}
-            <li><a href="#{{id}}">{{name}}</a> ({{count}})</li>
+            <li><a href="#{{short_id}}">{{name}}</a> ({{count}})</li>
             {{/each}}
         </ul>
 
         <h2>All license text:</h2>
         <ul class="licenses-list">
             {{#each licenses}}
-            <li class="license">
-                <h3 id="{{id}}">{{name}}</h3>
-                <h4>Used by:</h4>
-                <ul class="license-used-by">
-                    {{#each used_by}}
-                    <li><a href="{{#if crate.repository}} {{crate.repository}} {{else}} https://crates.io/crates/{{crate.name}} {{/if}}">{{crate.name}} {{crate.version}}</a></li>
-                    {{/each}}
-                </ul>
-                <pre class="license-text">{{text}}</pre>
-            </li>
+                <!-- Write out a header for each block of the same license -->
+                {{#if first_of_kind}}
+                    <h3 id="{{short_id}}">{{name}}</h3>
+                {{/if}}
+                <li class="license">
+                    <h4 id="{{short_id}}-{{@index}}">{{name}}</h>
+                    <h5>Used by:</h5>
+                    <ul class="license-used-by">
+                        {{#each used_by}}
+                        <li><a href="{{#if crate.repository}} {{crate.repository}} {{else}} https://crates.io/crates/{{crate.name}} {{/if}}">{{crate.name}} {{crate.version}}</a></li>
+                        {{/each}}
+                    </ul>
+                    <pre class="license-text">{{text}}</pre>
+                </li>
             {{/each}}
         </ul>
     </main>
