@@ -44,13 +44,13 @@ codespan-reporting = "0.11"
 # Logging helpers
 fern = "0.6"
 # Template engine for output
-handlebars = { version = "5.1", features = ["dir_source"] }
+handlebars = { version = "6.0", features = ["dir_source"] }
 # $HOME retrieval
 home = "0.5"
 # Directory walking
 ignore = "0.4"
 # Dependency graphing
-krates = "0.16.4"
+krates = { version = "0.17.1", features = ["metadata"] }
 # Logging macros
 log = "0.4"
 # Better heap allocator over system one (usually)
@@ -69,6 +69,8 @@ ring = "0.17"
 # Oh gee what could it be
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+# Used for checking version requirements
+semver = { version = "1.0", features = ["serde"] }
 # License expression parsing and evaluation
 spdx = { version = "0.10", features = ["text"] }
 # Log timestamps
