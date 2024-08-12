@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - [PR#251](https://github.com/EmbarkStudios/cargo-about/pull/251) updated crates and directly depend on `semver`.
 
+### Fixed
+- [PR#253](https://github.com/EmbarkStudios/cargo-about/pull/253) resolved [#250](https://github.com/EmbarkStudios/cargo-about/issues/250) by changing the example template to emit unique anchors.
+- [PR#253](https://github.com/EmbarkStudios/cargo-about/pull/253) resolved [#252](https://github.com/EmbarkStudios/cargo-about/issues/252) by ignoring `SIGPIPE`.
+
 ## [0.6.2] - 2024-05-31
 ### Changed
 - [PR#248](https://github.com/EmbarkStudios/cargo-about/pull/248) updated crates.
