@@ -44,7 +44,7 @@
             <h1>Third Party Licenses</h1>
             <p>This page lists the licenses of the projects used in cargo-about.</p>
         </div>
-    
+
         <h2>Overview of licenses:</h2>
         <ul class="licenses-overview">
             {{#each overview}}
@@ -55,16 +55,16 @@
         <h2>All license text:</h2>
         <ul class="licenses-list">
             {{#each licenses}}
-                <!-- Write out a header for each block of the same license -->
-                {{#if first_of_kind}}
-                    <h3 id="{{id}}">{{name}}</h3>
-                {{/if}}
                 <li class="license">
-                    <h4 id="{{id}}-{{@index}}">{{name}}</h>
+                    {{! Write out a header for each block of the same license }}
+                    {{#if first_of_kind}}
+                        <h3 id="{{id}}">{{name}}</h3>
+                    {{/if}}
+                    <h4 id="{{id}}-{{@index}}">{{name}}</h4>
                     <h5>Used by:</h5>
                     <ul class="license-used-by">
                         {{#each used_by}}
-                        <li><a href="{{#if crate.repository}} {{crate.repository}} {{else}} https://crates.io/crates/{{crate.name}} {{/if}}">{{crate.name}} {{crate.version}}</a></li>
+                        <li><a href="{{#if crate.repository}}{{crate.repository}}{{else}}https://crates.io/crates/{{crate.name}}{{/if}}">{{crate.name}} {{crate.version}}</a></li>
                         {{/each}}
                     </ul>
                     <pre class="license-text">{{text}}</pre>
