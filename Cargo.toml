@@ -7,7 +7,7 @@ authors = [
   "Jake Shadle <jake.shadle@embark-studios.com>",
 ]
 edition = "2021"
-rust-version = "1.74.0"
+rust-version = "1.81.0"
 repository = "https://github.com/EmbarkStudios/cargo-about"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
@@ -33,16 +33,16 @@ nu-ansi-term = "0.50"
 # Error facilities
 anyhow = "1.0"
 # License detection
-askalono = "0.4"
+askalono = "0.5"
 # API helpers for api.clearlydefined.io
 cd = { version = "0.3", features = ["blocking"] }
 # Argument parsing
-clap = { version = "4.0", features = ["derive"] }
+clap = { version = "4.5", features = ["derive"] }
 # Diagnostic reporting
 codespan = "0.11"
 codespan-reporting = "0.11"
 # Logging helpers
-fern = "0.6"
+fern = "0.7"
 # Template engine for output
 handlebars = { version = "6.0", features = ["dir_source"] }
 # $HOME retrieval
@@ -80,9 +80,9 @@ toml = "0.8"
 # Manipulation of cargo manifests for diagnostic purposes
 toml_edit = "0.22"
 # Hashing
-twox-hash = "1.6"
+twox-hash = "2.0"
 # Url parsing
-url = "2.2"
+url = "2.5"
 
 [dev-dependencies]
 # Filesystems - Filesystem fixtures and assertions for testing
