@@ -54,7 +54,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: "1.74.0"
+          toolchain: "1.81.0"
       - uses: Swatinem/rust-cache@v2
       - run: cargo fetch
       - name: cargo check
@@ -90,7 +90,7 @@ jobs:
           curl -L https://github.com/rust-lang-nursery/mdBook/releases/download/v0.4.21/mdbook-v0.4.21-x86_64-unknown-linux-gnu.tar.gz | tar xzf -
           echo `pwd` >> $GITHUB_PATH
       - run: (cd docs && mdbook build)
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v4
         with:
           name: doc-book
           path: docs/book
@@ -169,7 +169,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Download book
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4
         with:
           name: doc-book
       - name: Assemble gh-pages

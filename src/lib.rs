@@ -9,26 +9,23 @@ pub struct Krate(pub cm::Package);
 
 impl Krate {
     fn get_license_expression(&self) -> licenses::LicenseInfo {
-        match &self.0.license {
-            Some(license_field) => {
-                //. Reasons this can fail:
-                // * Empty! The rust crate used to validate this field has a bug
-                // https://github.com/rust-lang-nursery/license-exprs/issues/23
-                // * It also just does basic lexing, so parens, duplicate operators,
-                // unpaired exceptions etc can all fail validation
+        if let Some(license_field) = &self.0.license {
+            //. Reasons this can fail:
+            // * Empty! The rust crate used to validate this field has a bug
+            // https://github.com/rust-lang-nursery/license-exprs/issues/23
+            // * It also just does basic lexing, so parens, duplicate operators,
+            // unpaired exceptions etc can all fail validation
 
-                match spdx::Expression::parse(license_field) {
-                    Ok(validated) => licenses::LicenseInfo::Expr(validated),
-                    Err(err) => {
-                        log::error!("unable to parse license expression for '{}': {}", self, err);
-                        licenses::LicenseInfo::Unknown
-                    }
+            match spdx::Expression::parse(license_field) {
+                Ok(validated) => licenses::LicenseInfo::Expr(validated),
+                Err(err) => {
+                    log::error!("unable to parse license expression for '{self}': {err}");
+                    licenses::LicenseInfo::Unknown
                 }
             }
-            None => {
-                log::warn!("crate '{}' doesn't have a license field", self);
-                licenses::LicenseInfo::Unknown
-            }
+        } else {
+            log::warn!("crate '{self}' doesn't have a license field");
+            licenses::LicenseInfo::Unknown
         }
     }
 }

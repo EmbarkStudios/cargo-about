@@ -205,20 +205,17 @@ impl GitCache {
                         format!("crate '{krate}' with registry source does not have a 'repository'")
                     })?;
 
-                    let sha1 = match commit_override {
-                        Some(co) => {
-                            log::debug!("using commit override '{co}' for crate '{krate}'");
-                            co.clone()
-                        }
-                        None => {
-                            let vcs_info_path = krate
-                                .manifest_path
-                                .parent()
-                                .unwrap()
-                                .join(".cargo_vcs_info.json");
+                    let sha1 = if let Some(co) = commit_override {
+                        log::debug!("using commit override '{co}' for crate '{krate}'");
+                        co.clone()
+                    } else {
+                        let vcs_info_path = krate
+                            .manifest_path
+                            .parent()
+                            .unwrap()
+                            .join(".cargo_vcs_info.json");
 
-                            Self::parse_vcs_info(&vcs_info_path)?.git.sha1
-                        }
+                        Self::parse_vcs_info(&vcs_info_path)?.git.sha1
                     };
 
                     let hash = {
