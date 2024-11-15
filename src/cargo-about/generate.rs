@@ -249,7 +249,7 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
 
     log::info!("gathered {} crates", krates.len());
 
-    let client = if !args.offline {
+    let client = if !args.offline && !args.frozen {
         Some(reqwest::blocking::ClientBuilder::new().build()?)
     } else {
         None
