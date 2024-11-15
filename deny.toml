@@ -9,24 +9,20 @@ targets = [
 ]
 
 [advisories]
-ignore = [
-    # rmp-serde, only used to deserialize a valid utf-8 config
-    "RUSTSEC-2022-0092",
-]
+ignore = []
 
 [bans]
 multiple-versions = "deny"
 deny = ["openssl-sys", "cmake", "windows"]
 skip = []
 skip-tree = [
-    { crate = "windows-sys@0.48.0", reason = "as always" },
     { crate = "windows-sys@0.52.0", reason = "as always" },
 ]
 
 [licenses]
 # We want really high confidence when inferring licenses from text
 confidence-threshold = 0.93
-allow = ["Apache-2.0", "MIT", "BSD-3-Clause", "ISC"]
+allow = ["Apache-2.0", "MIT", "BSD-3-Clause", "ISC", "Unicode-3.0"]
 
 exceptions = [
     # ring uses code from multiple libraries but all with permissive licenses
