@@ -100,10 +100,12 @@ pub fn get_all_crates(
     all_features: bool,
     features: Vec<String>,
     workspace: bool,
+    lock_opts: krates::LockOptions,
     cfg: &licenses::config::Config,
 ) -> anyhow::Result<Krates> {
     let mut mdc = krates::Cmd::new();
     mdc.manifest_path(cargo_toml);
+    mdc.lock_opts(lock_opts);
 
     // The metadata command builder is weird and only allows you to specify
     // one of these, but really you might need to do multiple of them

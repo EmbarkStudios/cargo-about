@@ -61,7 +61,7 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
                 .with_context(|| format!("unable to read file '{full_path}'"))?
         }
         Subcommand::Repo { rev, repo } => {
-            let gc = GitCache::default();
+            let gc = GitCache::online();
 
             gc.retrieve_remote(repo.as_str(), &rev, &args.path)
                 .context("failed to retrieve remote file")?
@@ -95,7 +95,7 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
             let pkg: MinPkg =
                 toml::from_str(&manifest).context("failed to deserialize Cargo.toml")?;
 
-            let gc = GitCache::default();
+            let gc = GitCache::online();
             let vcs_info = GitCache::parse_vcs_info(&crate_path.join(".cargo_vcs_info.json"))
                 .context("failed to read sha1")?;
 

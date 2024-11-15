@@ -122,16 +122,14 @@ impl<'krate> Eq for KrateLicense<'krate> {}
 
 pub struct Gatherer {
     store: Arc<LicenseStore>,
-    cd_client: cd::client::Client,
     threshold: f32,
     max_depth: Option<usize>,
 }
 
 impl Gatherer {
-    pub fn with_store(store: Arc<LicenseStore>, client: cd::client::Client) -> Self {
+    pub fn with_store(store: Arc<LicenseStore>) -> Self {
         Self {
             store,
-            cd_client: client,
             threshold: 0.8,
             max_depth: None,
         }
@@ -151,6 +149,7 @@ impl Gatherer {
         self,
         krates: &'krate Krates,
         cfg: &config::Config,
+        client: Option<reqwest::blocking::Client>,
     ) -> Vec<KrateLicense<'krate>> {
         let mut licensed_krates = Vec::with_capacity(krates.len());
 
@@ -167,7 +166,8 @@ impl Gatherer {
             .optimize(false)
             .max_passes(1);
 
-        let git_cache = fetch::GitCache::default();
+        let is_offline = client.is_none();
+        let git_cache = fetch::GitCache::maybe_offline(client);
 
         // If we're ignoring crates that are private, just add them
         // to the list so all of the following gathers ignore them
@@ -204,7 +204,27 @@ impl Gatherer {
         // can get previously gathered license information + any possible
         // curations so that we only need to fallback to scanning local crate
         // sources if it's not already in clearly-defined
-        self.gather_clearly_defined(krates, cfg, &strategy, &mut licensed_krates);
+        if !is_offline && !cfg.no_clearly_defined {
+            match reqwest::blocking::ClientBuilder::new()
+                .timeout(std::time::Duration::from_secs(
+                    cfg.clearly_defined_timeout_secs.unwrap_or(30),
+                ))
+                .build()
+            {
+                Ok(client) => {
+                    self.gather_clearly_defined(
+                        krates,
+                        cfg,
+                        client.into(),
+                        &strategy,
+                        &mut licensed_krates,
+                    );
+                }
+                Err(err) => {
+                    log::error!("failed to build clearlydefined.io HTTP client: {err:#}");
+                }
+            }
+        }
 
         // Finally, crawl the crate sources on disk to try and determine licenses
         self.gather_file_system(krates, &strategy, &mut licensed_krates);
@@ -244,7 +264,7 @@ impl Gatherer {
                         );
                     }
                     Err(e) => {
-                        log::warn!("failed to validate all files specified in clarification for crate {krate}: {e}");
+                        log::warn!("failed to validate all files specified in clarification for crate {krate}: {e:#}");
                     }
                 }
             }
@@ -255,6 +275,7 @@ impl Gatherer {
         &self,
         krates: &'k Krates,
         cfg: &config::Config,
+        client: cd::client::Client,
         strategy: &askalono::ScanStrategy<'_>,
         licensed_krates: &mut Vec<KrateLicense<'k>>,
     ) {
@@ -292,7 +313,7 @@ impl Gatherer {
         );
 
         let collected: Vec<_> = reqs.par_bridge().filter_map(|req| {
-            match self.cd_client.execute::<cd::definitions::GetResponse>(req) {
+            match client.execute::<cd::definitions::GetResponse>(req) {
                 Ok(response) => {
                     Some(response.definitions.into_iter().filter_map(|def| {
                         if def.described.is_none() {
