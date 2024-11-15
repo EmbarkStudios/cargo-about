@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Added
+- [PR#261](https://github.com/EmbarkStudios/cargo-about/pull/261) resolved [#246](https://github.com/EmbarkStudios/cargo-about/issues/246) by adding an `--offline` (as well as `--locked` and `--frozen`) option to the `generate` command.
+
 ## [0.6.4] - 2024-08-12
 ### Fixed
 - [PR#254](https://github.com/EmbarkStudios/cargo-about/pull/254) reverted unintended `id` -> `short_id` field rename.
