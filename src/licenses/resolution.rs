@@ -139,7 +139,7 @@ pub fn resolve(
                         if fail_on_missing {
                             resolved.diagnostics.push(Diagnostic::new(Severity::Error).with_message(msg));
                         } else {
-                            log::warn!("{}", msg);
+                            log::warn!("{msg}");
                         }
 
                         return Some(resolved);

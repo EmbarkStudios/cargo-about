@@ -100,10 +100,12 @@ pub fn get_all_crates(
     all_features: bool,
     features: Vec<String>,
     workspace: bool,
+    lock_opts: krates::LockOptions,
     cfg: &licenses::config::Config,
 ) -> anyhow::Result<Krates> {
     let mut mdc = krates::Cmd::new();
     mdc.manifest_path(cargo_toml);
+    mdc.lock_opts(lock_opts);
 
     // The metadata command builder is weird and only allows you to specify
     // one of these, but really you might need to do multiple of them
@@ -170,8 +172,7 @@ pub fn to_hex(bytes: &[u8]) -> String {
 pub fn validate_sha256(buffer: &str, expected: &str) -> anyhow::Result<()> {
     anyhow::ensure!(
         expected.len() == 64,
-        "checksum '{}' length is {} instead of expected 64",
-        expected,
+        "checksum '{expected}' length is {} instead of expected 64",
         expected.len()
     );
 
@@ -193,7 +194,7 @@ pub fn validate_sha256(buffer: &str, expected: &str) -> anyhow::Result<()> {
             b'a'..=b'f' => exp[0] - b'a' + 10,
             b'0'..=b'9' => exp[0] - b'0',
             c => {
-                anyhow::bail!("invalid byte in checksum '{}' @ {}: {}", expected, ind, c);
+                anyhow::bail!("invalid byte in checksum '{expected}' @ {ind}: {c}");
             }
         };
 
@@ -204,12 +205,12 @@ pub fn validate_sha256(buffer: &str, expected: &str) -> anyhow::Result<()> {
             b'a'..=b'f' => exp[1] - b'a' + 10,
             b'0'..=b'9' => exp[1] - b'0',
             c => {
-                anyhow::bail!("invalid byte in checksum '{}' @ {}: {}", expected, ind, c);
+                anyhow::bail!("invalid byte in checksum '{expected}' @ {ind}: {c}");
             }
         };
 
         if digest[ind] != cur {
-            anyhow::bail!("checksum mismatch, expected {}", expected);
+            anyhow::bail!("checksum mismatch, expected '{expected}'");
         }
     }
 
