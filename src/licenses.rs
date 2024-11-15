@@ -345,7 +345,7 @@ impl Gatherer {
                                             Some(text)
                                         }
                                         Err(err) => {
-                                            log::warn!("failed to read license from '{}' for crate '{}': {}", path, krate, err);
+                                            log::warn!("failed to read license from '{path}' for crate '{krate}': {err}");
                                             return None;
                                         }
                                     }

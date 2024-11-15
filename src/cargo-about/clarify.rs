@@ -216,9 +216,7 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
 
     let overall_expression = spdx::Expression::parse(&final_expression).map_err(|e| {
         anyhow::anyhow!(
-            "failed to parse '{}' as the total expression for all of the licenses: {}",
-            final_expression,
-            e,
+            "failed to parse '{final_expression}' as the total expression for all of the licenses: {e}",
         )
     })?;
 
