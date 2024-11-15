@@ -451,16 +451,15 @@ impl Gatherer {
                 license_files.sort();
 
                 let mut expr = None;
-                license_files.retain(|lf| match &expr {
-                    Some(cur) => {
+                license_files.retain(|lf| {
+                    if let Some(cur) = &expr {
                         if *cur != lf.license_expr {
                             expr = Some(lf.license_expr.clone());
                             true
                         } else {
                             false
                         }
-                    }
-                    None => {
+                    } else {
                         expr = Some(lf.license_expr.clone());
                         true
                     }
