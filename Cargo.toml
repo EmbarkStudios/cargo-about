@@ -26,6 +26,7 @@ path = "src/cargo-about/main.rs"
 
 [profile.release]
 strip = "debuginfo"
+lto = true
 
 [dependencies]
 # Colorization
