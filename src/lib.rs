@@ -290,13 +290,13 @@ pub fn is_powershell_parent() -> bool {
         while let Some(ppid) = pid {
             let mut basic_info = std::mem::MaybeUninit::<ProcessBasicInformation>::uninit();
             let mut length = 0;
-            if nt_query_information_process(
+            if dbg!(nt_query_information_process(
                 ppid,
                 Processinfoclass::ProcessBasicInformation,
                 basic_info.as_mut_ptr().cast(),
                 std::mem::size_of::<ProcessBasicInformation>() as _,
                 &mut length,
-            ) != StatusSuccess
+            )) != StatusSuccess
             {
                 return false;
             }
@@ -308,13 +308,13 @@ pub fn is_powershell_parent() -> bool {
             let basic_info = basic_info.assume_init();
             reset(&mut file_name);
 
-            if nt_query_information_process(
+            if dbg!(nt_query_information_process(
                 basic_info.inherited_from_unique_process_id as _,
                 Processinfoclass::ProcessImageFileName,
                 file_name.as_mut_ptr().cast(),
                 (file_name.len() * 2) as _,
                 &mut length,
-            ) != StatusSuccess
+            )) != StatusSuccess
             {
                 return false;
             }
