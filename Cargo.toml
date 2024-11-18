@@ -55,6 +55,8 @@ home = "0.5"
 ignore = "0.4"
 # Dependency graphing
 krates = { version = "0.17.1", features = ["metadata"] }
+# Parent process retrieval
+libc = "0.2"
 # Logging macros
 log = "0.4"
 # Better heap allocator over system one (usually)

@@ -45,7 +45,16 @@ jobs:
       - name: cargo test build
         run: cargo build --tests --release
       - name: cargo test
+        shell: bash
         run: cargo test --release
+      - name: detects powershell
+        if: ${{ matrix.os != 'macos-14' }}
+        shell: pwsh
+        run: cargo test --release -- --ignored is_powershell_true
+      - name: doesn't detect powershell
+        if: ${{ matrix.os != 'macos-14' }}
+        shell: bash
+        run: cargo test --release -- --ignored is_powershell_false
 
   msrv-check:
     name: Minimum Stable Rust Version Check

@@ -1,0 +1,22 @@
+output = "win_bindings.rs"
+binds = [
+    "MAX_PATH",
+    "NtClose",
+    "NtOpenProcess",
+    "NtQueryInformationProcess",
+    "ProcessBasicInformation",
+    "ProcessImageFileName",
+    "PROCESS_BASIC_INFORMATION",
+    "PROCESS_QUERY_INFORMATION",
+    "STATUS_SUCCESS",
+    "UNICODE_STRING",
+]
+
+[bind-mode]
+mode = "minwin"
+
+[bind-mode.config]
+enum-style = "minwin"
+fix-naming = true
+use-rust-casing = true
+linking-style = "raw-dylib"
