@@ -29,7 +29,7 @@ Prevents Cargo and `cargo-about` from accessing the network for any reason. With
 
 Beware that this may result in different dependency resolution than online mode. Cargo will restrict itself to crates that are downloaded locally, even if there might be a newer version as indicated in the local copy of the index. See the cargo-fetch(1) command to download dependencies before going offline.
 
-`cargo-about` will also not query clearlydefined.io for license information, meaning that user provided clarifications won't be used, and some ambiguous/complicated license files might be missed by `cargo-about`. Additionally, clarifications that use license files from the crate's source repository will not be applied, meaning that `cargo-about` will fallback to using the default license text rather than the one in the source repository, losing eg. copyright or other unique information.
+`cargo-about` will also not query <https://clearlydefined.io> for license information, meaning that user provided clarifications won't be used, and some ambiguous/complicated license files might be missed by `cargo-about`. Additionally, clarifications that use license files from the crate's source repository will not be applied, meaning that `cargo-about` will fallback to using the default license text rather than the one in the source repository, losing eg. copyright or other unique information.
 
 ### [`--frozen`](https://doc.rust-lang.org/cargo/commands/cargo-fetch.html#option-cargo-fetch---frozen)
 

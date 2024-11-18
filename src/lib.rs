@@ -94,6 +94,7 @@ impl std::ops::Deref for Krate {
 
 pub type Krates = krates::Krates<Krate>;
 
+#[allow(clippy::too_many_arguments)]
 pub fn get_all_crates(
     cargo_toml: &krates::Utf8Path,
     no_default_features: bool,
@@ -102,6 +103,7 @@ pub fn get_all_crates(
     workspace: bool,
     lock_opts: krates::LockOptions,
     cfg: &licenses::config::Config,
+    target_overrdes: &[String],
 ) -> anyhow::Result<Krates> {
     let mut mdc = krates::Cmd::new();
     mdc.manifest_path(cargo_toml);
@@ -139,7 +141,15 @@ pub fn get_all_crates(
         builder.ignore_kind(krates::DepKind::Build, krates::Scope::NonWorkspace);
     }
 
-    builder.include_targets(cfg.targets.iter().map(|triple| (triple.as_str(), vec![])));
+    if target_overrdes.is_empty() {
+        builder.include_targets(cfg.targets.iter().map(|triple| (triple.as_str(), vec![])));
+    } else {
+        builder.include_targets(
+            target_overrdes
+                .iter()
+                .map(|triple| (triple.as_str(), vec![])),
+        );
+    }
 
     let graph = builder.build(mdc, |filtered: cm::Package| {
         if let Some(src) = filtered.source {

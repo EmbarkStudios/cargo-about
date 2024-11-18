@@ -52,6 +52,12 @@ pub struct Args {
     /// Do not activate the `default` feature
     #[clap(long)]
     no_default_features: bool,
+    /// The target triples to use for dependency graph filtering.
+    ///
+    /// Overrides the `targets` configuration value, and note that unlike cargo
+    /// itself this can take multiple targets instead of just one.
+    #[clap(long)]
+    target: Vec<String>,
     /// Run without accessing the network.
     ///
     /// In addition to cargo not fetching crates, this will mean that only
@@ -63,13 +69,13 @@ pub struct Args {
     ///     copyright information in the license that would be retrieved from
     ///     the original git repo for the crate in question
     #[arg(long)]
-    pub(crate) offline: bool,
+    offline: bool,
     /// Assert that `Cargo.lock` will remain unchanged
     #[arg(long)]
-    pub(crate) locked: bool,
+    locked: bool,
     /// Equivalent to specifying both `--locked` and `--offline`
     #[arg(long)]
-    pub(crate) frozen: bool,
+    frozen: bool,
     /// The path of the Cargo.toml for the root crate.
     ///
     /// Defaults to the current crate or workspace in the current working directory
@@ -194,6 +200,7 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
                     offline: args.offline,
                 },
                 &cfg,
+                &args.target,
             ));
         });
         s.spawn(|_| {
