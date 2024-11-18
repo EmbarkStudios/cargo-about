@@ -20,6 +20,9 @@ exclude = ["media/"]
 [badges]
 maintenance = { status = "actively-developed" }
 
+[features]
+native-certs = ["reqwest/rustls-tls-native-roots"]
+
 [[bin]]
 name = "cargo-about"
 path = "src/cargo-about/main.rs"
