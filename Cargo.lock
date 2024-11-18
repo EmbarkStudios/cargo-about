@@ -228,6 +228,7 @@ dependencies = [
  "home",
  "ignore",
  "krates",
+ "libc",
  "log",
  "mimalloc",
  "nu-ansi-term",

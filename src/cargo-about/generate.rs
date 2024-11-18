@@ -170,6 +170,15 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
         "handlebars template(s) must be specified when using handlebars output format"
     );
 
+    // Check if the parent process is powershell, if it is, assume that it will
+    // screw up the output https://github.com/EmbarkStudios/cargo-about/issues/198
+    // and inform the user about the -o, --output-file option
+    let redirect_stdout =
+        args.output_file.is_none() || args.output_file.as_deref() == Some(Path::new("-"));
+    if redirect_stdout {
+        anyhow::ensure!(!cargo_about::is_powershell_parent(), "cargo-about should not redirect its output in powershell, please use the -o, --output-file option to redirect to a file to avoid powershell encoding issues");
+    }
+
     rayon::scope(|s| {
         s.spawn(|_| {
             log::info!("gathering crates for {manifest_path}");
@@ -289,13 +298,11 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
         serde_json::to_string(&input)?
     };
 
-    match args.output_file.as_ref() {
-        None => println!("{output}"),
-        Some(path) if path == Path::new("-") => println!("{output}"),
-        Some(path) => {
-            std::fs::write(path, output)
-                .with_context(|| format!("output file {path} could not be written"))?;
-        }
+    if let Some(path) = &args.output_file.filter(|_| !redirect_stdout) {
+        std::fs::write(path, output)
+            .with_context(|| format!("output file {path} could not be written"))?;
+    } else {
+        println!("{output}");
     }
 
     Ok(())

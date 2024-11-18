@@ -216,3 +216,107 @@ pub fn validate_sha256(buffer: &str, expected: &str) -> anyhow::Result<()> {
 
     Ok(())
 }
+
+#[cfg(target_family = "unix")]
+#[allow(unsafe_code)]
+pub fn is_powershell_parent() -> bool {
+    if !cfg!(target_os = "linux") {
+        // Making the assumption that no one on MacOS or any of the *BSDs uses powershell...
+        return false;
+    }
+
+    // SAFETY: no invariants to uphold
+    let parent_id = unsafe { libc::getppid() };
+    let Ok(cmd) = std::fs::read_to_string(format!("/proc/{parent_id}/cmdline")) else {
+        return false;
+    };
+
+    let Some(proc) = cmd
+        .split('\0')
+        .nth(0)
+        .and_then(|path| path.split('/').last())
+    else {
+        return false;
+    };
+    dbg!(proc) == "pwsh"
+}
+
+#[cfg(target_family = "windows")]
+mod win_bindings;
+
+#[cfg(target_family = "windows")]
+#[allow(unsafe_code)]
+pub fn is_powershell_parent() -> bool {
+    use std::os::windows::ffi::OsStringExt as _;
+    use win_bindings::*;
+
+    unsafe {
+        let mut basic_info = std::mem::MaybeUninit::<ProcessBasicInformation>::uninit();
+        let mut length = 0;
+        if nt_query_information_process(
+            -1, /* NtCurrentProcess */
+            Processinfoclass::ProcessBasicInformation,
+            basic_info.as_mut_ptr().cast(),
+            std::mem::size_of::<ProcessBasicInformation>() as _,
+            &mut length,
+        ) != StatusSuccess
+        {
+            return false;
+        }
+
+        if length != std::mem::size_of::<ProcessBasicInformation>() as u32 {
+            return false;
+        }
+
+        let basic_info = basic_info.assume_init();
+
+        // The API for this is extremely irritating, the struct and string buffer
+        // need to be the same :/
+        let mut file_name = [0u16; MaxPath as usize + std::mem::size_of::<UnicodeString>() / 2];
+        {
+            let ustr = &mut *file_name.as_mut_ptr().cast::<UnicodeString>();
+            ustr.length = 0;
+            ustr.maximum_length = MaxPath as _;
+            ustr.buffer = file_name
+                .as_mut_ptr()
+                .byte_offset(std::mem::size_of::<UnicodeString>() as _);
+        }
+
+        if nt_query_information_process(
+            basic_info.inherited_from_unique_process_id as _,
+            Processinfoclass::ProcessImageFileName,
+            file_name.as_mut_ptr().cast(),
+            (file_name.len() * 2) as _,
+            &mut length,
+        ) != StatusSuccess
+        {
+            return false;
+        }
+
+        let ustr = &*file_name.as_ptr().cast::<UnicodeString>();
+        let os = std::ffi::OsString::from_wide(
+            &file_name[std::mem::size_of::<UnicodeString>() * 2
+                ..std::mem::size_of::<UnicodeString>() * 2 + ustr.length as usize],
+        );
+
+        let path = os.to_string_lossy();
+
+        dbg!(&path);
+        false
+    }
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    #[ignore = "call when actually run from powershell"]
+    fn is_powershell_true() {
+        assert!(super::is_powershell_parent());
+    }
+
+    #[test]
+    #[ignore = "call when not actually run from powershell"]
+    fn is_powershell_false() {
+        assert!(!super::is_powershell_parent());
+    }
+}
