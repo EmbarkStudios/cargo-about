@@ -274,7 +274,7 @@ pub fn is_powershell_parent() -> bool {
     let mut pid = Some(-1 /* NtCurrentProcess */);
 
     unsafe {
-        let reset = |fname: &[u16]| {
+        let reset = |fname: &mut [u16]| {
             let ustr = &mut *fname.as_mut_ptr().cast::<UnicodeString>();
             ustr.length = 0;
             ustr.maximum_length = MaxPath as _;
@@ -327,13 +327,13 @@ pub fn is_powershell_parent() -> bool {
 
             let path = os.to_string_lossy();
             dbg!(&path);
-            let p = std::path::Path::new(&path);
-            if p.file_stem() == Some("pwsh") {
+            let p = std::path::Path::new(path.as_ref());
+            if p.file_stem() == Some(std::ffi::OsStr::new("pwsh")) {
                 return true;
             }
 
             pid = (basic_info.inherited_from_unique_process_id != 0)
-                .then(basic_info.inherited_from_unique_process_id as _);
+                .then_some(basic_info.inherited_from_unique_process_id as isize);
         }
 
         false
