@@ -45,6 +45,7 @@ jobs:
       - name: cargo test build
         run: cargo build --tests --release
       - name: cargo test
+        shell: bash
         run: cargo test --release
       - name: detects powershell
         if: ${{ matrix.os != 'macos-14' }}

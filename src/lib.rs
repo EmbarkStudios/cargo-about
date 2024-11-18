@@ -301,13 +301,13 @@ pub fn is_powershell_parent() -> bool {
         while let Some(ph) = handle {
             let mut basic_info = std::mem::MaybeUninit::<ProcessBasicInformation>::uninit();
             let mut length = 0;
-            if dbg!(nt_query_information_process(
+            if nt_query_information_process(
                 ph.handle,
                 Processinfoclass::ProcessBasicInformation,
                 basic_info.as_mut_ptr().cast(),
                 std::mem::size_of::<ProcessBasicInformation>() as _,
                 &mut length,
-            )) != StatusSuccess
+            ) != StatusSuccess
             {
                 break;
             }
@@ -331,12 +331,12 @@ pub fn is_powershell_parent() -> bool {
                 unique_process: ppid,
                 unique_thread: 0,
             };
-            if dbg!(nt_open_process(
+            if nt_open_process(
                 &mut parent_handle,
                 ProcessAccessRights::ProcessQueryInformation,
                 &obj_attr,
-                &client_id
-            )) != StatusSuccess
+                &client_id,
+            ) != StatusSuccess
             {
                 break;
             }
@@ -345,13 +345,13 @@ pub fn is_powershell_parent() -> bool {
                 handle: parent_handle,
             });
 
-            if dbg!(nt_query_information_process(
+            if nt_query_information_process(
                 parent_handle,
                 Processinfoclass::ProcessImageFileName,
                 file_name.as_mut_ptr().cast(),
                 (file_name.len() * 2) as _,
                 &mut length,
-            )) != StatusSuccess
+            ) != StatusSuccess
             {
                 break;
             }
@@ -362,11 +362,11 @@ pub fn is_powershell_parent() -> bool {
                 (ustr.length >> 1) as usize,
             ));
 
-            let path = os.to_string_lossy();
-            eprintln!("{path}");
-            let p = std::path::Path::new(path.as_ref());
-            if p.file_stem() == Some(std::ffi::OsStr::new("pwsh")) {
-                return true;
+            let path = std::path::Path::new(&os);
+            if let Some(stem) = path.file_stem().and_then(|stem| stem.to_str()) {
+                if stem == "pwsh" || stem == "powershell" {
+                    return true;
+                }
             }
         }
 
