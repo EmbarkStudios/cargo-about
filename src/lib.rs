@@ -287,11 +287,11 @@ pub fn is_powershell_parent() -> bool {
         // need to be the same :/
         let mut file_name = [0u16; MaxPath as usize + std::mem::size_of::<UnicodeString>() / 2];
 
-        while let Some(pid) = pid {
+        while let Some(ppid) = pid {
             let mut basic_info = std::mem::MaybeUninit::<ProcessBasicInformation>::uninit();
             let mut length = 0;
             if nt_query_information_process(
-                pid,
+                ppid,
                 Processinfoclass::ProcessBasicInformation,
                 basic_info.as_mut_ptr().cast(),
                 std::mem::size_of::<ProcessBasicInformation>() as _,
@@ -327,13 +327,13 @@ pub fn is_powershell_parent() -> bool {
 
             let path = os.to_string_lossy();
             dbg!(&path);
-            let p = Path::new(&path);
+            let p = std::path::Path::new(&path);
             if p.file_stem() == Some("pwsh") {
                 return true;
             }
 
             pid = (basic_info.inherited_from_unique_process_id != 0)
-                .then_some(basic_info.inherited_from_unique_process_id as _);
+                .then(basic_info.inherited_from_unique_process_id as _);
         }
 
         false
