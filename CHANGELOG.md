@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.6.5] - 2024-11-18
 ### Added
 - [PR#261](https://github.com/EmbarkStudios/cargo-about/pull/261) resolved [#246](https://github.com/EmbarkStudios/cargo-about/issues/246) by adding an `--offline` (as well as `--locked` and `--frozen`) option to the `generate` command.
 - [PR#266](https://github.com/EmbarkStudios/cargo-about/pull/266) resolved [#230](https://github.com/EmbarkStudios/cargo-about/issues/230) by adding a `--target` option to `generate`, allowing one to specify one or more targets to filter the dependency graph by, overriding the `targets` configuration option.
@@ -185,7 +186,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.4...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.5...HEAD
+[0.6.5]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.4...0.6.5
 [0.6.4]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.3...0.6.4
 [0.6.3]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.2...0.6.3
 [0.6.2]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.1...0.6.2
