@@ -271,69 +271,103 @@ pub fn is_powershell_parent() -> bool {
     use std::os::windows::ffi::OsStringExt as _;
     use win_bindings::*;
 
-    let mut pid = Some(-1 /* NtCurrentProcess */);
+    struct NtHandle {
+        handle: isize,
+    }
+
+    impl Drop for NtHandle {
+        fn drop(&mut self) {
+            if self.handle != -1 {
+                unsafe {
+                    nt_close(self.handle);
+                }
+            }
+        }
+    }
+
+    let mut handle = Some(NtHandle { handle: -1 });
 
     unsafe {
         let reset = |fname: &mut [u16]| {
             let ustr = &mut *fname.as_mut_ptr().cast::<UnicodeString>();
             ustr.length = 0;
             ustr.maximum_length = MaxPath as _;
-            ustr.buffer = fname
-                .as_mut_ptr()
-                .byte_offset(std::mem::size_of::<UnicodeString>() as _);
         };
 
         // The API for this is extremely irritating, the struct and string buffer
         // need to be the same :/
         let mut file_name = [0u16; MaxPath as usize + std::mem::size_of::<UnicodeString>() / 2];
 
-        while let Some(ppid) = pid {
+        while let Some(ph) = handle {
             let mut basic_info = std::mem::MaybeUninit::<ProcessBasicInformation>::uninit();
             let mut length = 0;
             if dbg!(nt_query_information_process(
-                ppid,
+                ph.handle,
                 Processinfoclass::ProcessBasicInformation,
                 basic_info.as_mut_ptr().cast(),
                 std::mem::size_of::<ProcessBasicInformation>() as _,
                 &mut length,
             )) != StatusSuccess
             {
-                return false;
+                break;
             }
 
             if length != std::mem::size_of::<ProcessBasicInformation>() as u32 {
-                return false;
+                break;
             }
 
             let basic_info = basic_info.assume_init();
             reset(&mut file_name);
 
+            let ppid = basic_info.inherited_from_unique_process_id as isize;
+
+            if ppid == 0 || ppid == -1 {
+                break;
+            }
+
+            let mut parent_handle = -1;
+            let obj_attr = std::mem::zeroed();
+            let client_id = ClientId {
+                unique_process: ppid,
+                unique_thread: 0,
+            };
+            if dbg!(nt_open_process(
+                &mut parent_handle,
+                ProcessAccessRights::ProcessQueryInformation,
+                &obj_attr,
+                &client_id
+            )) != StatusSuccess
+            {
+                break;
+            }
+
+            handle = Some(NtHandle {
+                handle: parent_handle,
+            });
+
             if dbg!(nt_query_information_process(
-                basic_info.inherited_from_unique_process_id as _,
+                parent_handle,
                 Processinfoclass::ProcessImageFileName,
                 file_name.as_mut_ptr().cast(),
                 (file_name.len() * 2) as _,
                 &mut length,
             )) != StatusSuccess
             {
-                return false;
+                break;
             }
 
             let ustr = &*file_name.as_ptr().cast::<UnicodeString>();
-            let os = std::ffi::OsString::from_wide(
-                &file_name[std::mem::size_of::<UnicodeString>() * 2
-                    ..std::mem::size_of::<UnicodeString>() * 2 + ustr.length as usize],
-            );
+            let os = std::ffi::OsString::from_wide(std::slice::from_raw_parts(
+                ustr.buffer,
+                (ustr.length >> 1) as usize,
+            ));
 
             let path = os.to_string_lossy();
-            dbg!(&path);
+            eprintln!("{path}");
             let p = std::path::Path::new(path.as_ref());
             if p.file_stem() == Some(std::ffi::OsStr::new("pwsh")) {
                 return true;
             }
-
-            pid = (basic_info.inherited_from_unique_process_id != 0)
-                .then_some(basic_info.inherited_from_unique_process_id as isize);
         }
 
         false

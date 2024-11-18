@@ -5,17 +5,17 @@
     non_camel_case_types,
     clippy::upper_case_acronyms
 )]
-#[link(name = "kernel32", kind = "raw-dylib")]
-extern "system" {
-    #[link_name = "OpenProcess"]
-    pub fn open_process(
-        desired_access: ProcessAccessRights::Enum,
-        inherit_handle: Bool,
-        process_id: u32,
-    ) -> Handle;
-}
 #[link(name = "ntdll", kind = "raw-dylib")]
 extern "system" {
+    #[link_name = "NtClose"]
+    pub fn nt_close(handle: Handle) -> Ntstatus;
+    #[link_name = "NtOpenProcess"]
+    pub fn nt_open_process(
+        process_handle: *mut Handle,
+        desired_access: u32,
+        object_attributes: *const ObjectAttributes,
+        client_id: *const ClientId,
+    ) -> Ntstatus;
     #[link_name = "NtQueryInformationProcess"]
     pub fn nt_query_information_process(
         process_handle: Handle,
@@ -26,7 +26,11 @@ extern "system" {
     ) -> Ntstatus;
 }
 pub const MaxPath: u32 = 260;
-pub type Bool = i32;
+#[repr(C)]
+pub struct ClientId {
+    pub unique_process: Handle,
+    pub unique_thread: Handle,
+}
 pub type Handle = isize;
 #[repr(C)]
 pub struct ListEntry {
@@ -35,6 +39,15 @@ pub struct ListEntry {
 }
 pub type Ntstatus = i32;
 pub const StatusSuccess: Ntstatus = 0;
+#[repr(C)]
+pub struct ObjectAttributes {
+    pub length: u32,
+    pub root_directory: Handle,
+    pub object_name: *mut UnicodeString,
+    pub attributes: u32,
+    pub security_descriptor: *mut ::core::ffi::c_void,
+    pub security_quality_of_service: *mut ::core::ffi::c_void,
+}
 #[repr(C)]
 pub struct Peb {
     pub reserved1: [u8; 2],

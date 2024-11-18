@@ -1,8 +1,9 @@
 output = "win_bindings.rs"
 binds = [
     "MAX_PATH",
+    "NtClose",
+    "NtOpenProcess",
     "NtQueryInformationProcess",
-    "OpenProcess",
     "ProcessBasicInformation",
     "ProcessImageFileName",
     "PROCESS_BASIC_INFORMATION",
