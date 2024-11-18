@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - ReleaseDate
 ### Added
 - [PR#261](https://github.com/EmbarkStudios/cargo-about/pull/261) resolved [#246](https://github.com/EmbarkStudios/cargo-about/issues/246) by adding an `--offline` (as well as `--locked` and `--frozen`) option to the `generate` command.
+- [PR#266](https://github.com/EmbarkStudios/cargo-about/pull/266) resolved [#230](https://github.com/EmbarkStudios/cargo-about/issues/230) by adding a `--target` option to `generate`, allowing one to specify one or more targets to filter the dependency graph by, overriding the `targets` configuration option.
+
+### Changed
+- [PR#262](https://github.com/EmbarkStudios/cargo-about/pull/262) resolved [#258](https://github.com/EmbarkStudios/cargo-about/issues/258) by using LTO for release builds, slightly decreasing binary sizes.
+
+### Fixed
+- [PR#263](https://github.com/EmbarkStudios/cargo-about/pull/263) resolved [#238](https://github.com/EmbarkStudios/cargo-about/issues/238) by adding the `native-certs` feature to use the native certificate store. This feature is not enabled by default as it is only required for corporate environments that man in the middle network traffic.
+- [PR#265](https://github.com/EmbarkStudios/cargo-about/pull/265) resolved [#198](https://github.com/EmbarkStudios/cargo-about/issues/198) by detecting if the parent process is powershell and exiting with an error if cargo-about's output is being redirected instead of using the `-o` option, as powershell is terrible and doesn't use utf-8 encoding by default.
+- [PR#266](https://github.com/EmbarkStudios/cargo-about/pull/266) resolved [#222](https://github.com/EmbarkStudios/cargo-about/issues/222) by adding some additional documentation on <https://clearlydefined.io>.
 
 ## [0.6.4] - 2024-08-12
 ### Fixed
