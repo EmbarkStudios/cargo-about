@@ -52,11 +52,21 @@ ignore-transitive-dependencies = true
 
 ## The `no-clearly-defined` field (optional)
 
-If true, will not attempt to lookup licensing information for any crate from <https://clearlydefined.io>, only user clarifications, workarounds, and local file scanning will be used to determine licensing information.
+If true, will not attempt to lookup licensing information for any crate from [clearlydefined.io], only user clarifications, workarounds, and local file scanning will be used to determine licensing information.
+
+By default, `cargo-about` will use [clearlydefined.io] to augment the license information that can be gathered by scanning local files, as it has more advanced license detection (eg. it can detect multiple license in the same file unlike askalono), and can have [curations](https://docs.clearlydefined.io/docs/get-involved/data-curation) applied that benefit all users of a crate, rather than the project-specific clarifications supported by `cargo-about`.
+
+[clearlydefined.io] does have some downsides however, in that it is an external source of information that can be missing or updated, which can result in different output given the same dependency graph input.
+
+It will also show warnings for when the license information for a crate cannot be retrieved, the most common of which is
+
+> the definition for <crate> has not been harvested
+
+which indicates that the particular crate version has not been scanned and indexed by [clearlydefined.io] yet. Simply by making a request for a crate version from cargo-about, [clearlydefined.io] will automatically queue it to be harvested, but depending on load may take several hours or more before it is available.
 
 ## The `filter-noassertion` field (optional)
 
-If using <https://clearlydefined.io> to gather license information, that service will conservatively add [`NOASSERTION`](https://docs.clearlydefined.io/curation-guidelines) to the expression for files that contain license like data, but an SPDX license ID could not be confidently ascribed to it. This can result in the license expression for the crate to contain 1 or more `NOASSERTION` identifiers, which would require the user to accept that (not really valid) ID to pass the license check. By setting this field to `true`, files that have a `NOASSERTION` id will instead be scanned locally, which will generally either figure out the license, or else skip that file.
+If using [clearlydefined.io] to gather license information, that service will conservatively add [`NOASSERTION`](https://docs.clearlydefined.io/curation-guidelines) to the expression for files that contain license like data, but an SPDX license ID could not be confidently ascribed to it. This can result in the license expression for the crate to contain 1 or more `NOASSERTION` identifiers, which would require the user to accept that (not really valid) ID to pass the license check. By setting this field to `true`, files that have a `NOASSERTION` id will instead be scanned locally, which will generally either figure out the license, or else skip that file.
 
 For a real world example of what this looks like, [`webpki:0.22.0`](https://crates.io/crates/webpki/0.22.0)'s [LICENSE](https://clearlydefined.io/file/5b698ca13897be3afdb7174256fa1574f8c6892b8bea1a66dd6469d3fe27885a) file is an ISC license, however it has a preamble that is not part of the ISC license that trips up clearly defined's inspection, causing it to be attributed with `ISC AND NOASSERTION`. Locally scanning the file will be more tolerant and just attribute it with `ISC`.
 
@@ -197,3 +207,5 @@ In some cases, crates concatenate multiple licenses together into a single file,
 ##### The `end` field (optional)
 
 Just as with start, this is just a simple substring find, however, it will only match text that comes _after_ the position the start text (or beginning of the file) was found.
+
+[clearlydefined.io]: https://clearlydefined.io

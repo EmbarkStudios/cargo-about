@@ -94,6 +94,7 @@ impl std::ops::Deref for Krate {
 
 pub type Krates = krates::Krates<Krate>;
 
+#[allow(clippy::too_many_arguments)]
 pub fn get_all_crates(
     cargo_toml: &krates::Utf8Path,
     no_default_features: bool,
