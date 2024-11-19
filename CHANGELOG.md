@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.6.6] - 2024-11-19
 ### Added
 - [PR#268](https://github.com/EmbarkStudios/cargo-about/pull/268) resolved [#267](https://github.com/EmbarkStudios/cargo-about/issues/267) by adding a [`unicode-ident`](https://github.com/dtolnay/unicode-ident) workaround to compensate for the `LICENSE-UNICODE` file more closely matching the [`Unicode-3.0`](https://spdx.org/licenses/Unicode-3.0.html) SPDX identifier rather than the expected [`Unicode-DFS-2016`](https://spdx.org/licenses/Unicode-DFS-2016.html) one.
 
@@ -189,7 +190,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.5...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.6...HEAD
+[0.6.6]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.5...0.6.6
 [0.6.5]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.4...0.6.5
 [0.6.4]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.3...0.6.4
 [0.6.3]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.2...0.6.3
