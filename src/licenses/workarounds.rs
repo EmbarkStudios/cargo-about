@@ -15,6 +15,7 @@ mod rustls;
 mod sentry;
 mod tonic;
 mod tract;
+mod unicode_ident;
 mod wasmtime;
 
 pub(crate) fn apply_workarounds<'krate>(
@@ -88,5 +89,6 @@ const WORKAROUNDS: &[(
     ("sentry", &self::sentry::get),
     ("tonic", &self::tonic::get),
     ("tract", &self::tract::get),
+    ("unicode-ident", &self::unicode_ident::get),
     ("wasmtime", &self::wasmtime::get),
 ];

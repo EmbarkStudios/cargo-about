@@ -12,7 +12,7 @@ ignore-build-dependencies = false
 ignore-dev-dependencies = false
 ignore-transitive-dependencies = false
 filter-noassertion = true
-workarounds = ["ring", "chrono", "rustls"]
+workarounds = ["ring", "chrono", "rustls", "unicode-ident"]
 
 [codespan.clarify]
 license = "Apache-2.0"
