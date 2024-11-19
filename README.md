@@ -11,7 +11,7 @@
 [![Crates.io](https://img.shields.io/crates/v/cargo-about.svg)](https://crates.io/crates/cargo-about)
 [![API Docs](https://docs.rs/cargo-about/badge.svg)](https://docs.rs/cargo-about)
 [![SPDX Version](https://img.shields.io/badge/SPDX%20Version-3.25.0-blue.svg)](https://spdx.org/licenses/)
-[![Minimum Stable Rust Version](https://img.shields.io/badge/Rust-1.74.0-blue?color=fc8d62&logo=rust)](https://github.com/rust-lang/rust/blob/master/RELEASES.md#version-1740-2023-11-16)
+[![Minimum Stable Rust Version](https://img.shields.io/badge/Rust-1.81.0-blue?color=fc8d62&logo=rust)](https://github.com/rust-lang/rust/blob/master/RELEASES.md#version-1810-2024-09-05)
 [![dependency status](https://deps.rs/repo/github/EmbarkStudios/cargo-about/status.svg)](https://deps.rs/repo/github/EmbarkStudios/cargo-about)
 [![Build Status](https://github.com/EmbarkStudios/cargo-about/workflows/CI/badge.svg)](https://github.com/EmbarkStudios/cargo-about/actions?workflow=CI)
 
