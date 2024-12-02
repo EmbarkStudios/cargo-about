@@ -30,7 +30,7 @@ impl<'acc> Accepted<'acc> {
     }
 }
 
-impl<'acc> fmt::Display for Accepted<'acc> {
+impl fmt::Display for Accepted<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "global: [")?;
         for (id, val) in self.global.iter().enumerate() {

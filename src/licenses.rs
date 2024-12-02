@@ -97,28 +97,28 @@ pub struct KrateLicense<'krate> {
     pub license_files: Vec<LicenseFile>,
 }
 
-impl<'krate> Ord for KrateLicense<'krate> {
+impl Ord for KrateLicense<'_> {
     #[inline]
     fn cmp(&self, o: &Self) -> cmp::Ordering {
         self.krate.cmp(o.krate)
     }
 }
 
-impl<'krate> PartialOrd for KrateLicense<'krate> {
+impl PartialOrd for KrateLicense<'_> {
     #[inline]
     fn partial_cmp(&self, o: &Self) -> Option<cmp::Ordering> {
         Some(self.cmp(o))
     }
 }
 
-impl<'krate> PartialEq for KrateLicense<'krate> {
+impl PartialEq for KrateLicense<'_> {
     #[inline]
     fn eq(&self, o: &Self) -> bool {
         self.cmp(o) == cmp::Ordering::Equal
     }
 }
 
-impl<'krate> Eq for KrateLicense<'krate> {}
+impl Eq for KrateLicense<'_> {}
 
 pub struct Gatherer {
     store: Arc<LicenseStore>,
