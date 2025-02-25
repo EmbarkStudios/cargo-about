@@ -264,7 +264,9 @@ impl Gatherer {
                         );
                     }
                     Err(e) => {
-                        log::warn!("failed to validate all files specified in clarification for crate {krate}: {e:#}");
+                        log::warn!(
+                            "failed to validate all files specified in clarification for crate {krate}: {e:#}"
+                        );
                     }
                 }
             }
@@ -291,11 +293,7 @@ impl Gatherer {
                 }
 
                 // Ignore local and git sources in favor of scanning those on the local disk
-                if krate
-                    .source
-                    .as_ref()
-                    .map_or(false, |src| src.is_crates_io())
-                {
+                if krate.source.as_ref().is_some_and(|src| src.is_crates_io()) {
                     Some(cd::Coordinate {
                         shape: cd::Shape::Crate,
                         provider: cd::Provider::CratesIo,

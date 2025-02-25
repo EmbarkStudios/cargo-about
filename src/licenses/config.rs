@@ -1,5 +1,5 @@
 use krates::Utf8PathBuf as PathBuf;
-use serde::{de, ser, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de, ser};
 use spdx::Expression;
 use std::{collections::BTreeMap, fmt};
 

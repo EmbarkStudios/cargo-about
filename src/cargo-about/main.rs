@@ -113,7 +113,7 @@ fn real_main() -> anyhow::Result<()> {
     setup_logger(args.log_level)?;
 
     match args.cmd {
-        Command::Generate(gen) => generate::cmd(gen, args.color),
+        Command::Generate(generate) => generate::cmd(generate, args.color),
         Command::Init(init) => init::cmd(init),
         Command::Clarify(clarify) => clarify::cmd(clarify),
     }
@@ -122,14 +122,12 @@ fn real_main() -> anyhow::Result<()> {
 /// Ignore SIGPIPE due to std library deficiency <https://github.com/rust-lang/rust/issues/46016>
 #[cfg(unix)]
 fn ignore_sigpipe() {
-    extern "C" {
-        fn signal(signum: i32, handler: usize) -> usize;
+    #[allow(unsafe_code)]
+    unsafe extern "C" {
+        safe fn signal(signum: i32, handler: usize) -> usize;
     }
 
-    #[allow(unsafe_code)]
-    unsafe {
-        signal(13 /*SIGPIPE*/, 0 /*SIG_DFL*/);
-    }
+    signal(13 /*SIGPIPE*/, 0 /*SIG_DFL*/);
 }
 
 fn main() {
