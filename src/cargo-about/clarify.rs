@@ -135,7 +135,10 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
     };
 
     if contents.contains('\r') {
-        log::warn!("{} contains CRLF line endings, the checksums will be calculated with normal LF line endings to match checksum verification", args.path);
+        log::warn!(
+            "{} contains CRLF line endings, the checksums will be calculated with normal LF line endings to match checksum verification",
+            args.path
+        );
     }
 
     let license_store = cargo_about::licenses::store_from_cache()?;

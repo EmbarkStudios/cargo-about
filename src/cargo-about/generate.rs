@@ -182,7 +182,10 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
     let redirect_stdout =
         args.output_file.is_none() || args.output_file.as_deref() == Some(Path::new("-"));
     if redirect_stdout {
-        anyhow::ensure!(!cargo_about::is_powershell_parent(), "cargo-about should not redirect its output in powershell, please use the -o, --output-file option to redirect to a file to avoid powershell encoding issues");
+        anyhow::ensure!(
+            !cargo_about::is_powershell_parent(),
+            "cargo-about should not redirect its output in powershell, please use the -o, --output-file option to redirect to a file to avoid powershell encoding issues"
+        );
     }
 
     rayon::scope(|s| {

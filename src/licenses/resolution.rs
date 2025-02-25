@@ -1,6 +1,6 @@
 use crate::{
-    licenses::{config, KrateLicense, LicenseInfo},
     Krate,
+    licenses::{KrateLicense, LicenseInfo, config},
 };
 use spdx::{Expression, LicenseReq, Licensee};
 use std::fmt;

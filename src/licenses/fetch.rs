@@ -1,4 +1,4 @@
-use super::{config, Krate};
+use super::{Krate, config};
 use anyhow::Context as _;
 use krates::Utf8Path as Path;
 use reqwest::blocking::Client;

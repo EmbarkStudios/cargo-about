@@ -1,6 +1,6 @@
-use anyhow::{anyhow, Result};
-use assert_fs::prelude::*;
+use anyhow::{Result, anyhow};
 use assert_fs::TempDir;
+use assert_fs::prelude::*;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Debug;

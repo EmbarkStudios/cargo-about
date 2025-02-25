@@ -1,7 +1,7 @@
 use crate::licenses::{
+    KrateLicense,
     config::{Clarification, ClarificationFile, Config},
     fetch::GitCache,
-    KrateLicense,
 };
 
 mod bitvec;

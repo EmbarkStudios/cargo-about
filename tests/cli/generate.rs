@@ -251,8 +251,8 @@ fn reports_no_licenses_when_manifest_has_license_file_field_with_non_spdx_text()
 }
 
 #[test]
-fn reports_custom_spdx_license_text_when_manifest_has_license_file_field_with_spdx_text(
-) -> Result<()> {
+fn reports_custom_spdx_license_text_when_manifest_has_license_file_field_with_spdx_text()
+-> Result<()> {
     let license_text = mit_license_text("2022", "Big Birdz");
 
     let package = Package::builder()
@@ -278,8 +278,8 @@ fn reports_custom_spdx_license_text_when_manifest_has_license_file_field_with_sp
 }
 
 #[test]
-fn reports_no_licenses_when_manifest_has_license_file_field_with_spdx_license_text_and_non_std_filename(
-) -> Result<()> {
+fn reports_no_licenses_when_manifest_has_license_file_field_with_spdx_license_text_and_non_std_filename()
+-> Result<()> {
     let license_text = mit_license_text("2022", "Big Birdz");
 
     let package = Package::builder()
@@ -311,8 +311,8 @@ fn reports_no_licenses_when_manifest_has_license_file_field_with_spdx_license_te
 }
 
 #[test]
-fn reports_custom_spdx_license_file_when_spdx_license_file_has_std_naming_but_not_specifed_in_manifest(
-) -> Result<()> {
+fn reports_custom_spdx_license_file_when_spdx_license_file_has_std_naming_but_not_specifed_in_manifest()
+-> Result<()> {
     let license_content = mit_license_text("2022", "Big Birdz");
 
     let package = Package::builder()
