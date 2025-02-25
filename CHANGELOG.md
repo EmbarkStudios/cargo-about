@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.7.0] - 2025-02-25
 ### Changed
 - [PR#275](https://github.com/EmbarkStudios/cargo-about/pull/275) updated crates.
 - [PR#275](https://github.com/EmbarkStudios/cargo-about/pull/275) moved to edition 2024 and rust 1.85.0 as the MSRV.
@@ -194,7 +195,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.6...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.7.0...HEAD
+[0.7.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.6...0.7.0
 [0.6.6]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.5...0.6.6
 [0.6.5]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.4...0.6.5
 [0.6.4]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.3...0.6.4
