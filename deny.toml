@@ -34,8 +34,6 @@ exceptions = [
     # which we do through public forks of the repos if/when we do changes to it.
     # https://tldrlegal.com/license/mozilla-public-license-2.0-(mpl-2)
     { allow = ["MPL-2.0"], name = "webpki-roots" },
-
-    { allow = ["Unicode-DFS-2016"], name = "unicode-ident" },
 ]
 
 [[licenses.clarify]]

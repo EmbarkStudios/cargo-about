@@ -54,7 +54,7 @@ home = "0.5"
 # Directory walking
 ignore = "0.4"
 # Dependency graphing
-krates = { version = "0.17.1", features = ["serialize"] }
+krates = { version = "0.18", features = ["serialize"] }
 # Parent process retrieval
 libc = "0.2"
 # Logging macros
@@ -97,6 +97,3 @@ assert_fs = "1.0.7"
 assert_cmd = "2.0"
 # Composable first-order predicate functions
 predicates = "3.0"
-
-[patch.crates-io]
-krates = { path = "../krates" }
