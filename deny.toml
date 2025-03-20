@@ -9,6 +9,7 @@ targets = [
 ]
 
 [advisories]
+unmaintained = "workspace"
 ignore = []
 
 [bans]
