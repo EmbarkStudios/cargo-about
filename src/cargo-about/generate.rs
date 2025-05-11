@@ -246,7 +246,7 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
                 );
 
                 if template_path.is_dir() {
-                    reg.register_templates_directory( template_path, handlebars::DirectorySourceOptions::default())?;
+                    reg.register_templates_directory(template_path, handlebars::DirectorySourceOptions::default())?;
 
                     anyhow::ensure!(!reg.get_templates().is_empty(), "template path '{template_path}' did not contain any hbs files");
 
