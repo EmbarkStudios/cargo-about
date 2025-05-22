@@ -11,6 +11,7 @@ mod cocoa;
 mod gtk;
 mod prost;
 mod ring;
+mod rustix;
 mod rustls;
 mod sentry;
 mod tonic;
@@ -91,4 +92,5 @@ const WORKAROUNDS: &[(
     ("tract", &self::tract::get),
     ("unicode-ident", &self::unicode_ident::get),
     ("wasmtime", &self::wasmtime::get),
+    ("rustix", &self::rustix::get),
 ];
