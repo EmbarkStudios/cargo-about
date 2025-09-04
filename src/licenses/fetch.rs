@@ -84,9 +84,10 @@ impl GitHostFlavor {
 #[serde(deny_unknown_fields)]
 pub struct GitInfo {
     pub sha1: String,
+    pub dirty: bool,
 }
 
-/// The structure of a `.cargo_vs_info` file
+/// The structure of a `.cargo_vcs_info` file
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct VcsInfo {
@@ -234,7 +235,13 @@ impl GitCache {
                             .unwrap()
                             .join(".cargo_vcs_info.json");
 
-                        Self::parse_vcs_info(&vcs_info_path)?.git.sha1
+                        let vcs = Self::parse_vcs_info(&vcs_info_path)?;
+                        if vcs.git.dirty {
+                            log::debug!(
+                                "crate '{krate}' had dirty repository state when it was published"
+                            );
+                        }
+                        vcs.git.sha1
                     };
 
                     let hash = {

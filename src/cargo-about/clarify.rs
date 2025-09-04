@@ -75,7 +75,7 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
             )
             .map_err(|_e| anyhow::anyhow!("CARGO_HOME directory is not utf-8"))?;
 
-            let crate_path = root.join(spec);
+            let crate_path = root.join(&spec);
 
             anyhow::ensure!(crate_path.exists(), "unable to find crate source");
 
@@ -100,7 +100,17 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
                 .context("failed to read sha1")?;
 
             gc.retrieve_remote(&pkg.package.repository, &vcs_info.git.sha1, &args.path)
-                .context("failed to retrieve remote file")?
+                .with_context(|| {
+                    let mut ctx = String::new();
+                    ctx.push_str("failed to retrieve remote file");
+                    if vcs_info.git.dirty {
+                        ctx.reserve(15 + spec.len() + 50);
+                        ctx.push_str(", note: crate '");
+                        ctx.push_str(&spec);
+                        ctx.push_str("' had dirty repository state when it was published");
+                    }
+                    ctx
+                })?
         }
     };
 

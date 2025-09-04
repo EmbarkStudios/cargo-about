@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Changed
+- [PR#287](https://github.com/EmbarkStudios/cargo-about/pull/287) updated crates.
+
+### Removed
+- [PR#287](https://github.com/EmbarkStudios/cargo-about/pull/287) removed support for retrieving license information from clearly defined. It's too slow, unreliable, and tends to only add noise.
+
 ## [0.7.1] - 2025-03-20
 ### Changed
 - [PR#279](https://github.com/EmbarkStudios/cargo-about/pull/279) updated crates, resolving [#278](https://github.com/EmbarkStudios/cargo-about/issues/278).

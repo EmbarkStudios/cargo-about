@@ -63,11 +63,11 @@ pub struct Args {
     /// In addition to cargo not fetching crates, this will mean that only
     /// local files will be crawled for license information.
     /// 1. clearlydefined.io will not be used, so some more ambiguous/complicated
-    ///     license files might be ignored
+    ///    license files might be ignored
     /// 2. Crates that are improperly packaged and don't contain their LICENSE
-    ///     file(s) will fallback to the default license file, missing eg.
-    ///     copyright information in the license that would be retrieved from
-    ///     the original git repo for the crate in question
+    ///    file(s) will fallback to the default license file, missing eg.
+    ///    copyright information in the license that would be retrieved from
+    ///    the original git repo for the crate in question
     #[arg(long)]
     offline: bool,
     /// Assert that `Cargo.lock` will remain unchanged
@@ -246,7 +246,7 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
                 );
 
                 if template_path.is_dir() {
-                    reg.register_templates_directory( template_path, handlebars::DirectorySourceOptions::default())?;
+                    reg.register_templates_directory(template_path, handlebars::DirectorySourceOptions::default())?;
 
                     anyhow::ensure!(!reg.get_templates().is_empty(), "template path '{template_path}' did not contain any hbs files");
 

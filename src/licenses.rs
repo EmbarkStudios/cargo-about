@@ -6,7 +6,7 @@ mod workarounds;
 
 use crate::{Krate, Krates};
 use anyhow::Context as _;
-use krates::{KrateMatch, Utf8PathBuf as PathBuf};
+use krates::Utf8PathBuf as PathBuf;
 use rayon::prelude::*;
 pub use resolution::Resolved;
 use std::{cmp, fmt, sync::Arc};
@@ -166,7 +166,6 @@ impl Gatherer {
             .optimize(false)
             .max_passes(1);
 
-        let is_offline = client.is_none();
         let git_cache = fetch::GitCache::maybe_offline(client);
 
         // If we're ignoring crates that are private, just add them
@@ -199,32 +198,6 @@ impl Gatherer {
         // Clarifications are user supplied and thus take precedence over any
         // machine gathered data
         self.gather_clarified(krates, cfg, &git_cache, &mut licensed_krates);
-
-        // Attempt to gather license information from clearly-defined.io so we
-        // can get previously gathered license information + any possible
-        // curations so that we only need to fallback to scanning local crate
-        // sources if it's not already in clearly-defined
-        if !is_offline && !cfg.no_clearly_defined {
-            match reqwest::blocking::ClientBuilder::new()
-                .timeout(std::time::Duration::from_secs(
-                    cfg.clearly_defined_timeout_secs.unwrap_or(30),
-                ))
-                .build()
-            {
-                Ok(client) => {
-                    self.gather_clearly_defined(
-                        krates,
-                        cfg,
-                        client.into(),
-                        &strategy,
-                        &mut licensed_krates,
-                    );
-                }
-                Err(err) => {
-                    log::error!("failed to build clearlydefined.io HTTP client: {err:#}");
-                }
-            }
-        }
 
         // Finally, crawl the crate sources on disk to try and determine licenses
         self.gather_file_system(krates, &strategy, &mut licensed_krates);
@@ -271,162 +244,6 @@ impl Gatherer {
                 }
             }
         }
-    }
-
-    fn gather_clearly_defined<'k>(
-        &self,
-        krates: &'k Krates,
-        cfg: &config::Config,
-        client: cd::client::Client,
-        strategy: &askalono::ScanStrategy<'_>,
-        licensed_krates: &mut Vec<KrateLicense<'k>>,
-    ) {
-        if cfg.no_clearly_defined {
-            return;
-        }
-
-        let reqs = cd::definitions::get(
-            10,
-            krates.krates().filter_map(|krate| {
-                if binary_search(licensed_krates, krate).is_ok() {
-                    return None;
-                }
-
-                // Ignore local and git sources in favor of scanning those on the local disk
-                if krate.source.as_ref().is_some_and(|src| src.is_crates_io()) {
-                    Some(cd::Coordinate {
-                        shape: cd::Shape::Crate,
-                        provider: cd::Provider::CratesIo,
-                        // Rust crates, at least on crates.io, don't have a namespace
-                        namespace: None,
-                        name: krate.name.clone(),
-                        version: cd::CoordVersion::Semver(krate.version.clone()),
-                        // TODO: maybe set this if it's overriden in the config? seems messy though
-                        curation_pr: None,
-                    })
-                } else {
-                    None
-                }
-            }),
-        );
-
-        let collected: Vec<_> = reqs.par_bridge().filter_map(|req| {
-            match client.execute::<cd::definitions::GetResponse>(req) {
-                Ok(response) => {
-                    Some(response.definitions.into_iter().filter_map(|def| {
-                        if def.described.is_none() {
-                            log::warn!("the definition for {} has not been harvested", def.coordinates);
-                            return None;
-                        }
-
-                        // Since we only ever retrieve license information for crates on crates.io
-                        // they _should_ always have a valid semver
-                        let version = match &def.coordinates.revision {
-                            cd::CoordVersion::Semver(vers) => vers.clone(),
-                            cd::CoordVersion::Any(vers) => {
-                                log::warn!(
-                                    "the definition for {} does not have a valid semver '{vers}'",
-                                    def.coordinates,
-                                );
-                                return None;
-                            }
-                        };
-
-                        let krate = krates.krates_by_name(def.coordinates.name).find_map(move |KrateMatch { krate, .. }| {
-                            if krate.version == version {
-                                Some(krate)
-                            } else {
-                                None
-                            }
-                        });
-
-                        krate.map(|krate| {
-                            let info = krate.get_license_expression();
-
-                            // clearly defined doesn't provide per-file scores, so we just use
-                            // the overall score for the entire crate
-                            let confidence = def.scores.effective as f32 / 100.0;
-
-                            let license_files = def.files.into_iter().filter_map(|cd_file| {
-                                // Retrieve (and validate) the text of the file if clearlydefined thinks it is a license file
-                                let license_text = if cd_file.natures.iter().any(|s| s == "license") {
-                                    let root_path = krate.manifest_path.parent().unwrap();
-                                    let path = root_path.join(&cd_file.path);
-                                    match std::fs::read_to_string(&path) {
-                                        Ok(text) => {
-                                            if let Some(expected) = cd_file.hashes.as_ref().and_then(|hashes| hashes.sha256.as_ref()) {
-                                                if let Err(err) = crate::validate_sha256(&text, expected) {
-                                                    log::warn!("file '{path}' for crate '{krate}' marked as a license but the sha256 hash could not be verified: {err}");
-                                                    return None;
-                                                }
-                                            }
-
-                                            Some(text)
-                                        }
-                                        Err(err) => {
-                                            log::warn!("failed to read license from '{path}' for crate '{krate}': {err}");
-                                            return None;
-                                        }
-                                    }
-                                } else {
-                                    None
-                                };
-
-                                let path = cd_file.path;
-
-                                // clearly defined will attach a license identifier to any file
-                                // with a license or SPDX identifier, but like askalono it won't
-                                // detect all licenses if there are multiple in a single file
-                                match (cd_file.license, license_text) {
-                                    (Some(lic), license_text) if !cfg.filter_noassertion || !lic.contains("NOASSERTION") => {
-                                        let license_expr = match spdx::Expression::parse_mode(&lic, spdx::ParseMode::LAX) {
-                                            Ok(expr) => expr,
-                                            Err(err) => {
-                                                log::warn!("clearlydefined detected license '{lic}' in '{path}' for crate '{krate}', but it can't be parsed: {err}");
-                                                return None;
-                                            }
-                                        };
-
-                                        Some(LicenseFile {
-                                            license_expr,
-                                            path,
-                                            confidence,
-                                            kind: license_text.map_or(LicenseFileKind::Header, LicenseFileKind::Text),
-                                        })
-                                    }
-                                    (None, Some(license_text)) => {
-                                        // For some reason, clearlydefined will correctly identify text as being a
-                                        // license but won't give it an expression, so we have to figure out what it
-                                        // is, but at least have high confidence that it will result in a match
-                                        scan::check_is_license_file(path.clone(), license_text, strategy, self.threshold)
-                                            .or_else(|| {
-                                                log::warn!("clearlydefined detected license in '{path}' for crate '{krate}', but we failed to determine what its license was");
-                                                None
-                                            })
-                                    }
-                                    _ => None,
-                                }
-                            }).collect();
-
-                            KrateLicense {
-                                krate,
-                                lic_info: info,
-                                license_files,
-                            }
-                        })
-                    }).collect::<Vec<_>>())
-                }
-                Err(err) => {
-                    log::warn!("failed to request license information from clearly defined: {err:#}");
-                    None
-                }
-            }
-        }).collect();
-
-        for mut set in collected {
-            licensed_krates.append(&mut set);
-        }
-        licensed_krates.sort();
     }
 
     fn gather_file_system<'k>(
