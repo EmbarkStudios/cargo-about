@@ -246,7 +246,7 @@ pub fn is_powershell_parent() -> bool {
         let Some(proc) = cmd
             .split('\0')
             .next()
-            .and_then(|path| path.split('/').last())
+            .and_then(|path| path.split('/').next_back())
         else {
             break;
         };
