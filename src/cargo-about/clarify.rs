@@ -101,8 +101,10 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
 
             gc.retrieve_remote(&pkg.package.repository, &vcs_info.git.sha1, &args.path)
                 .with_context(|| {
-                    let mut ctx = format!("failed to retrieve remote file");
+                    let mut ctx = String::new();
+                    ctx.push_str("failed to retrieve remote file");
                     if vcs_info.git.dirty {
+                        ctx.reserve(15 + spec.len() + 50);
                         ctx.push_str(", note: crate '");
                         ctx.push_str(&spec);
                         ctx.push_str("' had dirty repository state when it was published");
