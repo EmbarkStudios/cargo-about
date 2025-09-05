@@ -47,4 +47,3 @@ pub fn get(krate: &crate::Krate) -> anyhow::Result<Option<super::Clarification>>
         files: Vec::new(),
     }))
 }
-
