@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.8.0] - 2025-09-05
 ### Changed
 - [PR#287](https://github.com/EmbarkStudios/cargo-about/pull/287) updated crates.
 
@@ -208,7 +209,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.7.1...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.8.0...HEAD
+[0.8.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.7.1...0.8.0
 [0.7.1]: https://github.com/EmbarkStudios/cargo-about/compare/0.7.0...0.7.1
 [0.7.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.6...0.7.0
 [0.6.6]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.5...0.6.6
