@@ -191,7 +191,7 @@ jobs:
         # Uses a rust script to setup and push to the gh-pages branch
         run: rustc .github/scripts/build-pages.rs && (cd gh-pages && ../build-pages)
         env:
-          GITHUB_DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+          GITHUB_DEPLOY_KEY: ${{ secrets.REAL_DEPLOY_KEY }}
           BUILD_REPOSITORY_ID: ${{ github.repository }}
           BUILD_SOURCEVERSION: ${{ github.sha }}
 
