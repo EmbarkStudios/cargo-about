@@ -129,3 +129,12 @@ The crates around `wasmtime` and `cranelift`, many but not all of which are publ
 - [`wiggle-generate`](https://crates.io/crates/wiggle-generate)
 - [`wiggle-macro`](https://crates.io/crates/wiggle-macro)
 - [`winx`](https://crates.io/crates/winx)
+
+## `rustix`
+
+The crate `rustix` and its dependency `linux-raw-sys` are triple licensed under `Apache-2.0 WITH LLVM-exception`, `Apache-2.0` and `MIT` licenses.
+However, they also include a `COPYRIGHT` file that confuses `clearlydefined.io` in parsing the license expression. This workaround clarifies the three
+licenses and their inclusion.
+
+- [`rustix`](https://crates.io/crates/rustix)
+- [`linux-raw-sys`](https://crates.io/crates/linux-raw-sys)

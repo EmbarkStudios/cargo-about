@@ -9,8 +9,10 @@ mod chrono;
 mod clap;
 mod cocoa;
 mod gtk;
+mod linux_raw_sys;
 mod prost;
 mod ring;
+mod rustix;
 mod rustls;
 mod sentry;
 mod tonic;
@@ -91,4 +93,6 @@ const WORKAROUNDS: &[(
     ("tract", &self::tract::get),
     ("unicode-ident", &self::unicode_ident::get),
     ("wasmtime", &self::wasmtime::get),
+    ("rustix", &self::rustix::get),
+    ("linux-raw-sys", &self::linux_raw_sys::get),
 ];
