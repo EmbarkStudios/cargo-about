@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - [PR#287](https://github.com/EmbarkStudios/cargo-about/pull/287) updated crates.
 
+### Added
+- [PR#285](https://github.com/EmbarkStudios/cargo-about/pull/285) added workarounds for `rustix` and `linux-raw-sys`.
+
 ### Removed
 - [PR#287](https://github.com/EmbarkStudios/cargo-about/pull/287) removed support for retrieving license information from clearly defined. It's too slow, unreliable, and tends to only add noise.
 
