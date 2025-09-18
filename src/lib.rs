@@ -5,6 +5,25 @@ use std::{cmp, fmt};
 
 pub mod licenses;
 
+#[inline]
+pub fn parse_license_expression(license: &str) -> Result<spdx::Expression, spdx::ParseError> {
+    spdx::Expression::parse_mode(
+        license,
+        spdx::ParseMode {
+            // Users can't control the expression of external crates, some of which
+            // might use invalid identifiers, mostly the GNU licenses due to how annoying
+            // and divergent they are
+            allow_deprecated: true,
+            // Again, some crates might use completely invalid license names
+            allow_imprecise_license_names: true,
+            // We auto correct this extremely common error on crate load
+            allow_slash_as_or_operator: false,
+            // Invalid, but again have to handle invalid cases
+            allow_postfix_plus_on_gpl: true,
+        },
+    )
+}
+
 pub struct Krate(pub cm::Package);
 
 impl Krate {
@@ -16,7 +35,7 @@ impl Krate {
             // * It also just does basic lexing, so parens, duplicate operators,
             // unpaired exceptions etc can all fail validation
 
-            match spdx::Expression::parse(license_field) {
+            match parse_license_expression(license_field) {
                 Ok(validated) => licenses::LicenseInfo::Expr(validated),
                 Err(err) => {
                     log::error!("unable to parse license expression for '{self}': {err}");
