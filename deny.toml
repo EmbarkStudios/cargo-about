@@ -19,8 +19,8 @@ skip = [
     { crate = "getrandom@0.2.16", reason = "ring" },
 ]
 skip-tree = [
-    { crate = "windows-sys@0.52.0", reason = "as always" },
-    { crate = "windows-sys@0.59.0", reason = "as always" },
+    # Currently at four fucking versions now
+    { crate = "windows-sys", reason = "as always" },
 ]
 
 [licenses]

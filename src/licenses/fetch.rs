@@ -84,6 +84,7 @@ impl GitHostFlavor {
 #[serde(deny_unknown_fields)]
 pub struct GitInfo {
     pub sha1: String,
+    #[serde(default)]
     pub dirty: bool,
 }
 
