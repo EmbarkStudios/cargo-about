@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.8.1] - 2025-09-18
 ### Fixed
 - [PR#289](https://github.com/EmbarkStudios/cargo-about/pull/289) fixed deserialization of `.cargo_vcs_info.json` as the `dirty` field was only added in more recent versions.
 - [PR#289](https://github.com/EmbarkStudios/cargo-about/pull/289) relaxed parsing of SPDX expressions for external crates as they can contain deprecated license identifiers the user has no control over.
@@ -213,7 +214,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.8.0...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.8.1...HEAD
+[0.8.1]: https://github.com/EmbarkStudios/cargo-about/compare/0.8.0...0.8.1
 [0.8.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.7.1...0.8.0
 [0.7.1]: https://github.com/EmbarkStudios/cargo-about/compare/0.7.0...0.7.1
 [0.7.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.6.6...0.7.0
