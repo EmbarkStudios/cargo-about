@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Fixed
+- [PR#290](https://github.com/EmbarkStudios/cargo-about/pull/290) returns the behavior of allowing deprecated license identifiers in the `accepted` field.
+
 ## [0.8.1] - 2025-09-18
 ### Fixed
 - [PR#289](https://github.com/EmbarkStudios/cargo-about/pull/289) fixed deserialization of `.cargo_vcs_info.json` as the `dirty` field was only added in more recent versions.
