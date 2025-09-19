@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.8.2] - 2025-09-19
 ### Fixed
 - [PR#290](https://github.com/EmbarkStudios/cargo-about/pull/290) returns the behavior of allowing deprecated license identifiers in the `accepted` field.
 
@@ -217,7 +218,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.8.1...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.8.2...HEAD
+[0.8.2]: https://github.com/EmbarkStudios/cargo-about/compare/0.8.1...0.8.2
 [0.8.1]: https://github.com/EmbarkStudios/cargo-about/compare/0.8.0...0.8.1
 [0.8.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.7.1...0.8.0
 [0.7.1]: https://github.com/EmbarkStudios/cargo-about/compare/0.7.0...0.7.1

@@ -1,6 +1,6 @@
 [package]
 name = "cargo-about"
-version = "0.8.1"
+version = "0.8.2"
 description = "Cargo plugin for generating a listing of all of the crates and the the terms under which they are licensed"
 authors = [
   "Embark <opensource@embark-studios.com>",
