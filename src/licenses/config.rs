@@ -43,9 +43,7 @@ mod spdx_expr_opt {
         D: de::Deserializer<'de>,
     {
         match <Option<String>>::deserialize(deserializer)? {
-            Some(value) => Ok(Some(
-                spdx::Expression::parse(&value).map_err(de::Error::custom)?,
-            )),
+            Some(value) => Ok(Some(Expression::parse(&value).map_err(de::Error::custom)?)),
             None => Ok(None),
         }
     }
@@ -74,7 +72,18 @@ where
             let mut vec = Vec::new();
 
             while let Some(v) = seq.next_element::<String>()? {
-                let lic = spdx::Licensee::parse(&v).map_err(|e| {
+                // We need to allow deprecated identifiers since external dependencies
+                // can use them even though they shouldn't
+                let lic = spdx::Licensee::parse_mode(
+                    &v,
+                    spdx::ParseMode {
+                        allow_deprecated: true,
+                        allow_slash_as_or_operator: false,
+                        allow_imprecise_license_names: false,
+                        allow_postfix_plus_on_gpl: false,
+                    },
+                )
+                .map_err(|e| {
                     de::Error::custom(format!("'{v}' is not a valid SPDX licensee: {e}"))
                 })?;
 
