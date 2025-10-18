@@ -58,7 +58,7 @@ pub struct PackageLicense<'a> {
 }
 
 #[derive(Serialize)]
-pub struct Input<'a> {
+pub struct LicenseList<'a> {
     /// All license types (e.g. Apache, MIT) and the indices (in [`Input::crates`]) of the crates that use them.
     pub overview: Vec<LicenseSet>,
     /// All unique license *texts* (which may differ by e.g. copyright string, even among licenses of the same type),
@@ -75,7 +75,7 @@ pub fn generate<'kl>(
     resolved: &[Option<licenses::Resolved>],
     files: &licenses::resolution::Files,
     stream: Option<term::termcolor::StandardStream>,
-) -> anyhow::Result<Input<'kl>> {
+) -> anyhow::Result<LicenseList<'kl>> {
     use licenses::resolution::Severity;
 
     let mut num_errors = 0;
@@ -231,7 +231,7 @@ pub fn generate<'kl>(
             license: &nfo.lic_info,
         })
         .collect();
-    Ok(Input {
+    Ok(LicenseList {
         overview,
         licenses,
         crates,
