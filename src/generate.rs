@@ -1,11 +1,10 @@
 use std::collections::BTreeMap;
 
 use crate::licenses::{self, LicenseInfo};
-use serde::{Serialize, Serializer};
-use krates::{Utf8PathBuf as PathBuf};
-use krates::cm::Package;
 use codespan_reporting::term;
-
+use krates::Utf8PathBuf as PathBuf;
+use krates::cm::Package;
+use serde::{Serialize, Serializer};
 
 #[derive(Clone, Serialize)]
 pub struct UsedBy<'a> {
@@ -44,7 +43,10 @@ pub struct LicenseSet {
     pub text: String,
 }
 
-fn serialize_as_string<T: std::fmt::Display, S: Serializer>(value: &T, serializer: S) -> Result<S::Ok, S::Error> {
+fn serialize_as_string<T: std::fmt::Display, S: Serializer>(
+    value: &T,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
     serializer.collect_str(value)
 }
 
@@ -58,7 +60,7 @@ pub struct PackageLicense<'a> {
 }
 
 #[derive(Serialize)]
-pub struct Input<'a> {
+pub struct LicenseList<'a> {
     /// All license types (e.g. Apache, MIT) and the indices (in [`Input::crates`]) of the crates that use them.
     pub overview: Vec<LicenseSet>,
     /// All unique license *texts* (which may differ by e.g. copyright string, even among licenses of the same type),
@@ -75,7 +77,7 @@ pub fn generate<'kl>(
     resolved: &[Option<licenses::Resolved>],
     files: &licenses::resolution::Files,
     stream: Option<term::termcolor::StandardStream>,
-) -> anyhow::Result<Input<'kl>> {
+) -> anyhow::Result<LicenseList<'kl>> {
     use licenses::resolution::Severity;
 
     let mut num_errors = 0;
@@ -98,7 +100,7 @@ pub fn generate<'kl>(
                             num_errors += 1;
                         }
 
-                        term::emit(&mut streaml, &diag_cfg, files, diag)?;
+                        term::emit_to_io_write(&mut streaml, &diag_cfg, files, diag)?;
                     }
                 }
                 _ => {}
@@ -231,7 +233,7 @@ pub fn generate<'kl>(
             license: &nfo.lic_info,
         })
         .collect();
-    Ok(Input {
+    Ok(LicenseList {
         overview,
         licenses,
         crates,
