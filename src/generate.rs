@@ -197,31 +197,24 @@ pub fn generate<'kl>(
         );
     }
 
-    let mut overview: Vec<LicenseSet> = Vec::with_capacity(256);
+    let mut overview: BTreeMap<&str, LicenseSet> = BTreeMap::new();
 
     for (ndx, lic) in licenses.iter_mut().enumerate() {
-        match overview.binary_search_by(|i| i.id.cmp(&lic.id)) {
-            Ok(i) => {
-                let ov = &mut overview[i];
-                ov.indices.push(ndx);
-                ov.count += lic.used_by.len();
+        let ls = overview.entry(&lic.id).or_insert_with(|| {
+            lic.first_of_kind = true;
+            LicenseSet {
+                count: 0,
+                name: lic.name.clone(),
+                id: lic.id.clone(),
+                indices: Vec::with_capacity(10),
+                text: lic.text.clone(),
             }
-            Err(i) => {
-                let mut ls = LicenseSet {
-                    count: lic.used_by.len(),
-                    name: lic.name.clone(),
-                    id: lic.id.clone(),
-                    indices: Vec::with_capacity(10),
-                    text: lic.text.clone(),
-                };
-
-                ls.indices.push(ndx);
-                overview.insert(i, ls);
-                lic.first_of_kind = true;
-            }
-        }
+        });
+        ls.indices.push(ndx);
+        ls.count += lic.used_by.len();
     }
 
+    let mut overview = overview.into_values().collect::<Vec<_>>();
     // Show the most used licenses first
     overview.sort_by(|a, b| b.count.cmp(&a.count));
 
