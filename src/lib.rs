@@ -4,6 +4,7 @@ use krates::cm;
 use std::{cmp, fmt};
 
 pub mod licenses;
+pub mod generate;
 
 #[inline]
 pub fn parse_license_expression(license: &str) -> Result<spdx::Expression, spdx::ParseError> {
