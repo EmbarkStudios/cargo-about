@@ -32,20 +32,39 @@ pub struct License<'a> {
 
 #[derive(Serialize)]
 pub struct LicenseSet {
+    /// Number of packages that use this license.
     pub count: usize,
+    /// This license's human-readable name (e.g. "Apache License 2.0").
     pub name: String,
+    /// This license's SPDX identifier (e.g. "Apache-2.0").
     pub id: String,
+    /// Indices (in [`Input::crates`]) of the crates that use this license.
     pub indices: Vec<usize>,
+    /// This license's text. Currently taken from the first crate that uses the license.
     pub text: String,
 }
 
 #[derive(Serialize)]
+pub struct PackageLicense<'a> {
+    /// The package itself.
+    pub package: &'a Package,
+    /// The package's license: either a SPDX license identifier, "Unknown", or "Ignore".
+    pub license: String,
+}
+
+#[derive(Serialize)]
 pub struct Input<'a> {
+    /// All license types (e.g. Apache, MIT) and the indices (in [`Input::crates`]) of the crates that use them.
     pub overview: Vec<LicenseSet>,
+    /// All unique license *texts* (which may differ by e.g. copyright string, even among licenses of the same type),
+    /// and the crates that use them.
     pub licenses: Vec<License<'a>>,
+    /// All input packages/crates.
     pub crates: Vec<PackageLicense<'a>>,
 }
 
+/// Generate a list of all licenses from a list of crates gathered from [`licenses::Gatherer`] and a list of resolved
+/// licenses and files from [`licenses::resolution::resolve`].
 pub fn generate<'kl>(
     nfos: &[licenses::KrateLicense<'kl>],
     resolved: &[Option<licenses::Resolved>],
@@ -219,10 +238,4 @@ pub fn generate<'kl>(
         licenses,
         crates,
     })
-}
-
-#[derive(Serialize)]
-pub struct PackageLicense<'a> {
-    pub package: &'a Package,
-    pub license: String,
 }
