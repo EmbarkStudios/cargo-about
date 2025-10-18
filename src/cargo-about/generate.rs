@@ -299,12 +299,11 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
         crate::Color::Never => ColorChoice::Never,
     });
 
+    let input = generate(&summary, &resolved, &files, stream)?;
     let output = if let Some(templates) = templates {
         let (registry, template_name) = templates?;
-        let input = generate(&summary, &resolved, &files, stream)?;
         registry.render(&template_name, &input)?
     } else {
-        let input = generate(&summary, &resolved, &files, stream)?;
         serde_json::to_string(&input)?
     };
 
