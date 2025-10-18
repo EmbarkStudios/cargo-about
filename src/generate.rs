@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use crate::licenses::{self, LicenseInfo};
-use serde::Serialize;
+use serde::{Serialize, Serializer};
 use krates::{Utf8PathBuf as PathBuf};
 use krates::cm::Package;
 use codespan_reporting::term;
@@ -44,12 +44,17 @@ pub struct LicenseSet {
     pub text: String,
 }
 
+fn serialize_as_string<T: std::fmt::Display, S: Serializer>(value: &T, serializer: S) -> Result<S::Ok, S::Error> {
+    serializer.collect_str(value)
+}
+
 #[derive(Serialize)]
 pub struct PackageLicense<'a> {
     /// The package itself.
     pub package: &'a Package,
     /// The package's license: either a SPDX license identifier, "Unknown", or "Ignore".
-    pub license: String,
+    #[serde(serialize_with = "serialize_as_string")]
+    pub license: &'a LicenseInfo,
 }
 
 #[derive(Serialize)]
@@ -66,7 +71,7 @@ pub struct Input<'a> {
 /// Generate a list of all licenses from a list of crates gathered from [`licenses::Gatherer`] and a list of resolved
 /// licenses and files from [`licenses::resolution::resolve`].
 pub fn generate<'kl>(
-    nfos: &[licenses::KrateLicense<'kl>],
+    nfos: &'kl [licenses::KrateLicense<'kl>],
     resolved: &[Option<licenses::Resolved>],
     files: &licenses::resolution::Files,
     stream: Option<term::termcolor::StandardStream>,
@@ -223,7 +228,7 @@ pub fn generate<'kl>(
         .filter(|nfo| !matches!(nfo.lic_info, LicenseInfo::Ignore))
         .map(|nfo| PackageLicense {
             package: &nfo.krate.0,
-            license: nfo.lic_info.to_string(),
+            license: &nfo.lic_info,
         })
         .collect();
     Ok(Input {
