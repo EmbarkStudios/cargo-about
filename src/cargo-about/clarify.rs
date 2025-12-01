@@ -153,8 +153,7 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
 
     let license_store = cargo_about::licenses::store_from_cache()?;
 
-    let strategy = askalono::ScanStrategy::new(&license_store)
-        .mode(askalono::ScanMode::Elimination)
+    let strategy = spdx::detection::scan::Scanner::new(&license_store)
         .confidence_threshold(((args.threshold * 100.0) as u32).clamp(10, 100) as f32 / 100.0)
         .optimize(false)
         .max_passes(1);
@@ -180,10 +179,9 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
 
         let checksum = ctx.finish();
 
-        let text = askalono::TextData::new(subsection);
+        let text = spdx::detection::TextData::new(subsection);
         let scan_result = strategy
-            .scan(&text)
-            .with_context(|| format!("failed to scan subsection for license:\n{subsection}"))?;
+            .scan(&text);
 
         let found_license = scan_result
             .license
