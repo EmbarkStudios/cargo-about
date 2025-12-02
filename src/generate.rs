@@ -100,7 +100,7 @@ pub fn generate<'kl>(
                             num_errors += 1;
                         }
 
-                        term::emit_to_io_write(&mut streaml, &diag_cfg, files, diag)?;
+                        term::emit_to_io_write(&mut streaml, diag_cfg, files, diag)?;
                     }
                 }
                 _ => {}
