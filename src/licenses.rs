@@ -9,15 +9,14 @@ use anyhow::Context as _;
 use krates::Utf8PathBuf as PathBuf;
 use rayon::prelude::*;
 pub use resolution::Resolved;
+use spdx::detection as sd;
 use std::{cmp, fmt, sync::Arc};
 
-const LICENSE_CACHE: &[u8] = include_bytes!("../spdx_cache.bin.zstd");
-
-pub type LicenseStore = askalono::Store;
+pub type LicenseStore = sd::Store;
 
 #[inline]
 pub fn store_from_cache() -> anyhow::Result<LicenseStore> {
-    askalono::Store::from_cache(LICENSE_CACHE).context("failed to load license store")
+    sd::Store::load_inline().context("failed to load license store")
 }
 
 #[derive(Debug)]
@@ -156,8 +155,7 @@ impl Gatherer {
         let threshold = self.threshold;
         let min_threshold = threshold - 0.5;
 
-        let strategy = askalono::ScanStrategy::new(&self.store)
-            .mode(askalono::ScanMode::Elimination)
+        let strategy = spdx::detection::scan::Scanner::new(&self.store)
             .confidence_threshold(if min_threshold < 0.1 {
                 0.1
             } else {
@@ -249,7 +247,7 @@ impl Gatherer {
     fn gather_file_system<'k>(
         &self,
         krates: &'k Krates,
-        strategy: &askalono::ScanStrategy<'_>,
+        scanner: &sd::scan::Scanner<'_>,
         licensed_krates: &mut Vec<KrateLicense<'k>>,
     ) {
         let threshold = self.threshold;
@@ -269,7 +267,7 @@ impl Gatherer {
                 let root_path = krate.manifest_path.parent().unwrap();
 
                 let mut license_files =
-                    match scan::scan_files(root_path, strategy, threshold, max_depth) {
+                    match scan::scan_files(root_path, scanner, threshold, max_depth) {
                         Ok(files) => files,
                         Err(err) => {
                             log::error!(

@@ -17,6 +17,7 @@ multiple-versions = "deny"
 deny = ["openssl-sys", "cmake", "windows"]
 skip = [
     { crate = "getrandom@0.2.16", reason = "ring" },
+    { crate = "hashbrown@0.15.5", reason = "petgraph" },
 ]
 skip-tree = [
     # Currently at four fucking versions now

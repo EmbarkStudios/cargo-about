@@ -1,10 +1,11 @@
 use super::{LicenseFile, LicenseFileKind};
 use krates::{Utf8Path as Path, Utf8PathBuf as PathBuf};
 use rayon::prelude::*;
+use spdx::detection::scan::Scanner;
 
 pub(crate) fn scan_files(
     root_dir: &Path,
-    strat: &askalono::ScanStrategy<'_>,
+    scanner: &Scanner<'_>,
     threshold: f32,
     max_depth: Option<usize>,
 ) -> anyhow::Result<Vec<LicenseFile>> {
@@ -58,7 +59,7 @@ pub(crate) fn scan_files(
 
             let contents = read_file(&path)?;
 
-            check_is_license_file(path, contents, strat, threshold)
+            check_is_license_file(path, contents, scanner, threshold)
         })
         .collect();
 
@@ -84,10 +85,10 @@ fn read_file(path: &Path) -> Option<String> {
 pub(crate) fn check_is_license_file(
     path: PathBuf,
     contents: String,
-    strat: &askalono::ScanStrategy<'_>,
+    scanner: &Scanner<'_>,
     threshold: f32,
 ) -> Option<LicenseFile> {
-    match scan_text(&contents, strat, threshold) {
+    match scan_text(&contents, scanner, threshold) {
         ScanResult::Header(ided) => {
             // askalono only detects single license identifiers, not license
             // expressions, so we need to construct one from a single identifier,
@@ -158,41 +159,36 @@ enum ScanResult {
     NoLicense,
 }
 
-fn scan_text(contents: &str, strat: &askalono::ScanStrategy<'_>, threshold: f32) -> ScanResult {
-    let text = askalono::TextData::new(contents);
-    match strat.scan(&text) {
-        Ok(lic_match) => {
-            match lic_match.license {
-                Some(identified) => {
-                    let lic_id = match spdx::license_id(identified.name) {
-                        Some(id) => Identified {
-                            confidence: lic_match.score,
-                            id,
-                        },
-                        None => return ScanResult::UnknownId(identified.name.to_owned()),
-                    };
+fn scan_text(contents: &str, strat: &Scanner<'_>, threshold: f32) -> ScanResult {
+    let text = spdx::detection::TextData::new(contents);
+    let lic_match = strat.scan(&text);
 
-                    // askalano doesn't report any matches below the confidence threshold
-                    // but we want to see what it thinks the license is if the confidence
-                    // is somewhat ok at least
-                    if lic_match.score >= threshold {
-                        match identified.kind {
-                            askalono::LicenseType::Header => ScanResult::Header(lic_id),
-                            askalono::LicenseType::Original => ScanResult::Text(lic_id),
-                            askalono::LicenseType::Alternate => {
-                                panic!("Alternate license detected")
-                            }
-                        }
-                    } else {
-                        ScanResult::LowLicenseChance(lic_id)
-                    }
-                }
-                None => ScanResult::NoLicense,
+    let Some(identified) = lic_match.license else {
+        return ScanResult::NoLicense;
+    };
+
+    let lic_id = match spdx::license_id(identified.name) {
+        Some(id) => Identified {
+            confidence: lic_match.score,
+            id,
+        },
+        None => return ScanResult::UnknownId(identified.name.to_owned()),
+    };
+
+    use spdx::detection::LicenseType;
+
+    // askalano doesn't report any matches below the confidence threshold
+    // but we want to see what it thinks the license is if the confidence
+    // is somewhat ok at least
+    if lic_match.score >= threshold {
+        match identified.kind {
+            LicenseType::Header => ScanResult::Header(lic_id),
+            LicenseType::Original => ScanResult::Text(lic_id),
+            LicenseType::Alternate => {
+                panic!("Alternate license detected")
             }
         }
-        Err(e) => {
-            // the elimination strategy can't currently fail
-            panic!("askalalono elimination strategy failed: {e}");
-        }
+    } else {
+        ScanResult::LowLicenseChance(lic_id)
     }
 }
