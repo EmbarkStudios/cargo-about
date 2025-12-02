@@ -3,6 +3,7 @@
 use krates::cm;
 use std::{cmp, fmt};
 
+pub mod generate;
 pub mod licenses;
 
 #[inline]
