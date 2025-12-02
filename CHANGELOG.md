@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 ### Changed
+- [PR#291](https://github.com/EmbarkStudios/cargo-about/pull/291) resolved [#272](https://github.com/EmbarkStudios/cargo-about/issues/272) by exposing the core `generate` function and associated types publicly.
 - [PR#294](https://github.com/EmbarkStudios/cargo-about/pull/294) updated `spdx` to 0.13, replacing the need for `askalono` for license detection.
 
 ## [0.8.2] - 2025-09-19
