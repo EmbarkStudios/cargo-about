@@ -81,6 +81,7 @@ where
                         allow_slash_as_or_operator: false,
                         allow_imprecise_license_names: false,
                         allow_postfix_plus_on_gpl: false,
+                        allow_unknown: false,
                     },
                 )
                 .map_err(|e| {

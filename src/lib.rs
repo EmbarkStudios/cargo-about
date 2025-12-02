@@ -20,6 +20,9 @@ pub fn parse_license_expression(license: &str) -> Result<spdx::Expression, spdx:
             allow_slash_as_or_operator: false,
             // Invalid, but again have to handle invalid cases
             allow_postfix_plus_on_gpl: true,
+            // There is no reason to allow unknown identifiers, the user has the
+            // LicenseRef- and AdditionRef- options available to them
+            allow_unknown: false,
         },
     )
 }
