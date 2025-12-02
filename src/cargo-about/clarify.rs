@@ -180,8 +180,7 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
         let checksum = ctx.finish();
 
         let text = spdx::detection::TextData::new(subsection);
-        let scan_result = strategy
-            .scan(&text);
+        let scan_result = strategy.scan(&text);
 
         let found_license = scan_result
             .license

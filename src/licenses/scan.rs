@@ -166,7 +166,7 @@ fn scan_text(contents: &str, strat: &Scanner<'_>, threshold: f32) -> ScanResult 
     let Some(identified) = lic_match.license else {
         return ScanResult::NoLicense;
     };
-    
+
     let lic_id = match spdx::license_id(identified.name) {
         Some(id) => Identified {
             confidence: lic_match.score,

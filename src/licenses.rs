@@ -9,8 +9,8 @@ use anyhow::Context as _;
 use krates::Utf8PathBuf as PathBuf;
 use rayon::prelude::*;
 pub use resolution::Resolved;
-use std::{cmp, fmt, sync::Arc};
 use spdx::detection as sd;
+use std::{cmp, fmt, sync::Arc};
 
 pub type LicenseStore = sd::Store;
 
