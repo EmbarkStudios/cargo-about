@@ -3,8 +3,8 @@
 use krates::cm;
 use std::{cmp, fmt};
 
-pub mod licenses;
 pub mod generate;
+pub mod licenses;
 
 #[inline]
 pub fn parse_license_expression(license: &str) -> Result<spdx::Expression, spdx::ParseError> {
