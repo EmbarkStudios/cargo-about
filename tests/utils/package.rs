@@ -160,7 +160,7 @@ impl<'a> PackageBuilder<'a> {
                 package["license"] = toml_edit::value(license.clone());
             }
             if let Some(license_filename) = &self.license_filename {
-                package["license_file"] = toml_edit::value(license_filename.clone());
+                package["license-file"] = toml_edit::value(license_filename.clone());
             }
 
             if !self.dependencies.is_empty() {
