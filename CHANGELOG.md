@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Changed
+- [PR#295](https://github.com/EmbarkStudios/cargo-about/pull/295) changes how GNU licenses are detected, previously in 0.8.3 they would be detected as their root eg. `GPL-3.0` form, which are all deprecated. As all GNU licenses use the exact same text for the different variants, one of which is deprecated, they are now always detected as the `-or-later` variant, eg. `GPL-3.0-or-later`. If this detection does not match the actual license requirement, eg. `GPL-3.0-only`, then it must be corrected by the user, as unfortunately the license detection cannot determine that due to the lack of distinction between the license texts.
+
 ## [0.8.3] - 2025-12-02
 ### Changed
 - [PR#291](https://github.com/EmbarkStudios/cargo-about/pull/291) resolved [#272](https://github.com/EmbarkStudios/cargo-about/issues/272) by exposing the core `generate` function and associated types publicly.
