@@ -97,7 +97,7 @@ pub(crate) fn check_is_license_file(
                 Ok(expr) => expr,
                 Err(err) => {
                     log::error!(
-                        "failed to parse license '{}' into a valid expression: {err}",
+                        "failed to parse license '{}' at {path:?} into a valid expression: {err}",
                         ided.id.name
                     );
                     return None;
@@ -116,7 +116,7 @@ pub(crate) fn check_is_license_file(
                 Ok(expr) => expr,
                 Err(err) => {
                     log::error!(
-                        "failed to parse license '{}' into a valid expression: {err}",
+                        "failed to parse license '{}' at {path:?} into a valid expression: {err}",
                         ided.id.name
                     );
                     return None;
