@@ -71,7 +71,7 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
             let root = PathBuf::from_path_buf(
                 home::cargo_home()
                     .context("unable to find CARGO_HOME directory")?
-                    .join("registry/src/index.crates.io-6f17d22bba15001f"),
+                    .join("registry/src/index.crates.io-1949cf8c6b5b557f"),
             )
             .map_err(|_e| anyhow::anyhow!("CARGO_HOME directory is not utf-8"))?;
 
