@@ -81,7 +81,7 @@ fn setup_logger(level: log::LevelFilter) -> Result<(), fern::InitError> {
         .format(move |out, message, record| {
             out.finish(format_args!(
                 "{date} [{level}] {message}\x1B[0m",
-                date = time::OffsetDateTime::now_utc(),
+                date = jiff::Timestamp::now(),
                 level = match record.level() {
                     Lvl::Error => Color::Red.paint("ERROR"),
                     Lvl::Warn => Color::Yellow.paint("WARN"),

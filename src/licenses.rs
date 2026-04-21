@@ -11,6 +11,7 @@ use rayon::prelude::*;
 pub use resolution::Resolved;
 use spdx::detection as sd;
 use std::{cmp, fmt, sync::Arc};
+use ureq::Agent as Client;
 
 pub type LicenseStore = sd::Store;
 
@@ -148,7 +149,7 @@ impl Gatherer {
         self,
         krates: &'krate Krates,
         cfg: &config::Config,
-        client: Option<reqwest::blocking::Client>,
+        client: Option<Client>,
     ) -> Vec<KrateLicense<'krate>> {
         let mut licensed_krates = Vec::with_capacity(krates.len());
 

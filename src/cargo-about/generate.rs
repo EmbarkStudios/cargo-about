@@ -266,7 +266,7 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
     log::info!("gathered {} crates", krates.len());
 
     let client = if !args.offline && !args.frozen {
-        Some(reqwest::blocking::ClientBuilder::new().build()?)
+        Some(ureq::Agent::new_with_defaults())
     } else {
         None
     };

@@ -20,9 +20,6 @@ exclude = ["media/"]
 [badges]
 maintenance = { status = "actively-developed" }
 
-[features]
-native-certs = ["reqwest/rustls-tls-native-roots"]
-
 [[bin]]
 name = "cargo-about"
 path = "src/cargo-about/main.rs"
@@ -49,8 +46,9 @@ handlebars = { version = "6.0", features = ["dir_source"] }
 home = "0.5"
 # Directory walking
 ignore = "0.4"
+jiff = "0.2"
 # Dependency graphing
-krates = { version = "0.20", features = ["serialize"] }
+krates = { version = "0.21", features = ["serialize"] }
 # Parent process retrieval
 libc = "0.2"
 # Logging macros
@@ -62,10 +60,7 @@ parking_lot = "0.12"
 # brrrr
 rayon = "1.5"
 # HTTP requests
-reqwest = { version = "0.12", default-features = false, features = [
-  "blocking",
-  "rustls-tls",
-] }
+ureq = { version = "3.3", default-features = false, features = ["platform-verifier"] }
 # Checksum verification (already pulled in via rustls)
 ring = "0.17"
 # Oh gee what could it be
@@ -75,8 +70,6 @@ serde_json = "1.0"
 semver = { version = "1.0", features = ["serde"] }
 # License expression parsing and evaluation
 spdx = { version = "0.13", features = ["detection-parallel", "detection-inline-cache", "text"] }
-# Log timestamps
-time = "0.3"
 # Configuration parsing
 toml = "0.9"
 # Manipulation of cargo manifests for diagnostic purposes
@@ -90,6 +83,6 @@ url = "2.5"
 # Filesystems - Filesystem fixtures and assertions for testing
 assert_fs = "1.0.7"
 # Easy command initialization and assertions
-assert_cmd = "2.0"
+assert_cmd = "2.2"
 # Composable first-order predicate functions
 predicates = "3.0"
