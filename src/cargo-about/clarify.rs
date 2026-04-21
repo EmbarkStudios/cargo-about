@@ -68,12 +68,27 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
         }
         Subcommand::Crate { spec } => {
             // Just hardcoding to the typical because I can't be bothered
-            let root = PathBuf::from_path_buf(
-                home::cargo_home()
-                    .context("unable to find CARGO_HOME directory")?
-                    .join("registry/src/index.crates.io-6f17d22bba15001f"),
-            )
-            .map_err(|_e| anyhow::anyhow!("CARGO_HOME directory is not utf-8"))?;
+            let mut chome = if let Some(home) = std::env::var_os("CARGO_HOME")
+                && !home.is_empty()
+            {
+                let home = std::path::PathBuf::from(home);
+                if home.is_absolute() {
+                    home
+                } else {
+                    std::env::current_dir()
+                        .context("unable to determine current directory")?
+                        .join(&home)
+                }
+            } else {
+                std::env::home_dir()
+                    .context("unable to determine home directory")?
+                    .join(".cargo")
+            };
+
+            chome.push("registry/src/index.crates.io-6f17d22bba15001f");
+
+            let root = PathBuf::from_path_buf(chome)
+                .map_err(|_e| anyhow::anyhow!("CARGO_HOME directory is not utf-8"))?;
 
             let crate_path = root.join(&spec);
 

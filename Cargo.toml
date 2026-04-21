@@ -42,8 +42,6 @@ codespan-reporting = "0.13"
 fern = "0.7"
 # Template engine for output
 handlebars = { version = "6.0", features = ["dir_source"] }
-# $HOME retrieval
-home = "0.5"
 # Directory walking
 ignore = "0.4"
 jiff = "0.2"
