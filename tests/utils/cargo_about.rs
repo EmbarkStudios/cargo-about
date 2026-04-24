@@ -13,6 +13,7 @@ impl CargoAbout {
     pub fn new(package: &Package) -> Result<Self> {
         let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!());
         cmd.current_dir(&package.dir);
+        cmd.arg("--color=never");
         Ok(CargoAbout { cmd })
     }
 

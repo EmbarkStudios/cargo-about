@@ -169,7 +169,7 @@ impl<'a> PackageBuilder<'a> {
             for package in &self.dependencies {
                 writeln!(
                     &mut s,
-                    "{} = {{ version = \"{}\", path = \"{}\" }}",
+                    "{} = {{ version = '{}', path = '{}' }}",
                     package.name,
                     package.version,
                     package.dir.to_str().unwrap()
