@@ -23,36 +23,29 @@ maintenance = { status = "actively-developed" }
 [[bin]]
 name = "cargo-about"
 path = "src/cargo-about/main.rs"
+required-features = ["cli"]
+
+[features]
+cli = ["dep:nu-ansi-term", "dep:handlebars", "dep:mimalloc", "dep:jiff", "dep:fern", "dep:clap"]
 
 [profile.release]
 strip = "debuginfo"
 lto = true
 
 [dependencies]
-# Colorization
-nu-ansi-term = "0.50"
 # Error facilities
 anyhow = "1.0"
-# Argument parsing
-clap = { version = "4.5", features = ["derive"] }
 # Diagnostic reporting
 codespan = "0.13"
 codespan-reporting = "0.13"
-# Logging helpers
-fern = "0.7"
-# Template engine for output
-handlebars = { version = "6.0", features = ["dir_source"] }
 # Directory walking
 ignore = "0.4"
-jiff = "0.2"
 # Dependency graphing
 krates = { version = "0.21", features = ["serialize"] }
 # Parent process retrieval
 libc = "0.2"
 # Logging macros
 log = "0.4"
-# Better heap allocator over system one (usually)
-mimalloc = "0.1"
 # Better locking primitives
 parking_lot = "0.12"
 # brrrr
@@ -76,6 +69,19 @@ toml_edit = "0.23"
 twox-hash = "2.0"
 # Url parsing
 url = "2.5"
+
+# CLI only deps
+# Argument parsing
+clap = { version = "4.5", optional = true, features = ["derive"] }
+# Logging helpers
+fern = { version = "0.7", optional = true }
+jiff = { version = "0.2", optional = true }
+# Template engine for output
+handlebars = { version = "6.0", optional = true, features = ["dir_source"] }
+# Better heap allocator over system one (usually)
+mimalloc = { version = "0.1", optional = true }
+# Colorization
+nu-ansi-term = { version = "0.50", optional = true }
 
 [dev-dependencies]
 # Filesystems - Filesystem fixtures and assertions for testing

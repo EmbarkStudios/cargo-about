@@ -16,7 +16,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
 
@@ -29,16 +29,16 @@ jobs:
       - run: rustup component add clippy
       - run: cargo fetch
       - name: cargo clippy
-        run: cargo clippy --all-targets -- -D warnings
+        run: cargo clippy --all-targets --features cli -- -D warnings
 
   test:
     name: Test
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-14, windows-2022]
+        os: [ubuntu-24.04, macos-14, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo fetch
@@ -58,9 +58,9 @@ jobs:
 
   msrv-check:
     name: Minimum Stable Rust Version Check
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: "1.85.0"
@@ -78,22 +78,22 @@ jobs:
 
   check-self:
     name: cargo-about
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-unknown-linux-musl
       - run: sudo apt install -y musl-tools
       - uses: Swatinem/rust-cache@v2
-      - run: cargo run --release --target x86_64-unknown-linux-musl -- generate --fail about.hbs
+      - run: cargo run --release --target x86_64-unknown-linux-musl --features cli -- generate --fail about.hbs
 
   # Build `mdBook` documentation and upload it as a temporary build artifact
   doc-book:
     name: Build the book
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: |
           set -e
           curl -L https://github.com/rust-lang-nursery/mdBook/releases/download/v0.4.21/mdbook-v0.4.21-x86_64-unknown-linux-gnu.tar.gz | tar xzf -
@@ -106,14 +106,14 @@ jobs:
 
   publish-check:
     name: Publish Check
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     container: ghcr.io/cross-rs/aarch64-unknown-linux-musl:edge
     strategy:
       matrix:
         include:
           - target: aarch64-unknown-linux-musl
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
         with:
           target: ${{ matrix.target }}
@@ -128,9 +128,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             target: x86_64-unknown-linux-musl
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             target: aarch64-unknown-linux-musl
             container: ghcr.io/cross-rs/aarch64-unknown-linux-musl:edge
           - os: windows-2022
@@ -152,11 +152,11 @@ jobs:
         run: |
           sudo apt install -y musl-tools
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: cargo fetch
         run: cargo fetch --target ${{ matrix.target }}
       - name: Release build
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.target }} --features cli
       - name: Package
         shell: bash
         env:
@@ -174,10 +174,10 @@ jobs:
   publish:
     name: Publish Docs
     needs: [doc-book]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Download book
         uses: actions/download-artifact@v4
         with:
@@ -196,7 +196,7 @@ jobs:
           BUILD_SOURCEVERSION: ${{ github.sha }}
 
   test_success:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: [lint, test, check-self, deny-check, publish-check, doc-book]
     steps:
       - run: echo "All test jobs passed"
