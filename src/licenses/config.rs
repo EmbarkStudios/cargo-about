@@ -356,6 +356,11 @@ impl<'de> Deserialize<'de> for Config {
 
             l
         } else {
+            tab.errors.push(toml_span::Error {
+                kind: toml_span::ErrorKind::MissingField("accepted"),
+                span: (0..0).into(),
+                line_info: None,
+            });
             Vec::new()
         };
         let workarounds = tab.optional("workarounds").unwrap_or_default();
