@@ -43,18 +43,18 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo fetch
       - name: cargo test build
-        run: cargo build --tests --release
+        run: cargo build --tests --release --features cli
       - name: cargo test
         shell: bash
-        run: cargo test --release
+        run: cargo test --release --features cli
       - name: detects powershell
         if: ${{ matrix.os != 'macos-14' }}
         shell: pwsh
-        run: cargo test --release -- --ignored is_powershell_true
+        run: cargo test --release --features cli -- --ignored is_powershell_true
       - name: doesn't detect powershell
         if: ${{ matrix.os != 'macos-14' }}
         shell: bash
-        run: cargo test --release -- --ignored is_powershell_false
+        run: cargo test --release --features cli -- --ignored is_powershell_false
 
   msrv-check:
     name: Minimum Stable Rust Version Check
@@ -63,7 +63,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: "1.85.0"
+          toolchain: "1.88.0"
       - uses: Swatinem/rust-cache@v2
       - run: cargo fetch
       - name: cargo check

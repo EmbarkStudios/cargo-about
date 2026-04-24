@@ -136,7 +136,7 @@ pub fn resolve(
     files: &mut codespan::Files<String>,
     fail_on_missing: bool,
 ) -> Vec<Option<Resolved>> {
-    let resolved = licenses
+    licenses
         .iter()
         .map(|kl| {
             let mut resolved = Resolved {
@@ -298,7 +298,5 @@ pub fn resolve(
 
             Some(resolved)
         })
-        .collect();
-
-    resolved
+        .collect()
 }

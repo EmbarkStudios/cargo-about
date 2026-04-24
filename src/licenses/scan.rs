@@ -30,10 +30,10 @@ pub(crate) fn scan_files(
         .filter_map(|file| {
             log::trace!("scanning file {}", file.path().display());
 
-            if let Some(ft) = file.file_type() {
-                if ft.is_dir() {
-                    return None;
-                }
+            if let Some(ft) = file.file_type()
+                && ft.is_dir()
+            {
+                return None;
             }
 
             // Check for pipes on unix just in case
@@ -41,11 +41,11 @@ pub(crate) fn scan_files(
             {
                 use std::os::unix::fs::FileTypeExt;
 
-                if let Ok(md) = file.metadata() {
-                    if md.file_type().is_fifo() {
-                        log::error!("skipping FIFO {}", file.path().display());
-                        return None;
-                    }
+                if let Ok(md) = file.metadata()
+                    && md.file_type().is_fifo()
+                {
+                    log::error!("skipping FIFO {}", file.path().display());
+                    return None;
                 }
             }
 

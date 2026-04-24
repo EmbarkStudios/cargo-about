@@ -171,19 +171,18 @@ impl Gatherer {
         // to the list so all of the following gathers ignore them
         if cfg.private.ignore {
             for krate in krates.krates() {
-                if let Some(publish) = &krate.publish {
-                    if publish.is_empty()
+                if let Some(publish) = &krate.publish
+                    && (publish.is_empty()
                         || publish
                             .iter()
-                            .all(|reg| cfg.private.registries.contains(reg))
-                    {
-                        log::debug!("ignoring private crate '{krate}'");
-                        licensed_krates.push(KrateLicense {
-                            krate,
-                            lic_info: LicenseInfo::Ignore,
-                            license_files: Vec::new(),
-                        });
-                    }
+                            .all(|reg| cfg.private.registries.contains(reg)))
+                {
+                    log::debug!("ignoring private crate '{krate}'");
+                    licensed_krates.push(KrateLicense {
+                        krate,
+                        lic_info: LicenseInfo::Ignore,
+                        license_files: Vec::new(),
+                    });
                 }
             }
 
