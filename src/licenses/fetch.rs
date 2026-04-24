@@ -1,8 +1,8 @@
 use super::{Krate, config};
 use anyhow::Context as _;
 use krates::Utf8Path as Path;
-use reqwest::blocking::Client;
 use std::{io::Read, sync::Arc};
+use ureq::Agent as Client;
 use url::Url;
 
 #[derive(Copy, Clone, Debug)]
@@ -45,34 +45,35 @@ impl GitHostFlavor {
             None => project,
         };
 
-        let req = match self {
+        let url = match self {
             Self::Github => {
-                // https://docs.github.com/en/rest/reference/repos#contents
-                client.get(format!("https://rawcdn.githack.com/{project}/{rev}/{path}"))
+                format!("https://raw.githubusercontent.com/{project}/{rev}/{path}")
             }
             Self::Gitlab => {
                 // https://docs.gitlab.com/ee/api/repository_files.html#get-raw-file-from-repository
                 // https://glcdn.githack.com/veloren/veloren/-/raw/f92c6fbd49269b6e2cad04ae229d3405a6656053/LICENSE
-                client.get(format!(
-                    "https://glcdn.githack.com/{project}/-/raw/{rev}/{path}"
-                ))
+                format!("https://glcdn.githack.com/{project}/-/raw/{rev}/{path}")
             }
             Self::Bitbucket => {
                 // https://developer.atlassian.com/bitbucket/api/2/reference/resource/repositories/%7Bworkspace%7D/%7Brepo_slug%7D/src/%7Bcommit%7D/%7Bpath%7D
                 // https://bbcdn.githack.com/atlassian/pipelines-examples-rust/raw/581100fe400cd0cfb17f54c2aa26121181f82646/README.md
-                client.get(format!(
-                    "https://bbcdn.githack.com/{project}/raw/{rev}/{path}"
-                ))
+                format!("https://bbcdn.githack.com/{project}/raw/{rev}/{path}")
             }
         };
 
-        let mut res = req
-            .send()
-            .context("failed to send request")?
-            .error_for_status()?;
+        let res = client.get(&url).call().context("failed to send request")?;
 
-        let mut contents = String::with_capacity(res.content_length().unwrap_or(1024) as usize);
-        res.read_to_string(&mut contents)
+        anyhow::ensure!(
+            res.status().is_success(),
+            "{} - failed to retrieve raw file from {url}",
+            res.status()
+        );
+
+        let mut body = res.into_body();
+
+        let mut contents = String::with_capacity(body.content_length().unwrap_or(1024) as usize);
+        body.as_reader()
+            .read_to_string(&mut contents)
             .context("failed to read contents as utf-8")?;
 
         Ok(contents)
@@ -116,7 +117,7 @@ impl GitCache {
 
     pub fn online() -> Self {
         Self {
-            http_client: Some(Client::new()),
+            http_client: Some(Client::new_with_defaults()),
             cache: Default::default(),
         }
     }
@@ -287,7 +288,7 @@ mod test {
     fn fetches_github() {
         let contents = GitHostFlavor::Github
             .fetch(
-                &Client::new(),
+                &Client::new_with_defaults(),
                 &Url::parse("https://github.com/EmbarkStudios/cargo-about").unwrap(),
                 "6f0d247ee7f7b6842abc180c2e4e96581e454ca8", /* 0.3.0 commit */
                 Path::new("LICENSE-MIT"),
@@ -306,7 +307,7 @@ mod test {
     fn fetches_gitlab() {
         let contents = GitHostFlavor::Gitlab
             .fetch(
-                &Client::new(),
+                &Client::new_with_defaults(),
                 &Url::parse("https://gitlab.com/veloren/veloren").unwrap(),
                 "f92c6fbd49269b6e2cad04ae229d3405a6656053",
                 Path::new("LICENSE"),
@@ -325,7 +326,7 @@ mod test {
     fn fetches_bitbucket() {
         let contents = GitHostFlavor::Bitbucket
             .fetch(
-                &Client::new(),
+                &Client::new_with_defaults(),
                 &Url::parse("https://bitbucket.org/atlassian/pipelines-examples-rust/").unwrap(),
                 "581100fe400cd0cfb17f54c2aa26121181f82646",
                 Path::new("README.md"),

@@ -68,31 +68,64 @@ pub struct Resolved {
 /// Synthesizes a package manifest for a krate with the specified license expression
 fn synthesize_manifest(
     krate: &Krate,
-    existing: Option<toml_edit::DocumentMut>,
+    existing: Option<String>,
     expression: &spdx::Expression,
 ) -> (String, usize) {
-    let mut doc = if let Some(existing) = existing {
-        existing
+    use std::fmt::Write;
+
+    if let Some(mut existing) = existing
+        && let Some(pkg) = existing.find("[package]")
+    {
+        // Find the first empty line, or next table
+        let mut start = 0;
+        let s = &existing[pkg + 5..];
+        for l in memchr::memchr_iter(b'\n', s.as_bytes()) {
+            let line = &s[start..l];
+
+            if line.trim().is_empty() || line.starts_with('[') {
+                existing.insert_str(start, "license = \"");
+                let offset = start + 11;
+                existing.insert_str(offset, expression.as_ref());
+                existing.insert_str(offset + expression.as_ref().len(), "\"\n");
+                return (existing, offset);
+            }
+
+            start = l + 1;
+        }
+
+        if !existing.ends_with('\n') {
+            existing.push('\n');
+        }
+
+        existing.push_str("license = \"");
+        let offset = existing.len();
+        writeln!(&mut existing, "{expression}\n").unwrap();
+
+        (existing, offset)
     } else {
-        let mut doc = toml_edit::DocumentMut::new();
+        let mut doc = String::with_capacity(256);
 
-        let package = &mut doc["package"];
-        package["name"] = toml_edit::value(krate.name.clone());
-        package["version"] = toml_edit::value(krate.version.to_string());
-        package["authors"] =
-            toml_edit::value(krate.authors.iter().cloned().collect::<toml_edit::Array>());
+        doc.push_str("[package]\n");
+        writeln!(&mut doc, "name = \"{}\"", krate.name).unwrap();
+        writeln!(&mut doc, "version = \"{}\"", krate.version).unwrap();
+        doc.push_str("authors = [");
 
-        doc
-    };
+        if let Some(single) = krate.authors.first()
+            && krate.authors.len() == 1
+        {
+            write!(&mut doc, "\"{single}\"").unwrap();
+        } else {
+            for author in &krate.authors {
+                writeln!(&mut doc, "    \"{author}\"").unwrap();
+            }
+        }
+        doc.push_str("]\nlicense = \"");
 
-    doc["package"]["license"] = toml_edit::value(expression.as_ref().to_owned());
+        let offset = doc.len();
+        writeln!(&mut doc, "{expression}\"").unwrap();
 
-    let serialized = doc.to_string();
-
-    let offset = serialized
-        .find(expression.as_ref())
-        .expect("we literally just serialized this");
-    (serialized, offset)
+        (doc, offset)
+    }
 }
 
 /// Find the minimal set of required licenses for each crate.
@@ -100,11 +133,10 @@ pub fn resolve(
     licenses: &[KrateLicense<'_>],
     accepted: &[Licensee],
     krate_cfg: &std::collections::BTreeMap<String, config::KrateConfig>,
+    files: &mut codespan::Files<String>,
     fail_on_missing: bool,
-) -> (Files, Vec<Option<Resolved>>) {
-    let mut files = codespan::Files::new();
-
-    let resolved = licenses
+) -> Vec<Option<Resolved>> {
+    licenses
         .iter()
         .map(|kl| {
             let mut resolved = Resolved {
@@ -112,6 +144,8 @@ pub fn resolve(
                 diagnostics: Vec::new(),
             };
 
+            // For published crates the manifest will be a sanitized one that is more uniform, but we could use the original
+            // one that is in the same dirctory with .orig instead
             let manifest = std::fs::read_to_string(&kl.krate.manifest_path)
                 .map_err(|e| {
                     log::error!(
@@ -201,22 +235,10 @@ pub fn resolve(
             // there to begin with, we need to synthesize one instead
             let (manifest, expr_offset) = match (manifest, expr_offset) {
                 (Some(manifest), Some(expr_offset)) => (manifest, expr_offset),
-                (Some(manifest), None) => {
-                    let doc: Option<toml_edit::DocumentMut> = manifest
-                        .parse()
-                        .map_err(|e| {
-                            log::error!(
-                                "failed to parse manifest at '{}' for crate '{}': {e}",
-                                kl.krate.manifest_path,
-                                kl.krate
-                            );
-                            e
-                        })
-                        .ok();
-
-                    synthesize_manifest(kl.krate, doc, &expr)
+                (manifest, None) => {
+                    synthesize_manifest(kl.krate, manifest, &expr)
                 }
-                _ => synthesize_manifest(kl.krate, None, &expr),
+                (None, Some(_)) => unreachable!(),
             };
 
             // Retrieve additional crate specific licenses
@@ -276,7 +298,5 @@ pub fn resolve(
 
             Some(resolved)
         })
-        .collect();
-
-    (files, resolved)
+        .collect()
 }

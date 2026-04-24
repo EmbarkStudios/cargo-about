@@ -30,10 +30,10 @@ pub(crate) fn scan_files(
         .filter_map(|file| {
             log::trace!("scanning file {}", file.path().display());
 
-            if let Some(ft) = file.file_type() {
-                if ft.is_dir() {
-                    return None;
-                }
+            if let Some(ft) = file.file_type()
+                && ft.is_dir()
+            {
+                return None;
             }
 
             // Check for pipes on unix just in case
@@ -41,11 +41,11 @@ pub(crate) fn scan_files(
             {
                 use std::os::unix::fs::FileTypeExt;
 
-                if let Ok(md) = file.metadata() {
-                    if md.file_type().is_fifo() {
-                        log::error!("skipping FIFO {}", file.path().display());
-                        return None;
-                    }
+                if let Ok(md) = file.metadata()
+                    && md.file_type().is_fifo()
+                {
+                    log::error!("skipping FIFO {}", file.path().display());
+                    return None;
                 }
             }
 
@@ -88,17 +88,26 @@ pub(crate) fn check_is_license_file(
     scanner: &Scanner<'_>,
     threshold: f32,
 ) -> Option<LicenseFile> {
+    const MODE: spdx::ParseMode = spdx::ParseMode {
+        allow_slash_as_or_operator: true,
+        allow_imprecise_license_names: true,
+        allow_deprecated: true,
+        allow_unknown: false,
+        allow_postfix_plus_on_gpl: false,
+    };
+
     match scan_text(&contents, scanner, threshold) {
         ScanResult::Header(ided) => {
             // askalono only detects single license identifiers, not license
             // expressions, so we need to construct one from a single identifier,
             // this should be made into in infallible function in spdx itself
-            let license_expr = match spdx::Expression::parse(ided.id.name) {
+            let license_expr = match spdx::Expression::parse_mode(ided.id.name, MODE) {
                 Ok(expr) => expr,
                 Err(err) => {
                     log::error!(
-                        "failed to parse license '{}' at {path:?} into a valid expression: {err}",
-                        ided.id.name
+                        "failed to parse license '{}' from header in '{path}' into a valid expression: {}",
+                        ided.id.name,
+                        err.reason
                     );
                     return None;
                 }
@@ -112,12 +121,13 @@ pub(crate) fn check_is_license_file(
             })
         }
         ScanResult::Text(ided) => {
-            let license_expr = match spdx::Expression::parse(ided.id.name) {
+            let license_expr = match spdx::Expression::parse_mode(ided.id.name, MODE) {
                 Ok(expr) => expr,
                 Err(err) => {
                     log::error!(
-                        "failed to parse license '{}' at {path:?} into a valid expression: {err}",
-                        ided.id.name
+                        "failed to parse license '{}' from text in '{path}' into a valid expression: {}",
+                        ided.id.name,
+                        err.reason,
                     );
                     return None;
                 }

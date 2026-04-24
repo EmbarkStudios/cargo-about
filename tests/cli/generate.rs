@@ -104,7 +104,7 @@ fn fails_when_missing_accepted_field() -> Result<()> {
         .template(package.template()?)
         .assert()
         .failure()
-        .stderr(predicates::str::contains("missing field `accepted`"));
+        .stderr(predicates::str::contains("missing field 'accepted'"));
 
     Ok(())
 }

@@ -1,126 +1,95 @@
 use krates::Utf8PathBuf as PathBuf;
-use serde::{Deserialize, Serialize, de, ser};
 use spdx::Expression;
-use std::{collections::BTreeMap, fmt};
+use std::collections::BTreeMap;
+use toml_span::{Deserialize, Value, de_helpers as de};
 
-mod spdx_expr {
-    use super::*;
+const MODE: spdx::ParseMode = spdx::ParseMode {
+    allow_deprecated: true,
+    allow_slash_as_or_operator: false,
+    allow_imprecise_license_names: false,
+    allow_postfix_plus_on_gpl: false,
+    allow_unknown: false,
+};
 
-    #[inline]
-    pub(crate) fn serialize<S>(expr: &Expression, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: ser::Serializer,
-    {
-        serializer.serialize_str(expr.as_ref())
-    }
-
-    #[inline]
-    pub(crate) fn deserialize<'de, D>(deserializer: D) -> Result<Expression, D::Error>
-    where
-        D: de::Deserializer<'de>,
-    {
-        <String>::deserialize(deserializer)
-            .and_then(|value| Expression::parse(&value).map_err(de::Error::custom))
-    }
-}
-mod spdx_expr_opt {
-    use super::*;
-
-    #[inline]
-    pub(crate) fn serialize<S>(expr: &Option<Expression>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: ser::Serializer,
-    {
-        match expr {
-            Some(expr) => serializer.serialize_str(expr.as_ref()),
-            None => serializer.serialize_none(),
-        }
-    }
-
-    #[inline]
-    pub(crate) fn deserialize<'de, D>(deserializer: D) -> Result<Option<Expression>, D::Error>
-    where
-        D: de::Deserializer<'de>,
-    {
-        match <Option<String>>::deserialize(deserializer)? {
-            Some(value) => Ok(Some(Expression::parse(&value).map_err(de::Error::custom)?)),
-            None => Ok(None),
-        }
-    }
+#[inline]
+fn parse_expr<'de>(
+    th: &mut de::TableHelper<'de>,
+    key: &'static str,
+) -> Result<Expression, toml_span::Error> {
+    let s = th.required_s::<std::borrow::Cow<'de, str>>(key)?;
+    Expression::parse_mode(&s.value, MODE).map_err(|err| toml_span::Error {
+        kind: toml_span::ErrorKind::Custom(err.reason.to_string().into()),
+        span: (s.span.start + err.span.start..s.span.start + err.span.end).into(),
+        line_info: None,
+    })
 }
 
 #[inline]
-fn deserialize_licensee<'de, D>(
-    deserializer: D,
-) -> std::result::Result<Vec<spdx::Licensee>, D::Error>
-where
-    D: de::Deserializer<'de>,
-{
-    struct Visitor;
-
-    impl<'de> de::Visitor<'de> for Visitor {
-        type Value = Vec<spdx::Licensee>;
-
-        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-            formatter.write_str("array of SPDX licensees")
-        }
-
-        fn visit_seq<S>(self, mut seq: S) -> Result<Self::Value, S::Error>
-        where
-            S: de::SeqAccess<'de>,
-        {
-            let mut vec = Vec::new();
-
-            while let Some(v) = seq.next_element::<String>()? {
-                // We need to allow deprecated identifiers since external dependencies
-                // can use them even though they shouldn't
-                let lic = spdx::Licensee::parse_mode(
-                    &v,
-                    spdx::ParseMode {
-                        allow_deprecated: true,
-                        allow_slash_as_or_operator: false,
-                        allow_imprecise_license_names: false,
-                        allow_postfix_plus_on_gpl: false,
-                        allow_unknown: false,
-                    },
-                )
-                .map_err(|e| {
-                    de::Error::custom(format!("'{v}' is not a valid SPDX licensee: {e}"))
-                })?;
-
-                vec.push(lic);
-            }
-
-            Ok(vec)
-        }
-    }
-
-    deserializer.deserialize_seq(Visitor)
+fn parse_path<'de>(
+    th: &mut de::TableHelper<'de>,
+    key: &'static str,
+) -> Result<PathBuf, toml_span::Error> {
+    let s = th.required::<String>(key)?;
+    Ok(PathBuf::from(s))
 }
 
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct Additional {
     pub root: PathBuf,
-    #[serde(with = "spdx_expr")]
     pub license: Expression,
     pub license_file: PathBuf,
     pub license_start: Option<usize>,
     pub license_end: Option<usize>,
 }
 
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "kebab-case", deny_unknown_fields)]
+impl<'de> Deserialize<'de> for Additional {
+    fn deserialize(value: &mut Value<'de>) -> Result<Self, toml_span::DeserError> {
+        let mut tab = de::TableHelper::new(value)?;
+
+        let root = parse_path(&mut tab, "root")?;
+        let license = parse_expr(&mut tab, "license-file")?;
+        let license_file = parse_path(&mut tab, "license-file")?;
+        let license_start = tab.optional("license-start");
+        let license_end = tab.optional("license-end");
+
+        tab.finalize(None)?;
+
+        Ok(Self {
+            root,
+            license,
+            license_file,
+            license_start,
+            license_end,
+        })
+    }
+}
+
 pub struct Ignore {
-    #[serde(with = "spdx_expr")]
     pub license: Expression,
     pub license_file: PathBuf,
     pub license_start: Option<usize>,
     pub license_end: Option<usize>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
+impl<'de> Deserialize<'de> for Ignore {
+    fn deserialize(value: &mut Value<'de>) -> Result<Self, toml_span::DeserError> {
+        let mut tab = de::TableHelper::new(value)?;
+
+        let license = parse_expr(&mut tab, "license")?;
+        let license_file = parse_path(&mut tab, "license-file")?;
+        let license_start = tab.optional("license-start");
+        let license_end = tab.optional("license-end");
+
+        tab.finalize(None)?;
+
+        Ok(Self {
+            license,
+            license_file,
+            license_start,
+            license_end,
+        })
+    }
+}
+
 pub struct ClarificationFile {
     /// The crate relative path to the file
     pub path: PathBuf,
@@ -128,11 +97,6 @@ pub struct ClarificationFile {
     pub checksum: String,
     /// The license applied to the file. Defaults to the license of the parent
     /// clarification if not specified.
-    #[serde(
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "spdx_expr_opt"
-    )]
     pub license: Option<Expression>,
     /// The beginning of the text to checksum
     pub start: Option<String>,
@@ -140,114 +104,296 @@ pub struct ClarificationFile {
     pub end: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
+impl<'de> Deserialize<'de> for ClarificationFile {
+    fn deserialize(value: &mut Value<'de>) -> Result<Self, toml_span::DeserError> {
+        let mut tab = de::TableHelper::new(value)?;
+
+        let path = parse_path(&mut tab, "path")?;
+        let checksum = tab.required("checksum")?;
+        let license = if let Some(lic) = tab.optional_s::<std::borrow::Cow<'de, str>>("license") {
+            Some(
+                Expression::parse(&lic.value).map_err(|err| toml_span::Error {
+                    kind: toml_span::ErrorKind::Custom(err.to_string().into()),
+                    span: lic.span,
+                    line_info: None,
+                })?,
+            )
+        } else {
+            None
+        };
+        let start = tab.optional("start");
+        let end = tab.optional("end");
+
+        tab.finalize(None)?;
+
+        Ok(Self {
+            path,
+            checksum,
+            license,
+            start,
+            end,
+        })
+    }
+}
+
 pub struct Clarification {
     /// The full clarified license expression, as if it appeared as the `license`
     /// in the crate's Cargo.toml manifest
-    #[serde(with = "spdx_expr")]
     pub license: Expression,
     /// Normally, if clarifying a file via git, the file in question is retrieved
     /// from the same commit the package was built with, which is retrieved via
     /// the `.cargo_vcs_info.json` file included in the package. However, this
     /// file may not be present, notably if the crate is published with the
-    /// `--allow-dirty` flag due to file system modifications that aren't commited
+    /// `--allow-dirty` flag due to file system modifications that aren't committed
     /// to source control. In this case, the revision must be specified manually
     /// and used instead. This option should absolutely only be used in such a
     /// case, as otherwise it is possible for a drift between the license as it
     /// was at the time of the actual publish of the crate, and the revision
     /// specified here.
-    #[serde(
-        default,
-        rename = "override-git-commit",
-        skip_serializing_if = "Option::is_none"
-    )]
     pub override_git_commit: Option<String>,
     /// 1 or more files that are used as the source of truth for the license
     /// expression
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub files: Vec<ClarificationFile>,
     /// 1 or more files, retrieved from the source git repository for the same
     /// version that was published, used as the source of truth for the license
     /// expression
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub git: Vec<ClarificationFile>,
 }
 
-#[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
+impl<'de> Deserialize<'de> for Clarification {
+    fn deserialize(value: &mut Value<'de>) -> Result<Self, toml_span::DeserError> {
+        let mut tab = de::TableHelper::new(value)?;
+
+        let license = parse_expr(&mut tab, "license")?;
+        let override_git_commit = tab.optional("override-git-commit");
+        let files = tab.optional("files").unwrap_or_default();
+        let git = tab.optional("git").unwrap_or_default();
+
+        tab.finalize(None)?;
+
+        Ok(Self {
+            license,
+            override_git_commit,
+            files,
+            git,
+        })
+    }
+}
+
 pub struct KrateConfig {
     /// The list of additional accepted licenses for this crate, again in
     /// priority order
-    #[serde(default, deserialize_with = "deserialize_licensee")]
     pub accepted: Vec<spdx::Licensee>,
     /// Overrides the license expression for a crate as long as 1 or more file
     /// checksums match
     pub clarify: Option<Clarification>,
 }
 
+impl<'de> Deserialize<'de> for KrateConfig {
+    fn deserialize(value: &mut Value<'de>) -> Result<Self, toml_span::DeserError> {
+        let mut tab = de::TableHelper::new(value)?;
+
+        let accepted = if let Some((_, mut lic)) = tab.take("accepted") {
+            let mut l = Vec::new();
+
+            match lic.take() {
+                toml_span::value::ValueInner::Array(lic) => {
+                    for mut v in lic {
+                        match v.take_string(None) {
+                            Ok(lstr) => {
+                                // We need to allow deprecated identifiers since external dependencies
+                                // can use them even though they shouldn't
+                                match spdx::Licensee::parse_mode(&lstr, MODE) {
+                                    Ok(licensee) => l.push(licensee),
+                                    Err(error) => {
+                                        tab.errors.push(toml_span::Error {
+                                            kind: toml_span::ErrorKind::Custom(
+                                                error.reason.to_string().into(),
+                                            ),
+                                            span: (v.span.start + error.span.start
+                                                ..v.span.start + error.span.end)
+                                                .into(),
+                                            line_info: None,
+                                        });
+                                    }
+                                }
+                            }
+                            Err(err) => {
+                                tab.errors.push(err);
+                            }
+                        }
+                    }
+                }
+                other => {
+                    tab.errors.push(de::expected("an array", other, lic.span));
+                }
+            }
+
+            l
+        } else {
+            Vec::new()
+        };
+
+        let clarify = tab.optional("clarify");
+
+        tab.finalize(None)?;
+
+        Ok(Self { accepted, clarify })
+    }
+}
+
 /// Configures how private crates are handled and detected
-#[derive(Deserialize, Default, Debug)]
-#[serde(deny_unknown_fields)]
+#[derive(Default)]
 pub struct Private {
     /// If enabled, ignores workspace crates that aren't published, or are
     /// only published to private registries
-    #[serde(default)]
     pub ignore: bool,
     /// One or more private registries that you might publish crates to, if
     /// a crate is only published to private registries, and `ignore` is true,
     /// the crate will not have its license checked
-    #[serde(default)]
     pub registries: Vec<String>,
 }
 
-#[derive(Deserialize, Debug, Default)]
-#[serde(rename_all = "kebab-case")]
+impl<'de> Deserialize<'de> for Private {
+    fn deserialize(value: &mut Value<'de>) -> Result<Self, toml_span::DeserError> {
+        let mut tab = de::TableHelper::new(value)?;
+
+        let ignore = tab.optional("ignore").unwrap_or_default();
+        let registries = tab.optional("registries").unwrap_or_default();
+
+        tab.finalize(None)?;
+
+        Ok(Self { ignore, registries })
+    }
+}
+
+#[derive(Default)]
 pub struct Config {
     /// Only includes dependencies that match at least one of the specified
     /// targets
-    #[serde(default)]
     pub targets: Vec<String>,
     /// Configures how private crates are handled and detected
-    #[serde(default)]
     pub private: Private,
-    /// Disallows the use of clearlydefined.io to retrieve harvested license
-    /// information and relies purely on local file scanning and clarifications
-    #[serde(default)]
-    pub no_clearly_defined: bool,
-    /// Sets the timeout for requests to clearlydefined.io if it is used. Defaults
-    /// to 30 seconds.
-    pub clearly_defined_timeout_secs: Option<u64>,
     /// Sets the maximum depth from the root of each crate that will be scanned
     /// for license files.
     pub max_depth: Option<u32>,
     /// Ignores any build dependencies in the graph
-    #[serde(default)]
     pub ignore_build_dependencies: bool,
     /// Ignores any dev dependencies in the graph
-    #[serde(default)]
     pub ignore_dev_dependencies: bool,
     /// Ignores any transitive dependencies in the graph, ie, only direct
     /// dependencies of crates in the workspace will be included
-    #[serde(default)]
     pub ignore_transitive_dependencies: bool,
-    /// When using clearlydefined.io to gather harvested license information, it
-    /// will conservatively add `NOASSERTION` to any file that contains a license
-    /// that either cannot be identified, or diverges enough from the canonical
-    /// license text. This is not really useful in most cases, so this option
-    /// will remove the any instance of `NOASSERTION` to reduce noise.
-    #[serde(default)]
-    pub filter_noassertion: bool,
     /// The list of licenses we will use for all crates, in priority order
-    #[serde(deserialize_with = "deserialize_licensee")]
     pub accepted: Vec<spdx::Licensee>,
     /// Some crates have extremely complicated licensing which requires tedious
     /// configuration to actually correctly identify. Rather than require every
     /// user of cargo-about to redo that same configuration if they happen to
     /// use those problematic crates, they can apply workarounds instead.
-    #[serde(default)]
     pub workarounds: Vec<String>,
     /// Crate specific configuration
-    #[serde(flatten)]
-    pub crates: BTreeMap<String, KrateConfig>,
+    pub crates: BTreeMap<String, toml_span::Spanned<KrateConfig>>,
+}
+
+impl<'de> Deserialize<'de> for Config {
+    fn deserialize(value: &mut Value<'de>) -> Result<Self, toml_span::DeserError> {
+        let mut tab = de::TableHelper::new(value)?;
+
+        let targets = tab.optional("targets").unwrap_or_default();
+        let private = tab.optional("private").unwrap_or_default();
+        if tab.take("no-clearly-defined").is_some() {
+            log::warn!("`no-clearly-defined` has been removed");
+        }
+        if tab.take("clearly-defined-timeout-secs").is_some() {
+            log::warn!("`clearly-defined-timeout-secs` has been removed");
+        }
+        if tab.take("filter-noassertion").is_some() {
+            log::warn!("`filter-noassertion` has been removed");
+        }
+        let max_depth = tab.optional("max-depth");
+        let ignore_build_dependencies = tab
+            .optional("ignore-build-dependencies")
+            .unwrap_or_default();
+        let ignore_dev_dependencies = tab.optional("ignore-dev-dependencies").unwrap_or_default();
+        let ignore_transitive_dependencies = tab
+            .optional("ignore-transitive-dependencies")
+            .unwrap_or_default();
+        let accepted = if let Some((_, mut lic)) = tab.take("accepted") {
+            let mut l = Vec::new();
+
+            match lic.take() {
+                toml_span::value::ValueInner::Array(lic) => {
+                    for mut v in lic {
+                        match v.take_string(None) {
+                            Ok(lstr) => {
+                                // We need to allow deprecated identifiers since external dependencies
+                                // can use them even though they shouldn't
+                                match spdx::Licensee::parse_mode(&lstr, MODE) {
+                                    Ok(licensee) => l.push(licensee),
+                                    Err(error) => {
+                                        tab.errors.push(toml_span::Error {
+                                            kind: toml_span::ErrorKind::Custom(
+                                                error.reason.to_string().into(),
+                                            ),
+                                            span: (v.span.start + error.span.start
+                                                ..v.span.start + error.span.end)
+                                                .into(),
+                                            line_info: None,
+                                        });
+                                    }
+                                }
+                            }
+                            Err(err) => {
+                                tab.errors.push(err);
+                            }
+                        }
+                    }
+                }
+                other => {
+                    tab.errors.push(de::expected("an array", other, lic.span));
+                }
+            }
+
+            l
+        } else {
+            tab.errors.push(toml_span::Error {
+                kind: toml_span::ErrorKind::MissingField("accepted"),
+                span: (0..0).into(),
+                line_info: None,
+            });
+            Vec::new()
+        };
+        let workarounds = tab.optional("workarounds").unwrap_or_default();
+
+        let mut crates = BTreeMap::default();
+        for (key, mut value) in tab.table {
+            match KrateConfig::deserialize(&mut value) {
+                Ok(kc) => {
+                    crates.insert(
+                        key.name.into_owned(),
+                        toml_span::Spanned::with_span(kc, value.span),
+                    );
+                }
+                Err(mut err) => {
+                    tab.errors.append(&mut err.errors);
+                }
+            }
+        }
+
+        if !tab.errors.is_empty() {
+            return Err(toml_span::DeserError { errors: tab.errors });
+        }
+
+        Ok(Self {
+            targets,
+            private,
+            max_depth,
+            ignore_build_dependencies,
+            ignore_dev_dependencies,
+            ignore_transitive_dependencies,
+            accepted,
+            workarounds,
+            crates,
+        })
+    }
 }

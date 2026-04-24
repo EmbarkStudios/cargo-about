@@ -11,6 +11,7 @@ use rayon::prelude::*;
 pub use resolution::Resolved;
 use spdx::detection as sd;
 use std::{cmp, fmt, sync::Arc};
+use ureq::Agent as Client;
 
 pub type LicenseStore = sd::Store;
 
@@ -148,7 +149,7 @@ impl Gatherer {
         self,
         krates: &'krate Krates,
         cfg: &config::Config,
-        client: Option<reqwest::blocking::Client>,
+        client: Option<Client>,
     ) -> Vec<KrateLicense<'krate>> {
         let mut licensed_krates = Vec::with_capacity(krates.len());
 
@@ -170,19 +171,18 @@ impl Gatherer {
         // to the list so all of the following gathers ignore them
         if cfg.private.ignore {
             for krate in krates.krates() {
-                if let Some(publish) = &krate.publish {
-                    if publish.is_empty()
+                if let Some(publish) = &krate.publish
+                    && (publish.is_empty()
                         || publish
                             .iter()
-                            .all(|reg| cfg.private.registries.contains(reg))
-                    {
-                        log::debug!("ignoring private crate '{krate}'");
-                        licensed_krates.push(KrateLicense {
-                            krate,
-                            lic_info: LicenseInfo::Ignore,
-                            license_files: Vec::new(),
-                        });
-                    }
+                            .all(|reg| cfg.private.registries.contains(reg)))
+                {
+                    log::debug!("ignoring private crate '{krate}'");
+                    licensed_krates.push(KrateLicense {
+                        krate,
+                        lic_info: LicenseInfo::Ignore,
+                        license_files: Vec::new(),
+                    });
                 }
             }
 
@@ -215,7 +215,7 @@ impl Gatherer {
         for (krate, clarification) in krates.krates().filter_map(|krate| {
             cfg.crates
                 .get(&krate.name)
-                .and_then(|kc| kc.clarify.as_ref())
+                .and_then(|kc| kc.value.clarify.as_ref())
                 .map(|cl| (krate, cl))
         }) {
             if let Err(i) = binary_search(licensed_krates, krate) {

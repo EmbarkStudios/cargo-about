@@ -68,38 +68,49 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
         }
         Subcommand::Crate { spec } => {
             // Just hardcoding to the typical because I can't be bothered
-            let root = PathBuf::from_path_buf(
-                home::cargo_home()
-                    .context("unable to find CARGO_HOME directory")?
-                    .join("registry/src/index.crates.io-6f17d22bba15001f"),
-            )
-            .map_err(|_e| anyhow::anyhow!("CARGO_HOME directory is not utf-8"))?;
+            let mut chome = if let Some(home) = std::env::var_os("CARGO_HOME")
+                && !home.is_empty()
+            {
+                let home = std::path::PathBuf::from(home);
+                if home.is_absolute() {
+                    home
+                } else {
+                    std::env::current_dir()
+                        .context("unable to determine current directory")?
+                        .join(&home)
+                }
+            } else {
+                std::env::home_dir()
+                    .context("unable to determine home directory")?
+                    .join(".cargo")
+            };
+
+            chome.push("registry/src/index.crates.io-6f17d22bba15001f");
+
+            let root = PathBuf::from_path_buf(chome)
+                .map_err(|_e| anyhow::anyhow!("CARGO_HOME directory is not utf-8"))?;
 
             let crate_path = root.join(&spec);
 
             anyhow::ensure!(crate_path.exists(), "unable to find crate source");
 
-            let manifest = std::fs::read_to_string(crate_path.join("Cargo.toml"))
-                .context("failed to read Cargo.toml")?;
+            let path = crate_path.join("Cargo.toml");
 
-            #[derive(serde::Deserialize)]
-            struct Pkg {
-                repository: String,
-            }
+            let manifest = std::fs::read_to_string(&path).context("failed to read Cargo.toml")?;
 
-            #[derive(serde::Deserialize)]
-            struct MinPkg {
-                package: Pkg,
-            }
-
-            let pkg: MinPkg =
-                toml::from_str(&manifest).context("failed to deserialize Cargo.toml")?;
+            let root = toml_span::parse(&manifest)
+                .with_context(|| format!("failed to deserialize {path}"))?;
+            let repo = root
+                .pointer("/package/repository")
+                .context("{path} did not specify a package.repository value")?
+                .as_str()
+                .with_context(|| "{path} had an invalid package.repository")?;
 
             let gc = GitCache::online();
             let vcs_info = GitCache::parse_vcs_info(&crate_path.join(".cargo_vcs_info.json"))
                 .context("failed to read sha1")?;
 
-            gc.retrieve_remote(&pkg.package.repository, &vcs_info.git.sha1, &args.path)
+            gc.retrieve_remote(repo, &vcs_info.git.sha1, &args.path)
                 .with_context(|| {
                     let mut ctx = String::new();
                     ctx.push_str("failed to retrieve remote file");
@@ -161,7 +172,7 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
     let mut final_expression = String::new();
     let mut files = Vec::with_capacity(subsections.len());
 
-    use cargo_about::licenses::config::{Clarification, ClarificationFile};
+    use cargo_about::licenses::config::ClarificationFile;
 
     let file_name = args.path.file_name().unwrap().to_owned();
 
@@ -171,11 +182,6 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
         let mut ctx = ring::digest::Context::new(&ring::digest::SHA256);
 
         ctx.update(subsection.as_bytes());
-
-        // TODO: Warn on carriage returns?
-        // for line in subsection.split('\r') {
-        //     ctx.update(line.as_bytes());
-        // }
 
         let checksum = ctx.finish();
 
@@ -230,17 +236,28 @@ pub fn cmd(args: Args) -> anyhow::Result<()> {
         )
     })?;
 
-    let clarification = Clarification {
-        license: overall_expression,
-        override_git_commit: None,
-        files,
-        git: Vec::new(),
-    };
+    println!("license = '{overall_expression}'");
 
-    let clar_toml =
-        toml::to_string_pretty(&clarification).context("failed to serialize to toml")?;
+    for (i, file) in files.into_iter().enumerate() {
+        if i > 0 {
+            println!();
+        }
 
-    println!("{clar_toml}");
+        println!("[[files]]");
+        println!("path = '{}'", file.path);
+        println!("checksum = '{}'", file.checksum);
+
+        if let Some(lic) = file.license {
+            println!("license = '{lic}'");
+        }
+
+        if let Some(start) = file.start {
+            println!("start = {start}");
+        }
+        if let Some(end) = file.end {
+            println!("end = {end}");
+        }
+    }
 
     Ok(())
 }

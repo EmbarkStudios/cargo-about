@@ -7,7 +7,7 @@ authors = [
   "Jake Shadle <jake.shadle@embark-studios.com>",
 ]
 edition = "2024"
-rust-version = "1.85.0"
+rust-version = "1.88.0"
 repository = "https://github.com/EmbarkStudios/cargo-about"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
@@ -20,54 +20,43 @@ exclude = ["media/"]
 [badges]
 maintenance = { status = "actively-developed" }
 
-[features]
-native-certs = ["reqwest/rustls-tls-native-roots"]
-
 [[bin]]
 name = "cargo-about"
 path = "src/cargo-about/main.rs"
+required-features = ["cli"]
+
+[features]
+cli = ["dep:nu-ansi-term", "dep:handlebars", "dep:mimalloc", "dep:jiff", "dep:fern", "dep:clap"]
 
 [profile.release]
 strip = "debuginfo"
 lto = true
 
 [dependencies]
-# Colorization
-nu-ansi-term = "0.50"
 # Error facilities
 anyhow = "1.0"
-# Argument parsing
-clap = { version = "4.5", features = ["derive"] }
 # Diagnostic reporting
 codespan = "0.13"
 codespan-reporting = "0.13"
-# Logging helpers
-fern = "0.7"
-# Template engine for output
-handlebars = { version = "6.0", features = ["dir_source"] }
-# $HOME retrieval
-home = "0.5"
 # Directory walking
 ignore = "0.4"
 # Dependency graphing
-krates = { version = "0.20", features = ["serialize"] }
+krates = { version = "0.21", features = ["serialize"] }
 # Parent process retrieval
 libc = "0.2"
 # Logging macros
 log = "0.4"
-# Better heap allocator over system one (usually)
-mimalloc = "0.1"
 # Better locking primitives
 parking_lot = "0.12"
+memchr = "2.8"
 # brrrr
 rayon = "1.5"
 # HTTP requests
-reqwest = { version = "0.12", default-features = false, features = [
-  "blocking",
-  "rustls-tls",
-] }
+ureq = { version = "3.3", default-features = false, features = ["platform-verifier", "rustls-no-provider"] }
 # Checksum verification (already pulled in via rustls)
 ring = "0.17"
+# TLS
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
 # Oh gee what could it be
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -75,21 +64,29 @@ serde_json = "1.0"
 semver = { version = "1.0", features = ["serde"] }
 # License expression parsing and evaluation
 spdx = { version = "0.13", features = ["detection-parallel", "detection-inline-cache", "text"] }
-# Log timestamps
-time = "0.3"
-# Configuration parsing
-toml = "0.9"
-# Manipulation of cargo manifests for diagnostic purposes
-toml_edit = "0.23"
+toml-span = "0.7"
 # Hashing
 twox-hash = "2.0"
 # Url parsing
 url = "2.5"
 
+# CLI only deps
+# Argument parsing
+clap = { version = "4.5", optional = true, features = ["derive"] }
+# Logging helpers
+fern = { version = "0.7", optional = true }
+jiff = { version = "0.2", optional = true }
+# Template engine for output
+handlebars = { version = "6.0", optional = true, features = ["dir_source"] }
+# Better heap allocator over system one (usually)
+mimalloc = { version = "0.1", optional = true }
+# Colorization
+nu-ansi-term = { version = "0.50", optional = true }
+
 [dev-dependencies]
 # Filesystems - Filesystem fixtures and assertions for testing
 assert_fs = "1.0.7"
 # Easy command initialization and assertions
-assert_cmd = "2.0"
+assert_cmd = "2.2"
 # Composable first-order predicate functions
 predicates = "3.0"
