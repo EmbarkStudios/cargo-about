@@ -1,9 +1,9 @@
 use anyhow::{Result, anyhow};
-use assert_fs::TempDir;
-use assert_fs::prelude::*;
-use std::collections::HashMap;
-use std::collections::HashSet;
-use std::fmt::Debug;
+use assert_fs::{TempDir, prelude::*};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::{Debug, Write},
+};
 
 pub const CARGO_MANIFEST_FILENAME: &str = "Cargo.toml";
 pub const ABOUT_CONFIG_FILENAME: &str = "about.toml";
@@ -148,47 +148,51 @@ impl<'a> PackageBuilder<'a> {
     }
 
     fn write_default_cargo_manifest(&self, dir: &TempDir) -> Result<()> {
-        if self.not_overridden_or_excluded(CARGO_MANIFEST_FILENAME) {
-            let mut manifest = toml_edit::DocumentMut::new();
-            let package = &mut manifest["package"];
-            *package = toml_edit::table();
-
-            package["name"] = toml_edit::value(self.name.clone());
-            package["version"] = toml_edit::value(self.version.clone());
-
-            if let Some(license) = &self.license {
-                package["license"] = toml_edit::value(license.clone());
-            }
-            if let Some(license_filename) = &self.license_filename {
-                package["license-file"] = toml_edit::value(license_filename.clone());
-            }
-
-            if !self.dependencies.is_empty() {
-                let dependencies = &mut manifest["dependencies"];
-                *dependencies = toml_edit::table();
-                for package in &self.dependencies {
-                    dependencies[&package.name]["version"] =
-                        toml_edit::value(package.version.clone());
-                    dependencies[&package.name]["path"] =
-                        toml_edit::value(package.dir.to_str().unwrap());
-                }
-            }
-
-            dir.child(CARGO_MANIFEST_FILENAME)
-                .write_str(&manifest.to_string())?;
+        if !self.not_overridden_or_excluded(CARGO_MANIFEST_FILENAME) {
+            return Ok(());
         }
+
+        let mut s = String::with_capacity(1024);
+        s.push_str("[package]\n");
+        writeln!(&mut s, "name = \"{}\"", self.name)?;
+        writeln!(&mut s, "version = \"{}\"", self.version)?;
+
+        if let Some(license) = &self.license {
+            writeln!(&mut s, "license = \"{license}\"")?;
+        }
+        if let Some(lf) = &self.license_filename {
+            writeln!(&mut s, "license-file = \"{lf}\"")?;
+        }
+
+        if !self.dependencies.is_empty() {
+            s.push_str("\n[dependencies]\n");
+            for package in &self.dependencies {
+                writeln!(
+                    &mut s,
+                    "{} = {{ version = \"{}\", path = \"{}\" }}",
+                    package.name,
+                    package.version,
+                    package.dir.to_str().unwrap()
+                )?;
+            }
+        }
+
+        dir.child(CARGO_MANIFEST_FILENAME).write_str(&s)?;
 
         Ok(())
     }
 
     fn write_default_about_config(&self, dir: &TempDir) -> Result<()> {
         if self.not_overridden_or_excluded(ABOUT_CONFIG_FILENAME) {
-            let mut config = toml_edit::DocumentMut::new();
-            config["accepted"] =
-                toml_edit::value(self.accepted.iter().collect::<toml_edit::Array>());
+            let mut s = String::with_capacity(256);
 
-            dir.child(ABOUT_CONFIG_FILENAME)
-                .write_str(&config.to_string())?;
+            writeln!(&mut s, "accepted = [")?;
+            for acc in &self.accepted {
+                writeln!(&mut s, "\"{acc}\",")?;
+            }
+            writeln!(&mut s, "]")?;
+
+            dir.child(ABOUT_CONFIG_FILENAME).write_str(&s)?;
         }
 
         Ok(())

@@ -1,8 +1,9 @@
 use anyhow::Context as _;
 use cargo_about::{generate::generate, licenses};
-use codespan_reporting::term;
+use codespan_reporting::{diagnostic as diag, term};
 use krates::{Utf8Path as Path, Utf8PathBuf as PathBuf};
 use std::fmt;
+use toml_span::Deserialize;
 
 #[derive(clap::ValueEnum, Copy, Clone, Debug, Default)]
 pub enum OutputFormat {
@@ -97,7 +98,11 @@ pub struct Args {
     templates: Option<PathBuf>,
 }
 
-fn load_config(manifest_path: &Path) -> anyhow::Result<cargo_about::licenses::config::Config> {
+fn load_config(
+    manifest_path: &Path,
+    stream: &term::termcolor::StandardStream,
+    files: &mut codespan::Files<String>,
+) -> anyhow::Result<(codespan::FileId, cargo_about::licenses::config::Config)> {
     let mut parent = manifest_path.parent();
 
     // Move up directories until we find an about.toml, to handle
@@ -118,9 +123,7 @@ fn load_config(manifest_path: &Path) -> anyhow::Result<cargo_about::licenses::co
         let about_toml = p.join("about.toml");
 
         if about_toml.exists() {
-            let contents = std::fs::read_to_string(&about_toml)?;
-            let cfg = toml::from_str(&contents)?;
-
+            let cfg = deserialize_config(&about_toml, stream, files)?;
             log::info!("loaded config from '{about_toml}'");
             return Ok(cfg);
         }
@@ -129,7 +132,66 @@ fn load_config(manifest_path: &Path) -> anyhow::Result<cargo_about::licenses::co
     }
 
     log::warn!("no 'about.toml' found, falling back to default configuration");
-    Ok(cargo_about::licenses::config::Config::default())
+    Ok((
+        files.add("none", "".into()),
+        cargo_about::licenses::config::Config::default(),
+    ))
+}
+
+fn deserialize_config(
+    path: &Path,
+    stream: &term::termcolor::StandardStream,
+    files: &mut codespan::Files<String>,
+) -> anyhow::Result<(codespan::FileId, cargo_about::licenses::config::Config)> {
+    let contents = std::fs::read_to_string(path)
+        .with_context(|| format!("failed to read config file {path}"))?;
+    let id = files.add(path, contents.clone());
+
+    let mut cfg = match toml_span::parse(&contents) {
+        Ok(c) => c,
+        Err(err) => {
+            let mut sl = stream.lock();
+            term::emit_to_io_write(
+                &mut sl,
+                &term::Config::default(),
+                files,
+                &diag::Diagnostic {
+                    severity: diag::Severity::Error,
+                    code: None,
+                    message: err.to_string(),
+                    labels: vec![diag::Label::new(diag::LabelStyle::Primary, id, err.span)],
+                    notes: Vec::new(),
+                },
+            )?;
+
+            anyhow::bail!("failed to parse config file {path}");
+        }
+    };
+
+    match cargo_about::licenses::config::Config::deserialize(&mut cfg) {
+        Ok(c) => Ok((id, c)),
+        Err(error) => {
+            let mut sl = stream.lock();
+            let dc = &term::Config::default();
+
+            for err in error.errors {
+                term::emit_to_io_write(
+                    &mut sl,
+                    dc,
+                    files,
+                    &diag::Diagnostic {
+                        severity: diag::Severity::Error,
+                        code: None,
+                        message: err.to_string(),
+                        labels: vec![diag::Label::new(diag::LabelStyle::Primary, id, err.span)],
+                        notes: Vec::new(),
+                    },
+                )?;
+            }
+
+            anyhow::bail!("failed to deserialize config file {path}");
+        }
+    }
 }
 
 pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
@@ -154,14 +216,27 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
         "cargo manifest path '{manifest_path}' does not exist"
     );
 
-    let cfg = match &args.config {
-        Some(cfg_path) => {
-            let cfg_str = std::fs::read_to_string(cfg_path)
-                .with_context(|| format!("unable to read '{cfg_path}'"))?;
-            toml::from_str(&cfg_str)
-                .with_context(|| format!("unable to deserialize config from '{cfg_path}'"))?
+    use term::termcolor::ColorChoice;
+
+    let stream = term::termcolor::StandardStream::stderr(match color {
+        crate::Color::Auto => {
+            // The termcolor crate doesn't check the stream to see if it's a TTY
+            // which doesn't really fit with how the rest of the coloring works
+            use std::io::IsTerminal;
+            if std::io::stderr().is_terminal() {
+                ColorChoice::Auto
+            } else {
+                ColorChoice::Never
+            }
         }
-        None => load_config(&manifest_path)?,
+        crate::Color::Always => ColorChoice::Always,
+        crate::Color::Never => ColorChoice::Never,
+    });
+
+    let mut files = codespan::Files::new();
+    let (cfg_id, cfg) = match &args.config {
+        Some(cfg_path) => deserialize_config(cfg_path, &stream, &mut files)?,
+        None => load_config(&manifest_path, &stream, &mut files)?,
     };
 
     let mut all_crates = None;
@@ -290,27 +365,42 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
         .with_max_depth(cfg.max_depth.map(|md| md as _))
         .gather(&krates, &cfg, client);
 
-    let (files, resolved) =
-        licenses::resolution::resolve(&summary, &cfg.accepted, &cfg.crates, args.fail);
+    let diag_cfg = term::Config::default();
 
-    use term::termcolor::ColorChoice;
+    let mut kcs = std::collections::BTreeMap::new();
+    {
+        let mut streaml = stream.lock();
 
-    let stream = term::termcolor::StandardStream::stderr(match color {
-        crate::Color::Auto => {
-            // The termcolor crate doesn't check the stream to see if it's a TTY
-            // which doesn't really fit with how the rest of the coloring works
-            use std::io::IsTerminal;
-            if std::io::stderr().is_terminal() {
-                ColorChoice::Auto
+        for (name, kc) in cfg.crates {
+            if krates.krates_by_name(name.clone()).count() != 0 {
+                kcs.insert(name, kc.value);
             } else {
-                ColorChoice::Never
+                let _res = term::emit_to_io_write(
+                    &mut streaml,
+                    &diag_cfg,
+                    &files,
+                    &diag::Diagnostic {
+                        severity: diag::Severity::Warning,
+                        code: None,
+                        message: "config found for a crate not present in the graph".into(),
+                        labels: vec![diag::Label::new(diag::LabelStyle::Primary, cfg_id, kc.span)],
+                        notes: Vec::new(),
+                    },
+                );
             }
         }
-        crate::Color::Always => ColorChoice::Always,
-        crate::Color::Never => ColorChoice::Never,
-    });
+    }
 
-    let input = generate(&summary, &resolved, &files, Some(stream))?;
+    let resolved =
+        licenses::resolution::resolve(&summary, &cfg.accepted, &kcs, &mut files, args.fail);
+
+    let input = generate(&summary, &resolved, move |diags| {
+        let mut streaml = stream.lock();
+
+        for diag in diags {
+            let _res = term::emit_to_io_write(&mut streaml, &diag_cfg, &files, diag);
+        }
+    })?;
     let output = if let Some(templates) = templates {
         let (registry, template_name) = templates?;
         registry.render(&template_name, &input)?

@@ -1,7 +1,6 @@
 use std::collections::BTreeMap;
 
 use crate::licenses::{self, LicenseInfo};
-use codespan_reporting::term;
 use krates::Utf8PathBuf as PathBuf;
 use krates::cm::Package;
 use serde::{Serialize, Serializer};
@@ -75,14 +74,11 @@ pub struct LicenseList<'a> {
 pub fn generate<'kl>(
     nfos: &'kl [licenses::KrateLicense<'kl>],
     resolved: &[Option<licenses::Resolved>],
-    files: &licenses::resolution::Files,
-    stream: Option<term::termcolor::StandardStream>,
+    report_diagnostics: impl Fn(&[crate::licenses::resolution::Diagnostic]),
 ) -> anyhow::Result<LicenseList<'kl>> {
     use licenses::resolution::Severity;
 
     let mut num_errors = 0;
-
-    let term_and_diag = stream.map(|s| (s, term::Config::default()));
 
     let mut licenses = {
         let mut licenses = BTreeMap::new();
@@ -91,20 +87,15 @@ pub fn generate<'kl>(
             .zip(resolved.iter())
             .filter_map(|(kl, res)| res.as_ref().map(|res| (kl, res)))
         {
-            match &term_and_diag {
-                Some((stream, diag_cfg)) if !resolved.diagnostics.is_empty() => {
-                    let mut streaml = stream.lock();
-
-                    for diag in &resolved.diagnostics {
-                        if diag.severity >= Severity::Error {
-                            num_errors += 1;
-                        }
-
-                        term::emit_to_io_write(&mut streaml, diag_cfg, files, diag)?;
-                    }
-                }
-                _ => {}
+            if !resolved.diagnostics.is_empty() {
+                report_diagnostics(&resolved.diagnostics);
             }
+
+            num_errors += resolved
+                .diagnostics
+                .iter()
+                .filter(|d| d.severity >= Severity::Error)
+                .count();
 
             let license_iter = resolved.licenses.iter().flat_map(|license| {
                 let mut license_texts = Vec::new();
@@ -185,8 +176,8 @@ pub fn generate<'kl>(
         }
 
         let mut licenses: Vec<_> = licenses
-            .into_iter()
-            .flat_map(|(_, v)| v.into_values())
+            .into_values()
+            .flat_map(|v| v.into_values())
             .collect();
 
         // Sort the krates that use a license lexicographically
@@ -223,7 +214,7 @@ pub fn generate<'kl>(
 
     let mut overview = overview.into_values().collect::<Vec<_>>();
     // Show the most used licenses first
-    overview.sort_by(|a, b| b.count.cmp(&a.count));
+    overview.sort_by_key(|ls| std::cmp::Reverse(ls.count));
 
     let crates = nfos
         .iter()
@@ -233,6 +224,7 @@ pub fn generate<'kl>(
             license: &nfo.lic_info,
         })
         .collect();
+
     Ok(LicenseList {
         overview,
         licenses,

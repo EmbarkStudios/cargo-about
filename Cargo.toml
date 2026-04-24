@@ -48,6 +48,7 @@ libc = "0.2"
 log = "0.4"
 # Better locking primitives
 parking_lot = "0.12"
+memchr = "2.8"
 # brrrr
 rayon = "1.5"
 # HTTP requests
@@ -63,10 +64,7 @@ serde_json = "1.0"
 semver = { version = "1.0", features = ["serde"] }
 # License expression parsing and evaluation
 spdx = { version = "0.13", features = ["detection-parallel", "detection-inline-cache", "text"] }
-# Configuration parsing
-toml = "0.9"
-# Manipulation of cargo manifests for diagnostic purposes
-toml_edit = "0.23"
+toml-span = "0.7"
 # Hashing
 twox-hash = "2.0"
 # Url parsing

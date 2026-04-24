@@ -216,7 +216,7 @@ impl Gatherer {
         for (krate, clarification) in krates.krates().filter_map(|krate| {
             cfg.crates
                 .get(&krate.name)
-                .and_then(|kc| kc.clarify.as_ref())
+                .and_then(|kc| kc.value.clarify.as_ref())
                 .map(|cl| (krate, cl))
         }) {
             if let Err(i) = binary_search(licensed_krates, krate) {
