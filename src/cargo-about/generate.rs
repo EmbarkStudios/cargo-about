@@ -266,7 +266,21 @@ pub fn cmd(args: Args, color: crate::Color) -> anyhow::Result<()> {
     log::info!("gathered {} crates", krates.len());
 
     let client = if !args.offline && !args.frozen {
-        Some(ureq::Agent::new_with_defaults())
+        use ureq::tls::{RootCerts, TlsConfig};
+
+        let prov = rustls::crypto::ring::default_provider();
+
+        Some(
+            ureq::Agent::config_builder()
+                .tls_config(
+                    TlsConfig::builder()
+                        .unversioned_rustls_crypto_provider(std::sync::Arc::new(prov))
+                        .root_certs(RootCerts::PlatformVerifier)
+                        .build(),
+                )
+                .build()
+                .new_agent(),
+        )
     } else {
         None
     };
