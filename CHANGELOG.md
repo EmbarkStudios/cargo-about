@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Changed
+- [PR#299](https://github.com/EmbarkStudios/cargo-about/pull/299) updated dependencies
+- [PR#299](https://github.com/EmbarkStudios/cargo-about/pull/299) resolved [#286](https://github.com/EmbarkStudios/cargo-about/issues/286) by gating all cli specific features (argument parsing, templating, logging) behind the `cli` feature.
+
+### Fixed
+- [PR#299](https://github.com/EmbarkStudios/cargo-about/pull/299) resolved [#298](https://github.com/EmbarkStudios/cargo-about/issues/298) by allowing deprecated license identifiers.
+- [PR#299](https://github.com/EmbarkStudios/cargo-about/pull/299) (and [PR#296](https://github.com/EmbarkStudios/cargo-about/pull/296)) improved the error output when failing to parse expressions from scanning license text to include the actual path in question.
+
+### Added
+- [PR#299](https://github.com/EmbarkStudios/cargo-about/pull/299) improved output for configuration errors, including printing warnings when a clarification is specified for a crate that is not actually present.
+
 ## [0.8.4] - 2025-12-04
 ### Changed
 - [PR#295](https://github.com/EmbarkStudios/cargo-about/pull/295) changes how GNU licenses are detected, previously in 0.8.3 they would be detected as their root eg. `GPL-3.0` form, which are all deprecated. As all GNU licenses use the exact same text for the different variants, one of which is deprecated, they are now always detected as the `-or-later` variant, eg. `GPL-3.0-or-later`. If this detection does not match the actual license requirement, eg. `GPL-3.0-only`, then it must be corrected by the user, as unfortunately the license detection cannot determine that due to the lack of distinction between the license texts.
