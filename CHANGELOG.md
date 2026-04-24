@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+## [0.9.0] - 2026-04-24
 ### Changed
 - [PR#299](https://github.com/EmbarkStudios/cargo-about/pull/299) updated dependencies
 - [PR#299](https://github.com/EmbarkStudios/cargo-about/pull/299) resolved [#286](https://github.com/EmbarkStudios/cargo-about/issues/286) by gating all cli specific features (argument parsing, templating, logging) behind the `cli` feature.
@@ -238,7 +239,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial add of the thing
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.8.4...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/cargo-about/compare/0.9.0...HEAD
+[0.9.0]: https://github.com/EmbarkStudios/cargo-about/compare/0.8.4...0.9.0
 [0.8.4]: https://github.com/EmbarkStudios/cargo-about/compare/0.8.3...0.8.4
 [0.8.3]: https://github.com/EmbarkStudios/cargo-about/compare/0.8.2...0.8.3
 [0.8.2]: https://github.com/EmbarkStudios/cargo-about/compare/0.8.1...0.8.2
