@@ -28,7 +28,18 @@ _Please Note: This is a tool that we use (and like!) and it makes sense to us to
 #### From crates.io
 
 ```bash
-cargo install --locked cargo-about
+cargo install --locked --features cli cargo-about
+```
+
+#### With [`cargo-update`](https://github.com/nabijaczleweli/cargo-update)
+
+```ini
+# ~/.cargo/.install_config.toml
+[cargo-about]
+default_features = false
+features = ["cli"]
+enforce_lock = true
+
 ```
 
 #### On Arch Linux
