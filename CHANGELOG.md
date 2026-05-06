@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Fixed
+- Generated bundles now surface license text for `LicenseRef-*` identifiers when the corresponding file is supplied via a clarification (or any other mechanism that populates the crate's `license_files`). Previously the `Other` arm of the per-license iteration in `generate.rs` ignored `license_files` entirely and unconditionally emitted a "no license file for crate" warning, so projects bundling a non-SPDX license (e.g. Slint's `LicenseRef-Slint-Royalty-free-2.0`) could clarify the file successfully but still get an empty section in the rendered output. The arm now mirrors the `Spdx` branch: filter `license_files` for entries whose recorded expression matches the LicenseRef, and use the file's text when found. The warning is preserved when no matching file exists, since there's no canonical-text fallback for project-specific identifiers.
+
 ## [0.9.0] - 2026-04-24
 ### Changed
 - [PR#299](https://github.com/EmbarkStudios/cargo-about/pull/299) updated dependencies
