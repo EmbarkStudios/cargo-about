@@ -162,12 +162,28 @@ pub struct Clarification {
 
 impl<'de> Deserialize<'de> for Clarification {
     fn deserialize(value: &mut Value<'de>) -> Result<Self, toml_span::DeserError> {
+        let span = value.span;
         let mut tab = de::TableHelper::new(value)?;
 
         let license = parse_expr(&mut tab, "license")?;
         let override_git_commit = tab.optional("override-git-commit");
-        let files = tab.optional("files").unwrap_or_default();
-        let git = tab.optional("git").unwrap_or_default();
+        let files: Vec<ClarificationFile> = tab.optional("files").unwrap_or_default();
+        let git: Vec<ClarificationFile> = tab.optional("git").unwrap_or_default();
+
+        // A clarification needs at least one source of truth (`files` or `git`)
+        // for the checksums it validates against. Without one, the clarification
+        // can never be applied and would be silently ignored at generation time,
+        // falling back to concatenating all discovered licenses. Reject it here
+        // so the misconfiguration is reported instead of quietly dropped (#194).
+        if files.is_empty() && git.is_empty() {
+            tab.errors.push(toml_span::Error {
+                kind: toml_span::ErrorKind::Custom(
+                    "a `clarify` entry must specify at least one of `files` or `git` as the source of truth for its license expression".into(),
+                ),
+                span,
+                line_info: None,
+            });
+        }
 
         tab.finalize(None)?;
 
@@ -395,5 +411,83 @@ impl<'de> Deserialize<'de> for Config {
             workarounds,
             crates,
         })
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Config;
+    use toml_span::Deserialize;
+
+    fn deserialize(s: &str) -> Result<Config, toml_span::DeserError> {
+        let mut value = toml_span::parse(s).expect("failed to parse toml");
+        Config::deserialize(&mut value)
+    }
+
+    /// A clarification that specifies neither `files` nor `git` has no source of
+    /// truth, so it can never be applied. It must be rejected at config parse
+    /// time rather than silently ignored (see issue #194).
+    #[test]
+    fn rejects_clarification_without_source() {
+        let err = match deserialize(
+            r#"
+accepted = ["MIT"]
+
+[some-crate.clarify]
+license = "MIT AND Apache-2.0"
+"#,
+        ) {
+            Ok(_) => panic!("a clarification without `files` or `git` should be an error"),
+            Err(err) => err,
+        };
+
+        let msg = err
+            .errors
+            .iter()
+            .map(|e| e.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert!(
+            msg.contains("files") && msg.contains("git"),
+            "error should mention the required `files`/`git` source, got: {msg}"
+        );
+    }
+
+    /// A clarification that supplies `files` is a valid source and must keep
+    /// parsing successfully.
+    #[test]
+    fn accepts_clarification_with_files() {
+        deserialize(
+            r#"
+accepted = ["MIT"]
+
+[some-crate.clarify]
+license = "MIT"
+
+[[some-crate.clarify.files]]
+path = "LICENSE"
+checksum = "0000000000000000000000000000000000000000000000000000000000000000"
+"#,
+        )
+        .expect("a clarification with `files` should parse");
+    }
+
+    /// A clarification that supplies `git` is a valid source and must keep
+    /// parsing successfully.
+    #[test]
+    fn accepts_clarification_with_git() {
+        deserialize(
+            r#"
+accepted = ["MIT"]
+
+[some-crate.clarify]
+license = "MIT"
+
+[[some-crate.clarify.git]]
+path = "LICENSE"
+checksum = "0000000000000000000000000000000000000000000000000000000000000000"
+"#,
+        )
+        .expect("a clarification with `git` should parse");
     }
 }

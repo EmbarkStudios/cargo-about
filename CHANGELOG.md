@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Fixed
+- Resolved [#194](https://github.com/EmbarkStudios/cargo-about/issues/194) by returning a configuration error when a `clarify` entry specifies neither `files` nor `git`, instead of silently ignoring the clarification.
+
 ## [0.9.0] - 2026-04-24
 ### Changed
 - [PR#299](https://github.com/EmbarkStudios/cargo-about/pull/299) updated dependencies
