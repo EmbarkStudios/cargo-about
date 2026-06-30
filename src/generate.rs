@@ -99,7 +99,7 @@ pub fn generate<'kl>(
 
             let license_iter = resolved.licenses.iter().flat_map(|license| {
                 let mut license_texts = Vec::new();
-                match license.license {
+                match &license.license {
                     spdx::LicenseItem::Spdx { id, .. } => {
                         // Attempt to retrieve the actual license file from the crate, note that in some cases
                         // _sigh_ there are actually multiple license texts for the same license with different
@@ -111,7 +111,7 @@ pub fn generate<'kl>(
                                 // Check if this is the actual license file we want
                                 if !lf
                                     .license_expr
-                                    .evaluate(|ereq| ereq.license.id() == Some(id))
+                                    .evaluate(|ereq| ereq.license.id() == Some(*id))
                                 {
                                     return None;
                                 }
@@ -151,11 +151,56 @@ pub fn generate<'kl>(
                             });
                         }
                     }
-                    spdx::LicenseItem::Other { .. } => {
-                        log::warn!(
-                            "{license} has no license file for crate '{}'",
-                            krate_license.krate
-                        );
+                    spdx::LicenseItem::Other(license_ref) => {
+                        // LicenseRef-* identifiers are project-specific by
+                        // definition (askalono's SPDX corpus can never
+                        // contain them), but a clarification (or a future
+                        // REUSE-aware filename heuristic) may have
+                        // populated `license_files` with the actual text.
+                        // Mirror the Spdx arm's filter so consumers get
+                        // the bundled text instead of an empty section.
+                        license_texts.extend(krate_license
+                            .license_files
+                            .iter()
+                            .filter_map(|lf| {
+                                if !lf.license_expr.evaluate(|ereq| {
+                                    matches!(
+                                        &ereq.license,
+                                        spdx::LicenseItem::Other(other)
+                                            if other.as_ref() == license_ref.as_ref()
+                                    )
+                                }) {
+                                    return None;
+                                }
+
+                                match &lf.kind {
+                                    licenses::LicenseFileKind::Text(text)
+                                    | licenses::LicenseFileKind::AddendumText(text, _) => {
+                                        let id_str = license_ref.to_string();
+                                        Some(License {
+                                            name: id_str.clone(),
+                                            id: id_str,
+                                            text: text.clone(),
+                                            source_path: Some(lf.path.clone()),
+                                            used_by: Vec::new(),
+                                            first_of_kind: false,
+                                        })
+                                    }
+                                    licenses::LicenseFileKind::Header => None,
+                                }
+                            }));
+
+                        if license_texts.is_empty() {
+                            // No canonical-text fallback (unlike the Spdx
+                            // arm) — there's no canonical text for a
+                            // project-specific LicenseRef-*. Surface the
+                            // warning so the consumer knows their bundle
+                            // is incomplete and they need to clarify.
+                            log::warn!(
+                                "{license} has no license file for crate '{}'",
+                                krate_license.krate
+                            );
+                        }
                     }
                 }
 

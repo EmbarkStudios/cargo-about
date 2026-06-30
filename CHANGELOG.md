@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 ### Fixed
+- [PR#303](https://github.com/EmbarkStudios/cargo-about/pull/303) now attempts to find and add the license text for `LicenseRef-` licenses the same as it does for licenses in the SPDX list.
 - [PR#304](https://github.com/EmbarkStudios/cargo-about/pull/304) resolved [#194](https://github.com/EmbarkStudios/cargo-about/issues/194) by returning a configuration error when a `clarify` entry specifies neither `files` nor `git`, instead of silently ignoring the clarification.
 - [PR#306](https://github.com/EmbarkStudios/cargo-about/pull/306) resolved [#305](https://github.com/EmbarkStudios/cargo-about/issues/305) by removing the log warnings for using the deprecated fields related to clearly defined which was deprecated/removed in [PR#287](https://github.com/EmbarkStudios/cargo-about/pull/287).
 
