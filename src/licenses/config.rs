@@ -317,15 +317,6 @@ impl<'de> Deserialize<'de> for Config {
 
         let targets = tab.optional("targets").unwrap_or_default();
         let private = tab.optional("private").unwrap_or_default();
-        if tab.take("no-clearly-defined").is_some() {
-            log::warn!("`no-clearly-defined` has been removed");
-        }
-        if tab.take("clearly-defined-timeout-secs").is_some() {
-            log::warn!("`clearly-defined-timeout-secs` has been removed");
-        }
-        if tab.take("filter-noassertion").is_some() {
-            log::warn!("`filter-noassertion` has been removed");
-        }
         let max_depth = tab.optional("max-depth");
         let ignore_build_dependencies = tab
             .optional("ignore-build-dependencies")
