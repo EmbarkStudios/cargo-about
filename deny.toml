@@ -7,6 +7,7 @@ targets = [
     "aarch64-apple-darwin",
     "x86_64-pc-windows-msvc",
 ]
+all-features = true
 
 [advisories]
 unmaintained = "workspace"
@@ -17,7 +18,6 @@ multiple-versions = "deny"
 deny = ["openssl-sys", "cmake", "windows"]
 skip = [
     { crate = "getrandom@0.2.17", reason = "ring" },
-    { crate = "hashbrown@0.15.5", reason = "petgraph" },
 ]
 skip-tree = [
     # Currently at four fucking versions now
@@ -33,7 +33,5 @@ exceptions = [
     # ring uses code from multiple libraries but all with permissive licenses
     # https://tldrlegal.com/license/openssl-license-(openssl)
     { allow = ["ISC", "MIT", "OpenSSL"], name = "ring" },
-
-    { allow = ["CDLA-Permissive-2.0"], name = "webpki-roots" },
     { allow = ["Zlib"], name = "foldhash" },
 ]
