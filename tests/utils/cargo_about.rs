@@ -11,7 +11,7 @@ pub struct CargoAbout {
 
 impl CargoAbout {
     pub fn new(package: &Package) -> Result<Self> {
-        let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!());
+        let mut cmd = Command::new(assert_cmd::cargo::cargo_bin("cargo-about"));
         cmd.current_dir(&package.dir);
         cmd.arg("--color=never");
         Ok(CargoAbout { cmd })
