@@ -62,8 +62,8 @@ pub fn get(krate: &crate::Krate) -> anyhow::Result<Option<super::Clarification>>
                 .context("failed to parse license expression")?,
             override_git_commit: None,
             files: vec![
-                // Both clearlydefined and askalono don't handle license exceptions it seems, so we need to clarify
-                // the file otherwise we will think we won't find the license we expected
+                // We need to clarify the file otherwise we will think
+                // we won't find the license we expected
                 ClarificationFile {
                     path: "LICENSE".into(),
                     license: None,
