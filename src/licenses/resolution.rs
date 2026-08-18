@@ -194,7 +194,7 @@ pub fn resolve(
                         }
 
                         concat_expr.push('(');
-                        concat_expr.push_str(&id.name);
+                        concat_expr.push_str(id.name);
                         concat_expr.push(')');
                     }
 

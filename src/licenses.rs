@@ -39,7 +39,6 @@ impl fmt::Display for LicenseInfo {
 }
 
 /// The contents of a file with license info in it
-#[derive(Debug)]
 pub enum LicenseFileKind {
     /// The license file is the canonical text of the license
     Text(String),
@@ -51,13 +50,12 @@ pub enum LicenseFileKind {
     Header,
 }
 
-#[derive(Debug)]
+#[allow(clippy::large_enum_variant)]
 pub enum LicenseSource {
     Detected(spdx::LicenseId),
     Clarified(spdx::Expression),
 }
 
-#[derive(Debug)]
 pub struct LicenseFile {
     /// The SPDX license attributed to this file
     pub license: LicenseSource,
