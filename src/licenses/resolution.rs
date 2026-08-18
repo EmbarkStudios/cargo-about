@@ -1,6 +1,6 @@
 use crate::{
     Krate,
-    licenses::{KrateLicense, LicenseInfo, config},
+    licenses::{KrateLicense, LicenseInfo, LicenseSource, config},
 };
 use spdx::{Expression, LicenseReq, Licensee};
 use std::fmt;
@@ -145,7 +145,7 @@ pub fn resolve(
             };
 
             // For published crates the manifest will be a sanitized one that is more uniform, but we could use the original
-            // one that is in the same dirctory with .orig instead
+            // one that is in the same directory with .orig instead
             let manifest = std::fs::read_to_string(&kl.krate.manifest_path)
                 .map_err(|e| {
                     log::error!(
@@ -165,7 +165,7 @@ pub fn resolve(
                 LicenseInfo::Unknown => {
                     // Find all of the unique license expressions that were discovered
                     // and concatenate them together
-                    let mut unique_exprs = Vec::new();
+                    let mut unique_ids = Vec::new();
 
                     if kl.license_files.is_empty() {
                         let msg = format!("unable to synthesize license expression for '{}': no `license` specified, and no license files were found", kl.krate);
@@ -180,21 +180,21 @@ pub fn resolve(
                     }
 
                     for file in &kl.license_files {
-                        if let Err(i) = unique_exprs.binary_search_by(|expr: &String| {
-                            expr.as_str().cmp(file.license_expr.as_ref())
-                        }) {
-                            unique_exprs.insert(i, file.license_expr.as_ref().to_owned());
+                        let LicenseSource::Detected(id) = &file.license else { continue; };
+
+                        if let Err(i) = unique_ids.binary_search(id) {
+                            unique_ids.insert(i, *id);
                         }
                     }
 
                     let mut concat_expr = String::new();
-                    for (i, expr) in unique_exprs.into_iter().enumerate() {
+                    for (i, id) in unique_ids.into_iter().enumerate() {
                         if i > 0 {
                             concat_expr.push_str(" AND ");
                         }
 
                         concat_expr.push('(');
-                        concat_expr.push_str(&expr);
+                        concat_expr.push_str(&id.name);
                         concat_expr.push(')');
                     }
 
