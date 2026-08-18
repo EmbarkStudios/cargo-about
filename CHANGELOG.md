@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Changed
+- Removed any reference to clearlydefined.io as integration was completely removed in 0.8.0.
 ## [0.9.1] - 2026-06-30
 ### Fixed
 - [PR#303](https://github.com/EmbarkStudios/cargo-about/pull/303) now attempts to find and add the license text for `LicenseRef-` licenses the same as it does for licenses in the SPDX list.

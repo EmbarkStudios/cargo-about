@@ -130,7 +130,7 @@ accepted = ["OpenSSL"]
 
 As noted in the [`workarounds`](#the-workarounds-field-optional), some crates have complicated or incomplete licensing that messes up the harvesting of the license info in an automated fashion. While the `workarounds` exists for popular crates (and can always be expanded with PRs!) there are often going to be crates that you will need to clarify yourself until a new release of the crate, etc, which is the purpose of the `clarify` field, to specify exactly what the license information is, and how to verify that the license terms are still the same as when they were clarified, using hashes of the input files.
 
-Note that since clarifications are human supplied in your project's own configuration, they take precedence over all other methods. If a crate is clarified, it will not be retrieved from clearlydefined.io nor via local file harvesting.
+Note that since clarifications are human supplied in your project's own configuration, they take precedence over all other methods. If a crate is clarified, it will not be resolved via local file harvesting.
 
 #### The `license` field
 
@@ -188,4 +188,3 @@ In some cases, crates concatenate multiple licenses together into a single file,
 
 Just as with start, this is just a simple substring find, however, it will only match text that comes _after_ the position the start text (or beginning of the file) was found.
 
-[clearlydefined.io]: https://clearlydefined.io

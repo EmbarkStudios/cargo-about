@@ -105,7 +105,7 @@ None of the crates published from <https://github.com/sonos/tract> included the 
 
 ## `wasmtime`
 
-The crates around `wasmtime` and `cranelift`, many but not all of which are published from <https://github.com/bytecodealliance/wasmtime>, use the `Apache-2.0 WITH LLVM-exception`, and the license text reflects this. However, neither `clearlydefined.io` nor `askalono` report the inclusion of the `LLVM-exception`, so this workaround just clarifies that.
+The crates around `wasmtime` and `cranelift`, many but not all of which are published from <https://github.com/bytecodealliance/wasmtime>, use the `Apache-2.0 WITH LLVM-exception`, and the license text reflects this. However, external resolvers do not report the inclusion of the `LLVM-exception`, so this workaround just clarifies that.
 
 - [`cranelift-bforest`](https://crates.io/crates/cranelift-bforest)
 - [`cranelift-codegen`](https://crates.io/crates/cranelift-codegen)
@@ -133,7 +133,7 @@ The crates around `wasmtime` and `cranelift`, many but not all of which are publ
 ## `rustix`
 
 The crate `rustix` and its dependency `linux-raw-sys` are triple licensed under `Apache-2.0 WITH LLVM-exception`, `Apache-2.0` and `MIT` licenses.
-However, they also include a `COPYRIGHT` file that confuses `clearlydefined.io` in parsing the license expression. This workaround clarifies the three
+However, they also include a `COPYRIGHT` file that confuses automated systems in parsing the license expression. This workaround clarifies the three
 licenses and their inclusion.
 
 - [`rustix`](https://crates.io/crates/rustix)
