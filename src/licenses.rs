@@ -50,9 +50,15 @@ pub enum LicenseFileKind {
     Header,
 }
 
+#[allow(clippy::large_enum_variant)]
+pub enum LicenseSource {
+    Detected(spdx::LicenseId),
+    Clarified(spdx::Expression),
+}
+
 pub struct LicenseFile {
-    /// The SPDX requirement expression detected for the file
-    pub license_expr: spdx::Expression,
+    /// The SPDX license attributed to this file
+    pub license: LicenseSource,
     /// Full path of the file which had license data in it
     pub path: PathBuf,
     /// The confidence score for the license, the closer to the canonical
@@ -61,35 +67,6 @@ pub struct LicenseFile {
     /// The contents of the file
     pub kind: LicenseFileKind,
 }
-
-impl Ord for LicenseFile {
-    #[inline]
-    fn cmp(&self, o: &Self) -> cmp::Ordering {
-        match self.license_expr.as_ref().cmp(o.license_expr.as_ref()) {
-            cmp::Ordering::Equal => o
-                .confidence
-                .partial_cmp(&self.confidence)
-                .expect("NaN encountered comparing license confidences"),
-            ord => ord,
-        }
-    }
-}
-
-impl PartialOrd for LicenseFile {
-    #[inline]
-    fn partial_cmp(&self, o: &Self) -> Option<cmp::Ordering> {
-        Some(self.cmp(o))
-    }
-}
-
-impl PartialEq for LicenseFile {
-    #[inline]
-    fn eq(&self, o: &Self) -> bool {
-        self.cmp(o) == cmp::Ordering::Equal
-    }
-}
-
-impl Eq for LicenseFile {}
 
 pub struct KrateLicense<'krate> {
     pub krate: &'krate Krate,
@@ -280,22 +257,28 @@ impl Gatherer {
                         }
                     };
 
-                // Condense each license down to the best candidate if
-                // multiple are found
-                license_files.sort();
+                if license_files.is_empty() {
+                    return Some(KrateLicense {
+                        krate,
+                        lic_info: info,
+                        license_files,
+                    });
+                }
 
-                let mut expr = None;
-                license_files.retain(|lf| {
-                    if let Some(cur) = &expr {
-                        if *cur != lf.license_expr {
-                            expr = Some(lf.license_expr.clone());
-                            true
-                        } else {
-                            false
-                        }
-                    } else {
-                        expr = Some(lf.license_expr.clone());
-                        true
+                // Keep all license texts, but remove headers unless they apply to a license that _isn't_ declared
+                license_files.retain(|lf| match lf.kind {
+                    LicenseFileKind::Text(_) | LicenseFileKind::AddendumText(_, _) => true,
+                    LicenseFileKind::Header => {
+                        let LicenseInfo::Expr(expr) = &info else {
+                            return false;
+                        };
+                        let LicenseSource::Detected(id) = &lf.license else {
+                            return false; /* unreachable */
+                        };
+
+                        !expr
+                            .requirements()
+                            .any(|req| req.req.license.id().is_some_and(|rid| rid == *id))
                     }
                 });
 
@@ -358,11 +341,12 @@ pub(crate) fn apply_clarification(
         lic_files.push(LicenseFile {
             path: cf.path.clone(),
             confidence: 1.0,
-            license_expr: cf
-                .license
-                .as_ref()
-                .unwrap_or(&clarification.license)
-                .clone(),
+            license: LicenseSource::Clarified(
+                cf.license
+                    .as_ref()
+                    .unwrap_or(&clarification.license)
+                    .clone(),
+            ),
             kind: LicenseFileKind::Text(text),
         });
 

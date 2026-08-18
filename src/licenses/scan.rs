@@ -1,3 +1,5 @@
+use crate::licenses::LicenseSource;
+
 use super::{LicenseFile, LicenseFileKind};
 use krates::{Utf8Path as Path, Utf8PathBuf as PathBuf};
 use rayon::prelude::*;
@@ -88,58 +90,23 @@ pub(crate) fn check_is_license_file(
     scanner: &Scanner<'_>,
     threshold: f32,
 ) -> Option<LicenseFile> {
-    const MODE: spdx::ParseMode = spdx::ParseMode {
-        allow_slash_as_or_operator: true,
-        allow_imprecise_license_names: true,
-        allow_deprecated: true,
-        allow_unknown: false,
-        allow_postfix_plus_on_gpl: false,
-    };
+    // askalono only detects single license identifiers, not license
+    // expressions
+    let scan_res = scan_text(&contents, scanner, threshold);
 
-    match scan_text(&contents, scanner, threshold) {
-        ScanResult::Header(ided) => {
-            // askalono only detects single license identifiers, not license
-            // expressions, so we need to construct one from a single identifier,
-            // this should be made into in infallible function in spdx itself
-            let license_expr = match spdx::Expression::parse_mode(ided.id.name, MODE) {
-                Ok(expr) => expr,
-                Err(err) => {
-                    log::error!(
-                        "failed to parse license '{}' from header in '{path}' into a valid expression: {}",
-                        ided.id.name,
-                        err.reason
-                    );
-                    return None;
-                }
-            };
-
-            Some(LicenseFile {
-                license_expr,
-                confidence: ided.confidence,
-                path,
-                kind: LicenseFileKind::Header,
-            })
-        }
-        ScanResult::Text(ided) => {
-            let license_expr = match spdx::Expression::parse_mode(ided.id.name, MODE) {
-                Ok(expr) => expr,
-                Err(err) => {
-                    log::error!(
-                        "failed to parse license '{}' from text in '{path}' into a valid expression: {}",
-                        ided.id.name,
-                        err.reason,
-                    );
-                    return None;
-                }
-            };
-
-            Some(LicenseFile {
-                license_expr,
-                confidence: ided.confidence,
-                path,
-                kind: LicenseFileKind::Text(contents),
-            })
-        }
+    match scan_res {
+        ScanResult::Header(ided) => Some(LicenseFile {
+            license: LicenseSource::Detected(ided.id),
+            confidence: ided.confidence,
+            path,
+            kind: LicenseFileKind::Header,
+        }),
+        ScanResult::Text(ided) => Some(LicenseFile {
+            license: LicenseSource::Detected(ided.id),
+            confidence: ided.confidence,
+            path,
+            kind: LicenseFileKind::Text(contents),
+        }),
         ScanResult::UnknownId(id_str) => {
             log::error!("found unknown SPDX identifier '{id_str}' scanning '{path}'");
             None
@@ -156,11 +123,13 @@ pub(crate) fn check_is_license_file(
     }
 }
 
+#[derive(Debug)]
 struct Identified {
     confidence: f32,
     id: spdx::LicenseId,
 }
 
+#[derive(Debug)]
 enum ScanResult {
     Header(Identified),
     Text(Identified),

@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::licenses::{self, LicenseInfo};
+use crate::licenses::{self, LicenseInfo, LicenseSource};
 use krates::Utf8PathBuf as PathBuf;
 use krates::cm::Package;
 use serde::{Serialize, Serializer};
@@ -108,26 +108,31 @@ pub fn generate<'kl>(
                             .license_files
                             .iter()
                             .filter_map(|lf| {
-                                // Check if this is the actual license file we want
-                                if !lf
-                                    .license_expr
-                                    .evaluate(|ereq| ereq.license.id() == Some(*id))
-                                {
-                                    return None;
-                                }
-
                                 match &lf.kind {
                                     licenses::LicenseFileKind::Text(text)
                                     | licenses::LicenseFileKind::AddendumText(text, _) => {
-                                        let license = License {
+                                        // Check if this is the actual license file we want
+                                        match &lf.license {
+                                            LicenseSource::Detected(did) => {
+                                                if did != id { return None; }
+                                            }
+                                            LicenseSource::Clarified(expr) => {
+                                                if !expr.requirements().any(|req| {
+                                                    req.req.license.id().is_some_and(|did| did == *id)
+                                                }) {
+                                                    return None;
+                                                }
+                                            }
+                                        }
+
+                                        Some(License {
                                             name: id.full_name.to_owned(),
                                             id: id.name.to_owned(),
                                             text: text.clone(),
                                             source_path: Some(lf.path.clone()),
                                             used_by: Vec::new(),
                                             first_of_kind: false,
-                                        };
-                                        Some(license)
+                                        })
                                     }
                                     licenses::LicenseFileKind::Header => None,
                                 }
@@ -163,12 +168,10 @@ pub fn generate<'kl>(
                             .license_files
                             .iter()
                             .filter_map(|lf| {
-                                if !lf.license_expr.evaluate(|ereq| {
-                                    matches!(
-                                        &ereq.license,
-                                        spdx::LicenseItem::Other(other)
-                                            if other.as_ref() == license_ref.as_ref()
-                                    )
+                                let LicenseSource::Clarified(expr) = &lf.license else { return None; };
+                                if expr.requirements().any(|req| {
+                                    let spdx::LicenseItem::Other(other) = &req.req.license else {return false;};
+                                    other == license_ref
                                 }) {
                                     return None;
                                 }
