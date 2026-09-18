@@ -78,13 +78,15 @@ fn synthesize_manifest(
     {
         // Find the first empty line, or next table
         let mut start = 0;
-        let s = &existing[pkg + 5..];
+        let base = pkg + 5;
+        let s = &existing[base..];
         for l in memchr::memchr_iter(b'\n', s.as_bytes()) {
             let line = &s[start..l];
 
             if line.trim().is_empty() || line.starts_with('[') {
-                existing.insert_str(start, "license = \"");
-                let offset = start + 11;
+                let insert = base + start;
+                existing.insert_str(insert, "license = \"");
+                let offset = insert + 11;
                 existing.insert_str(offset, expression.as_ref());
                 existing.insert_str(offset + expression.as_ref().len(), "\"\n");
                 return (existing, offset);
@@ -125,6 +127,95 @@ fn synthesize_manifest(
         writeln!(&mut doc, "{expression}\"").unwrap();
 
         (doc, offset)
+    }
+}
+
+#[cfg(test)]
+// Kept next to `synthesize_manifest` (rather than at the end of the file)
+// so this stays mergeable with sibling fixes in `resolve`
+#[allow(clippy::items_after_test_module)]
+mod synthesize_offset_tests {
+    use super::*;
+    use krates::cm;
+
+    fn synth_krate() -> Krate {
+        Krate(cm::Package {
+            name: "synth".to_owned(),
+            version: semver::Version::new(0, 1, 0),
+            authors: Vec::new(),
+            id: cm::PackageId {
+                repr: "synth 0.1.0 (path+file:///synth)".to_owned(),
+            },
+            source: None,
+            description: None,
+            dependencies: Vec::new(),
+            license: None,
+            license_file: None,
+            targets: Vec::new(),
+            features: std::collections::BTreeMap::new(),
+            manifest_path: "Cargo.toml".into(),
+            categories: Vec::new(),
+            keywords: Vec::new(),
+            readme: None,
+            repository: None,
+            homepage: None,
+            documentation: None,
+            edition: cm::Edition::E2021,
+            metadata: serde_json::Value::Null,
+            links: None,
+            publish: None,
+            default_run: None,
+            rust_version: None,
+        })
+    }
+
+    /// Offsets computed relative to the `&existing[pkg + 5..]` subslice must
+    /// be rebased before indexing `existing`, otherwise the insert lands
+    /// `pkg + 5` bytes early and can split a UTF-8 character, see #314
+    #[test]
+    fn inserts_at_package_table_end_with_multibyte_description() {
+        let expr = spdx::Expression::parse("MIT").unwrap();
+        let manifest = "[package]\r\nname = \"repro\"\r\nversion = \"0.1.0\"\r\nedition = \"2021\"\r\ndescription = \"日本語の説明\"\r\n\r\n[dependencies]\r\n".to_owned();
+
+        let (synthesized, offset) = synthesize_manifest(&synth_krate(), Some(manifest), &expr);
+
+        assert_eq!(
+            synthesized,
+            "[package]\r\nname = \"repro\"\r\nversion = \"0.1.0\"\r\nedition = \"2021\"\r\ndescription = \"日本語の説明\"\r\nlicense = \"MIT\"\n\r\n[dependencies]\r\n"
+        );
+
+        // The offset is used to map diagnostics back into the manifest, so it
+        // still needs to point at the start of the expression
+        assert_eq!(&synthesized[offset..offset + expr.as_ref().len()], "MIT");
+    }
+
+    /// Without multibyte characters the same bug silently corrupts an
+    /// unrelated value instead of panicking, see #314
+    #[test]
+    fn inserts_at_package_table_end_without_corrupting_values() {
+        let expr = spdx::Expression::parse("MIT").unwrap();
+        let manifest =
+            "[package]\nname = \"repro\"\nversion = \"0.1.0\"\nedition = \"2021\"\n\n[dependencies]\n"
+                .to_owned();
+
+        let (synthesized, offset) = synthesize_manifest(&synth_krate(), Some(manifest), &expr);
+
+        assert_eq!(
+            synthesized,
+            "[package]\nname = \"repro\"\nversion = \"0.1.0\"\nedition = \"2021\"\nlicense = \"MIT\"\n\n[dependencies]\n"
+        );
+
+        assert_eq!(&synthesized[offset..offset + expr.as_ref().len()], "MIT");
+
+        let parsed =
+            toml_span::parse(&synthesized).expect("synthesized manifest is not valid TOML");
+
+        assert_eq!(
+            parsed
+                .pointer("/package/license")
+                .and_then(toml_span::Value::as_str),
+            Some("MIT")
+        );
     }
 }
 
