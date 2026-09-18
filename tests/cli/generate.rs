@@ -1,6 +1,7 @@
 use crate::utils::*;
 
 use anyhow::Result;
+use assert_fs::prelude::*;
 use predicates::prelude::*;
 
 #[test]
@@ -441,6 +442,222 @@ fn fails_when_dependency_has_non_accepted_license_field() -> Result<()> {
         .stderr(predicates::str::contains(
             "encountered 1 errors resolving licenses, unable to generate output",
         ));
+
+    Ok(())
+}
+
+fn generate_json(package: &Package) -> Result<serde_json::Value> {
+    let output = CargoAbout::new(package)?
+        .generate()
+        .arg("--offline")
+        .arg("--format=json")
+        .assert()
+        .success();
+
+    Ok(serde_json::from_slice(&output.get_output().stdout)?)
+}
+
+#[test]
+fn reports_notices_without_changing_license_groups() -> Result<()> {
+    let notice_a = "Package A\r\n  Copyright <Alice> & contributors.\r\n";
+    let notice_b = "Package B\nCopyright Bob.\n";
+    let package_b = Package::builder()
+        .name("package-b")
+        .license(Some("Apache-2.0"))
+        .file("NOTICE", notice_b)
+        .build()?;
+    let package_a = Package::builder()
+        .name("package-a")
+        .license(Some("Apache-2.0"))
+        .accepted(&["Apache-2.0"])
+        .file("NOTICE", notice_a)
+        .dependency(&package_b)
+        .build()?;
+
+    let report = generate_json(&package_a)?;
+    let licenses = report["licenses"].as_array().unwrap();
+    assert_eq!(licenses.len(), 1);
+    assert_eq!(licenses[0]["id"], "Apache-2.0");
+    assert_eq!(licenses[0]["used_by"].as_array().unwrap().len(), 2);
+    assert!(licenses[0]["source_path"].is_null());
+    assert_eq!(
+        licenses[0]["text"],
+        spdx::license_id("Apache-2.0").unwrap().text()
+    );
+    assert_eq!(report["overview"][0]["count"], 2);
+
+    let notices = report["notices"].as_array().unwrap();
+    assert_eq!(notices.len(), 2);
+    for (notice, name, text) in [
+        (&notices[0], "package-a", notice_a),
+        (&notices[1], "package-b", notice_b),
+    ] {
+        assert_eq!(notice["crate"]["name"], name);
+        assert_eq!(notice["crate"]["version"], "0.0.0");
+        assert_eq!(notice["text"], text);
+        let manifest = std::path::Path::new(notice["crate"]["manifest_path"].as_str().unwrap());
+        assert_eq!(
+            notice["source_path"],
+            serde_json::to_value(manifest.with_file_name("NOTICE"))?
+        );
+    }
+
+    Ok(())
+}
+
+#[test]
+fn collects_notice_variants_and_respects_scan_filters() -> Result<()> {
+    let package = Package::builder()
+        .license(Some("MIT"))
+        .file("NOTICE.txt", "Root notice")
+        .file("third-party/NOTICE-OTHER", "Nested attribution")
+        .file("third-party/NOTICE.md", "Nested markdown notice")
+        .file("NOTICES.txt", "Unrelated filename")
+        .file(".hidden/NOTICE", "Hidden notice")
+        .file("ignored/NOTICE", "Ignored notice")
+        .file(".ignore", "ignored/\n")
+        .build()?;
+
+    for (config, expected) in [
+        (
+            "accepted = ['MIT']",
+            vec![
+                "Root notice",
+                "Nested attribution",
+                "Nested markdown notice",
+            ],
+        ),
+        ("accepted = ['MIT']\nmax-depth = 1", vec!["Root notice"]),
+    ] {
+        package.dir.child(ABOUT_CONFIG_FILENAME).write_str(config)?;
+        let report = generate_json(&package)?;
+        let texts: Vec<_> = report["notices"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|notice| notice["text"].as_str().unwrap())
+            .collect();
+        assert_eq!(texts, expected);
+    }
+
+    Ok(())
+}
+
+#[test]
+fn collects_notices_from_clarified_crates() -> Result<()> {
+    let license_text = mit_license_text("2026", "Clarified Owner");
+    let checksum: String = ring::digest::digest(&ring::digest::SHA256, license_text.as_bytes())
+        .as_ref()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect();
+    let config = format!(
+        "accepted = ['MIT']\n\
+        [package.clarify]\n\
+        license = 'MIT'\n\
+        [[package.clarify.files]]\n\
+        path = 'LICENSE'\n\
+        checksum = '{checksum}'\n"
+    );
+    let package = Package::builder()
+        .license(Some("Apache-2.0"))
+        .file("LICENSE", &license_text)
+        .file("NOTICE", "Clarified crate attribution")
+        .file(ABOUT_CONFIG_FILENAME, &config)
+        .build()?;
+
+    let report = generate_json(&package)?;
+    assert_eq!(report["licenses"][0]["id"], "MIT");
+    assert_eq!(report["licenses"][0]["text"], license_text);
+    assert_eq!(report["notices"].as_array().unwrap().len(), 1);
+    assert_eq!(report["notices"][0]["text"], "Clarified crate attribution");
+
+    Ok(())
+}
+
+#[test]
+fn excludes_notices_from_ignored_crates() -> Result<()> {
+    let private = Package::builder()
+        .name("private-crate")
+        .file(CARGO_MANIFEST_FILENAME, "[package]\nname = 'private-crate'\nversion = '0.0.0'\nlicense = 'Apache-2.0'\npublish = false\n")
+        .file("NOTICE", "Private attribution")
+        .build()?;
+    let package = Package::builder()
+        .license(Some("MIT"))
+        .dependency(&private)
+        .file("NOTICE", "Public attribution")
+        .file(
+            ABOUT_CONFIG_FILENAME,
+            "accepted = ['MIT']\nprivate = { ignore = true }",
+        )
+        .build()?;
+
+    let report = generate_json(&package)?;
+    assert_eq!(report["notices"].as_array().unwrap().len(), 1);
+    assert_eq!(report["notices"][0]["crate"]["name"], "package");
+    assert_eq!(report["notices"][0]["text"], "Public attribution");
+
+    Ok(())
+}
+
+#[test]
+fn does_not_infer_a_license_from_notice_text() -> Result<()> {
+    let text = mit_license_text("2026", "Notice Owner");
+    let package = Package::builder().file("NOTICE", &text).build()?;
+
+    let report = generate_json(&package)?;
+    assert!(report["licenses"].as_array().unwrap().is_empty());
+    assert_eq!(report["notices"].as_array().unwrap().len(), 1);
+    assert_eq!(report["notices"][0]["text"], text);
+
+    Ok(())
+}
+
+#[test]
+fn renders_notices_in_bundled_templates_only_when_present() -> Result<()> {
+    for has_notice in [true, false] {
+        let mut builder = Package::builder();
+        builder.license(Some("MIT")).accepted(&["MIT"]);
+        if has_notice {
+            builder.file("NOTICE", "Copyright <Alice> & contributors.\n");
+        }
+        let package = builder.build()?;
+
+        for template in [
+            concat!(env!("CARGO_MANIFEST_DIR"), "/resources/default.hbs"),
+            concat!(env!("CARGO_MANIFEST_DIR"), "/about.hbs"),
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/about_list_by_crate_example.hbs"
+            ),
+        ] {
+            let output = CargoAbout::new(&package)?
+                .generate()
+                .arg("--offline")
+                .template(template)
+                .assert()
+                .success()
+                .stderr("");
+
+            if has_notice {
+                output
+                    .stdout(predicate::str::contains("<h2>Notices</h2>"))
+                    .stdout(predicate::str::contains("<h3>package 0.0.0</h3>"))
+                    .stdout(predicate::str::contains("<pre class=\"license-text\">Copyright &lt;Alice&gt; &amp; contributors.\n</pre>"));
+            } else {
+                output.stdout(predicate::str::contains("<h2>Notices</h2>").not());
+            }
+        }
+
+        if !has_notice {
+            assert!(
+                generate_json(&package)?["notices"]
+                    .as_array()
+                    .unwrap()
+                    .is_empty()
+            );
+        }
+    }
 
     Ok(())
 }
