@@ -101,7 +101,7 @@ fn synthesize_manifest(
 
         existing.push_str("license = \"");
         let offset = existing.len();
-        writeln!(&mut existing, "{expression}\n").unwrap();
+        writeln!(&mut existing, "{expression}\"").unwrap();
 
         (existing, offset)
     } else {
@@ -390,4 +390,71 @@ pub fn resolve(
             Some(resolved)
         })
         .collect()
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use krates::cm;
+
+    fn synth_krate() -> Krate {
+        Krate(cm::Package {
+            name: "synth".to_owned(),
+            version: semver::Version::new(0, 1, 0),
+            authors: Vec::new(),
+            id: cm::PackageId {
+                repr: "synth 0.1.0 (path+file:///synth)".to_owned(),
+            },
+            source: None,
+            description: None,
+            dependencies: Vec::new(),
+            license: None,
+            license_file: None,
+            targets: Vec::new(),
+            features: std::collections::BTreeMap::new(),
+            manifest_path: "Cargo.toml".into(),
+            categories: Vec::new(),
+            keywords: Vec::new(),
+            readme: None,
+            repository: None,
+            homepage: None,
+            documentation: None,
+            edition: cm::Edition::E2021,
+            metadata: serde_json::Value::Null,
+            links: None,
+            publish: None,
+            default_run: None,
+            rust_version: None,
+        })
+    }
+
+    /// The append path is only taken when the `[package]` table runs to the end
+    /// of the manifest, ie. there is no blank line or subsequent table to insert
+    /// the synthesized `license` field before, see #315
+    #[test]
+    fn synthesizes_a_terminated_license_field_when_appending() {
+        let expr = spdx::Expression::parse("MIT").unwrap();
+        let manifest = "[package]\nname = \"synth\"\nversion = \"0.1.0\"".to_owned();
+
+        let (synthesized, offset) = synthesize_manifest(&synth_krate(), Some(manifest), &expr);
+
+        assert_eq!(
+            synthesized,
+            "[package]\nname = \"synth\"\nversion = \"0.1.0\"\nlicense = \"MIT\"\n"
+        );
+
+        // The offset is used to map diagnostics back into the manifest, so it
+        // still needs to point at the start of the expression
+        assert_eq!(&synthesized[offset..offset + expr.as_ref().len()], "MIT");
+
+        let parsed =
+            toml_span::parse(&synthesized).expect("synthesized manifest is not valid TOML");
+
+        assert_eq!(
+            parsed
+                .pointer("/package/license")
+                .and_then(toml_span::Value::as_str),
+            Some("MIT")
+        );
+    }
 }
