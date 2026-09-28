@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Fixed
+- [PR#325](https://github.com/EmbarkStudios/cargo-about/pull/325) resolved [#316](https://github.com/EmbarkStudios/cargo-about/issues/316) by teaching the `ring` workaround about the split license files introduced in ring 0.17.10.
+
 ## [0.9.2] - 2026-08-18
 ### Fixed
 - [PR#312](https://github.com/EmbarkStudios/cargo-about/pull/312) changed processing of detected license files so that they are never discarded, resolving [#309](https://github.com/EmbarkStudios/cargo-about/issues/309).

@@ -48,7 +48,9 @@ The various `prost` crates don't include the license text in the published crate
 
 ## `ring`
 
-The `ring` crate puts puts 4 different licenses in a single file which confuses tools and also doesn't declare its expression in the Cargo.toml manifest.
+Versions of the `ring` crate before 0.17.10 put 4 different licenses in a single `LICENSE` file which confuses tools and also don't declare their expression in the Cargo.toml manifest.
+
+Starting with 0.17.10, `ring` declares `Apache-2.0 AND ISC` and `LICENSE` only points at the actual license texts, which live in `LICENSE-other-bits` (`ISC`) and `LICENSE-BoringSSL` (`Apache-2.0`, followed by the licenses for BoringSSL's support code). The workaround clarifies the `ISC` license from `LICENSE-other-bits` and the `Apache-2.0` license from `LICENSE-BoringSSL`, so that the `ISC` headers in the individual source files are not each picked up as a separate license.
 
 - [`ring`](https://crates.io/crates/ring)
 
