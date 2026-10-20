@@ -150,7 +150,11 @@ fn scan_text(contents: &str, strat: &Scanner<'_>, threshold: f32) -> ScanResult 
     // that an Apache-2.0 license text without its appendix is detected as
     // Pixar. The real Pixar license is titled "Modified Apache 2.0 License",
     // so if that is missing, it is actually Apache-2.0.
-    let name = if identified.name == "Pixar" && !contents.contains("Modified Apache 2.0 License") {
+    let name = if identified.name == "Pixar"
+        && !contents
+            .trim_start()
+            .starts_with("Modified Apache 2.0 License")
+    {
         "Apache-2.0"
     } else {
         identified.name
