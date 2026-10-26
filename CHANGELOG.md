@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 ### Fixed
+- [PR#319](https://github.com/EmbarkStudios/cargo-about/pull/319) and [PR#320](https://github.com/EmbarkStudios/cargo-about/pull/320) fixed issues with manifest synthesis.
 - [PR#324](https://github.com/EmbarkStudios/cargo-about/pull/324) resolved [#323](https://github.com/EmbarkStudios/cargo-about/issues/323) by writing the archive name into each release `.sha256` file, so `sha256sum -c` can check it.
+- [PR#328](https://github.com/EmbarkStudios/cargo-about/pull/328) updated `rustls` etc to fix stupid CA.
 
 ## [0.9.2] - 2026-08-18
 ### Fixed
