@@ -146,12 +146,26 @@ fn scan_text(contents: &str, strat: &Scanner<'_>, threshold: f32) -> ScanResult 
         return ScanResult::NoLicense;
     };
 
-    let lic_id = match spdx::license_id(identified.name) {
+    // The Pixar license is an almost exact copy of Apache-2.0, to the point
+    // that an Apache-2.0 license text without its appendix is detected as
+    // Pixar. The real Pixar license is titled "Modified Apache 2.0 License",
+    // so if that is missing, it is actually Apache-2.0.
+    let name = if identified.name == "Pixar"
+        && !contents
+            .trim_start()
+            .starts_with("Modified Apache 2.0 License")
+    {
+        "Apache-2.0"
+    } else {
+        identified.name
+    };
+
+    let lic_id = match spdx::license_id(name) {
         Some(id) => Identified {
             confidence: lic_match.score,
             id,
         },
-        None => return ScanResult::UnknownId(identified.name.to_owned()),
+        None => return ScanResult::UnknownId(name.to_owned()),
     };
 
     use spdx::detection::LicenseType;
@@ -169,5 +183,47 @@ fn scan_text(contents: &str, strat: &Scanner<'_>, threshold: f32) -> ScanResult 
         }
     } else {
         ScanResult::LowLicenseChance(lic_id)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    fn scan(text: &str) -> spdx::LicenseId {
+        let store = crate::licenses::store_from_cache().unwrap();
+        let scanner = Scanner::new(&store)
+            .confidence_threshold(0.8)
+            .optimize(false)
+            .max_passes(1);
+
+        let lf = check_is_license_file("LICENSE".into(), text.to_owned(), &scanner, 0.8)
+            .expect("license not detected");
+
+        match lf.license {
+            LicenseSource::Detected(id) => id,
+            LicenseSource::Clarified(_) => panic!("unexpected license source"),
+        }
+    }
+
+    fn text_of(name: &str) -> &'static str {
+        spdx::text::LICENSE_TEXTS
+            .iter()
+            .find_map(|(n, t)| (*n == name).then_some(*t))
+            .unwrap()
+    }
+
+    // Apache-2.0 without the appendix is extremely similar to Pixar
+    #[test]
+    fn apache_without_appendix_is_not_pixar() {
+        let apache = text_of("Apache-2.0");
+        let end = apache.find("END OF TERMS AND CONDITIONS").unwrap();
+
+        assert_eq!(scan(&apache[..end]).name, "Apache-2.0");
+    }
+
+    #[test]
+    fn detects_actual_pixar() {
+        assert_eq!(scan(text_of("Pixar")).name, "Pixar");
     }
 }

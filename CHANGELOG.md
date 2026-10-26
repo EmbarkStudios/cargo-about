@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Fixed
+- [#297](https://github.com/EmbarkStudios/cargo-about/issues/297) added a workaround for Apache-2.0 license text without the appendix being detected as `Pixar`.
+
 ## [0.9.2] - 2026-08-18
 ### Fixed
 - [PR#312](https://github.com/EmbarkStudios/cargo-about/pull/312) changed processing of detected license files so that they are never discarded, resolving [#309](https://github.com/EmbarkStudios/cargo-about/issues/309).
