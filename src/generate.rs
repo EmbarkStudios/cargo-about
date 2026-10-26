@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
 use crate::licenses::{self, LicenseInfo, LicenseSource};
-use krates::Utf8PathBuf as PathBuf;
 use krates::cm::Package;
+use krates::{Utf8Path as Path, Utf8PathBuf as PathBuf};
 use serde::{Serialize, Serializer};
 
 #[derive(Clone, Serialize)]
@@ -59,6 +59,17 @@ pub struct PackageLicense<'a> {
 }
 
 #[derive(Serialize)]
+pub struct Notice<'a> {
+    /// The package that contains the NOTICE file.
+    #[serde(rename = "crate")]
+    pub krate: &'a Package,
+    /// The path where the notice text was sourced from.
+    pub source_path: &'a Path,
+    /// The complete, unmodified notice text.
+    pub text: &'a str,
+}
+
+#[derive(Serialize)]
 pub struct LicenseList<'a> {
     /// All license types (e.g. Apache, MIT) and the indices (in [`Input::crates`]) of the crates that use them.
     pub overview: Vec<LicenseSet>,
@@ -67,6 +78,8 @@ pub struct LicenseList<'a> {
     pub licenses: Vec<License<'a>>,
     /// All input packages/crates.
     pub crates: Vec<PackageLicense<'a>>,
+    /// NOTICE files and the packages that contain them.
+    pub notices: Vec<Notice<'a>>,
 }
 
 /// Generate a list of all licenses from a list of crates gathered from [`licenses::Gatherer`] and a list of resolved
@@ -273,9 +286,31 @@ pub fn generate<'kl>(
         })
         .collect();
 
+    let mut notices: Vec<_> = nfos
+        .iter()
+        .filter(|nfo| !matches!(nfo.lic_info, LicenseInfo::Ignore))
+        .flat_map(|nfo| {
+            nfo.notice_files.iter().map(|file| Notice {
+                krate: &nfo.krate.0,
+                source_path: &file.path,
+                text: &file.text,
+            })
+        })
+        .collect();
+
+    notices.sort_by(|a, b| {
+        a.krate
+            .name
+            .cmp(&b.krate.name)
+            .then_with(|| a.krate.version.cmp(&b.krate.version))
+            .then_with(|| a.krate.id.cmp(&b.krate.id))
+            .then_with(|| a.source_path.cmp(b.source_path))
+    });
+
     Ok(LicenseList {
         overview,
         licenses,
         crates,
+        notices,
     })
 }

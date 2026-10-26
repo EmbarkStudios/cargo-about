@@ -60,6 +60,13 @@
             <h3 id="{{id}}">{{name}}</h3>
             <pre class="license-text">{{text}}</pre>
         {{/each}}
+        {{#if notices}}
+        <h2>Notices</h2>
+        {{#each notices}}
+            <h3>{{crate.name}} {{crate.version}}</h3>
+            <pre class="license-text">{{text}}</pre>
+        {{/each}}
+        {{/if}}
 </main>
 </body>
 

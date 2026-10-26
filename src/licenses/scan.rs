@@ -1,16 +1,16 @@
 use crate::licenses::LicenseSource;
 
-use super::{LicenseFile, LicenseFileKind};
+use super::{LicenseFile, LicenseFileKind, NoticeFile};
 use krates::{Utf8Path as Path, Utf8PathBuf as PathBuf};
-use rayon::prelude::*;
+use rayon::{iter::Either, prelude::*};
 use spdx::detection::scan::Scanner;
 
 pub(crate) fn scan_files(
     root_dir: &Path,
-    scanner: &Scanner<'_>,
+    scanner: Option<&Scanner<'_>>,
     threshold: f32,
     max_depth: Option<usize>,
-) -> anyhow::Result<Vec<LicenseFile>> {
+) -> anyhow::Result<(Vec<LicenseFile>, Vec<NoticeFile>)> {
     let types = {
         let mut tb = ignore::types::TypesBuilder::new();
         tb.add_defaults();
@@ -27,7 +27,7 @@ pub(crate) fn scan_files(
 
     let files: Vec<_> = walker.filter_map(|e| e.ok()).collect();
 
-    let license_files: Vec<_> = files
+    let (license_files, notice_files) = files
         .into_par_iter()
         .filter_map(|file| {
             log::trace!("scanning file {}", file.path().display());
@@ -59,13 +59,23 @@ pub(crate) fn scan_files(
                 }
             };
 
+            let is_notice = path.file_name().is_some_and(|name| {
+                name == "NOTICE" || name.starts_with("NOTICE.") || name.starts_with("NOTICE-")
+            });
+
+            if is_notice {
+                let text = read_file(&path)?;
+                return Some(Either::Right(NoticeFile { path, text }));
+            }
+
+            let scanner = scanner?;
             let contents = read_file(&path)?;
 
-            check_is_license_file(path, contents, scanner, threshold)
+            check_is_license_file(path, contents, scanner, threshold).map(Either::Left)
         })
-        .collect();
+        .partition_map(std::convert::identity);
 
-    Ok(license_files)
+    Ok((license_files, notice_files))
 }
 
 fn read_file(path: &Path) -> Option<String> {

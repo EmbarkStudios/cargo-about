@@ -53,6 +53,7 @@ pub(crate) fn apply_workarounds<'krate>(
                                         krate,
                                         lic_info: super::LicenseInfo::Expr(clarification.license),
                                         license_files: files,
+                                        notice_files: Vec::new(),
                                     },
                                 );
                             }

@@ -68,10 +68,18 @@ pub struct LicenseFile {
     pub kind: LicenseFileKind,
 }
 
+pub struct NoticeFile {
+    /// Full path of the NOTICE file.
+    pub path: PathBuf,
+    /// The complete, unmodified notice text.
+    pub text: String,
+}
+
 pub struct KrateLicense<'krate> {
     pub krate: &'krate Krate,
     pub lic_info: LicenseInfo,
     pub license_files: Vec<LicenseFile>,
+    pub notice_files: Vec<NoticeFile>,
 }
 
 impl Ord for KrateLicense<'_> {
@@ -159,6 +167,7 @@ impl Gatherer {
                         krate,
                         lic_info: LicenseInfo::Ignore,
                         license_files: Vec::new(),
+                        notice_files: Vec::new(),
                     });
                 }
             }
@@ -208,6 +217,7 @@ impl Gatherer {
                                 krate,
                                 lic_info: LicenseInfo::Expr(clarification.license.clone()),
                                 license_files: lic_files,
+                                notice_files: Vec::new(),
                             },
                         );
                     }
@@ -230,67 +240,69 @@ impl Gatherer {
         let threshold = self.threshold;
         let max_depth = self.max_depth;
 
-        let mut gathered: Vec<_> = krates
+        let gathered: Vec<_> = krates
             .krates()
             .par_bridge()
             .filter_map(|krate| {
-                // Ignore crates that we've already gathered
-                if binary_search(licensed_krates, krate).is_ok() {
-                    return None;
-                }
-
-                let info = krate.get_license_expression();
+                let existing = match binary_search(licensed_krates, krate) {
+                    Ok((_, kl)) if matches!(kl.lic_info, LicenseInfo::Ignore) => return None,
+                    Ok((index, _)) => Some(index),
+                    Err(_) => None,
+                };
 
                 let root_path = krate.manifest_path.parent().unwrap();
 
-                let mut license_files =
-                    match scan::scan_files(root_path, scanner, threshold, max_depth) {
+                // Clarified crates still need NOTICE files, but their licenses are already known.
+                let (license_files, notice_files) =
+                    match scan::scan_files(root_path, existing.is_none().then_some(scanner), threshold, max_depth) {
                         Ok(files) => files,
                         Err(err) => {
                             log::error!(
-                                "unable to scan for license files for crate '{} - {}': {err}",
+                                "unable to scan for license and NOTICE files for crate '{} - {}': {err}",
                                 krate.name,
                                 krate.version,
                             );
 
-                            Vec::new()
+                            (Vec::new(), Vec::new())
                         }
                     };
 
-                if license_files.is_empty() {
-                    return Some(KrateLicense {
-                        krate,
-                        lic_info: info,
-                        license_files,
-                    });
-                }
-
-                // Keep all license texts, but remove headers unless they apply to a license that _isn't_ declared
-                license_files.retain(|lf| match lf.kind {
-                    LicenseFileKind::Text(_) | LicenseFileKind::AddendumText(_, _) => true,
-                    LicenseFileKind::Header => {
-                        let LicenseInfo::Expr(expr) = &info else {
-                            return false;
-                        };
-                        let LicenseSource::Detected(id) = &lf.license else {
-                            return false; /* unreachable */
-                        };
-
-                        !expr
-                            .requirements()
-                            .any(|req| req.req.license.id().is_some_and(|rid| rid == *id))
-                    }
-                });
-
-                Some(KrateLicense {
-                    krate,
-                    lic_info: info,
-                    license_files,
-                })
+                Some((krate, existing, license_files, notice_files))
             })
             .collect();
 
-        licensed_krates.append(&mut gathered);
+        for (krate, existing, mut license_files, notice_files) in gathered {
+            if let Some(index) = existing {
+                licensed_krates[index].notice_files = notice_files;
+                continue;
+            }
+
+            let info = krate.get_license_expression();
+
+            // Keep all license texts, but remove headers unless they apply to a license that _isn't_ declared
+            license_files.retain(|lf| match lf.kind {
+                LicenseFileKind::Text(_) | LicenseFileKind::AddendumText(_, _) => true,
+                LicenseFileKind::Header => {
+                    let LicenseInfo::Expr(expr) = &info else {
+                        return false;
+                    };
+                    let LicenseSource::Detected(id) = &lf.license else {
+                        return false; /* unreachable */
+                    };
+
+                    !expr
+                        .requirements()
+                        .any(|req| req.req.license.id().is_some_and(|rid| rid == *id))
+                }
+            });
+
+            licensed_krates.push(KrateLicense {
+                krate,
+                lic_info: info,
+                license_files,
+                notice_files,
+            });
+        }
     }
 }
 
