@@ -169,7 +169,7 @@ pub fn generate<'kl>(
                             .iter()
                             .filter_map(|lf| {
                                 let LicenseSource::Clarified(expr) = &lf.license else { return None; };
-                                if expr.requirements().any(|req| {
+                                if !expr.requirements().any(|req| {
                                     let spdx::LicenseItem::Other(other) = &req.req.license else {return false;};
                                     other == license_ref
                                 }) {
