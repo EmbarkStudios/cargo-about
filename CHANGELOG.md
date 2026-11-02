@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Fixed
+- [PR#329](https://github.com/EmbarkStudios/cargo-about/pull/329) fixed a regression from [PR#312](https://github.com/EmbarkStudios/cargo-about/pull/312) that again dropped the license text for clarified `LicenseRef-` licenses.
+
 ## [0.9.3] - 2026-10-26
 ### Fixed
 - [PR#319](https://github.com/EmbarkStudios/cargo-about/pull/319) and [PR#320](https://github.com/EmbarkStudios/cargo-about/pull/320) fixed issues with manifest synthesis.

@@ -444,3 +444,37 @@ fn fails_when_dependency_has_non_accepted_license_field() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn reports_clarified_licenseref_license_text() -> Result<()> {
+    let license_text = "Custom License text: use this crate however you like.";
+
+    let package = Package::builder()
+        .license(Some("LicenseRef-Custom"))
+        .file("LICENSES/LicenseRef-Custom.md", license_text)
+        .file(
+            "about.toml",
+            r#"accepted = ["LicenseRef-Custom"]
+
+[package.clarify]
+license = "LicenseRef-Custom"
+
+[[package.clarify.files]]
+path = "LICENSES/LicenseRef-Custom.md"
+checksum = "5f67f4f67adad4e801773c24c7b0d9746cca5abe02523aff5b4408bb8e077224"
+"#,
+        )
+        .build()?;
+
+    CargoAbout::new(&package)?
+        .generate()
+        .template(package.template()?)
+        .assert()
+        .success()
+        .stderr(predicates::str::contains("has no license file").not())
+        .stdout(overview_count(1))
+        .stdout(licenses_count(1))
+        .stdout(predicates::str::contains(license_text));
+
+    Ok(())
+}
