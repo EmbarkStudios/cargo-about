@@ -278,12 +278,41 @@ fn reports_custom_spdx_license_text_when_manifest_has_license_file_field_with_sp
 }
 
 #[test]
-fn reports_no_licenses_when_manifest_has_license_file_field_with_spdx_license_text_and_non_std_filename()
+fn reports_custom_spdx_license_text_when_manifest_has_license_file_field_with_spdx_text_and_non_std_filename()
 -> Result<()> {
     let license_text = mit_license_text("2022", "Big Birdz");
 
     let package = Package::builder()
         .license_file("NON_STD_LICENSE_FILENAME", Some(&license_text))
+        .accepted(&["MIT"])
+        .build()?;
+
+    CargoAbout::new(&package)?
+        .generate()
+        .template(package.template()?)
+        .assert()
+        .success()
+        // TODO: There should not be a warning about a missing licenses field
+        // since the manifest does have a license file field and according to the
+        // cargo docs, a manifest should have a license field or a license file
+        // field but not both.
+        .stderr(contains_missing_license_field_warning(&package))
+        // The file is found because its name contains `LICENSE`, not because
+        // the manifest's `license-file` field is read
+        .stdout(overview_count(1))
+        .stdout(licenses_count(1))
+        .stdout(predicates::str::contains(&license_text));
+
+    Ok(())
+}
+
+#[test]
+fn reports_no_licenses_when_manifest_has_license_file_field_with_spdx_license_text_and_unrecognized_filename()
+-> Result<()> {
+    let license_text = mit_license_text("2022", "Big Birdz");
+
+    let package = Package::builder()
+        .license_file("NON_STD_FILENAME", Some(&license_text))
         .accepted(&["MIT"])
         .build()?;
 
