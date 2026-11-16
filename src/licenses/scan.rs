@@ -5,6 +5,16 @@ use krates::{Utf8Path as Path, Utf8PathBuf as PathBuf};
 use rayon::prelude::*;
 use spdx::detection::scan::Scanner;
 
+/// Globs, matched against the file name, for files that might contain license
+/// text but aren't guaranteed to match any of the `ignore` crate's default types
+const LICENSE_GLOBS: &[&str] = &[
+    "[Ll][Ii][Cc][Ee][Nn][CcSs][Ee]*",
+    "*[-._][Ll][Ii][Cc][Ee][Nn][CcSs][Ee]*",
+    "[Uu][Nn][Ll][Ii][Cc][Ee][Nn][CcSs][Ee]*",
+    "[Cc][Oo][Pp][Yy][Ii][Nn][Gg]*",
+    "[Cc][Oo][Pp][Yy][Rr][Ii][Gg][Hh][Tt]*",
+];
+
 pub(crate) fn scan_files(
     root_dir: &Path,
     scanner: &Scanner<'_>,
@@ -14,6 +24,12 @@ pub(crate) fn scan_files(
     let types = {
         let mut tb = ignore::types::TypesBuilder::new();
         tb.add_defaults();
+        // Selecting types drops every file that matches none of them, and the
+        // default `license` type misses common spellings such as `license-mit`
+        // or `LICENSE_MIT`, so add our own case-insensitive globs to it
+        for glob in LICENSE_GLOBS {
+            tb.add("license", glob)?;
+        }
         tb.select("all");
         tb.build()?
     };
@@ -169,5 +185,86 @@ fn scan_text(contents: &str, strat: &Scanner<'_>, threshold: f32) -> ScanResult 
         }
     } else {
         ScanResult::LowLicenseChance(lic_id)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    const MIT_TEXT: &str = "MIT License
+
+Copyright (c) 2024 Example Author
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the \"Software\"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+";
+
+    /// File names that crates on crates.io use for their license files but that
+    /// the `ignore` crate's default types don't match, eg. `windows-core` ships
+    /// `license-mit` and `tauri-plugin-opener` ships `LICENSE_MIT`
+    #[test]
+    fn scans_license_files_with_unrecognized_names() {
+        // Names must differ ignoring case, for case-insensitive file systems
+        let names = [
+            "license-mit",
+            "LICENSE_MIT",
+            "Licence_Other",
+            "MIT_LICENSE",
+            "mit-license",
+            "mit.licence",
+            "unlicense_mit",
+            "copying-mit",
+            "copyright_mit",
+            // Already matched by the default types
+            "LICENSE",
+        ];
+
+        let temp = assert_fs::TempDir::new().unwrap();
+        for name in names {
+            std::fs::write(temp.path().join(name), MIT_TEXT).unwrap();
+        }
+
+        let store = crate::licenses::store_from_cache().unwrap();
+        let scanner = Scanner::new(&store)
+            .confidence_threshold(0.5)
+            .optimize(false)
+            .max_passes(1);
+
+        let root = Path::from_path(temp.path()).unwrap();
+        let files = scan_files(root, &scanner, 0.8, None).unwrap();
+
+        let mut found: Vec<_> = files
+            .iter()
+            .map(|lf| {
+                assert!(
+                    matches!(&lf.license, LicenseSource::Detected(id) if id.name == "MIT"),
+                    "'{}' wasn't detected as MIT",
+                    lf.path
+                );
+                lf.path.file_name().unwrap()
+            })
+            .collect();
+        found.sort_unstable();
+
+        let mut expected = names.to_vec();
+        expected.sort_unstable();
+
+        assert_eq!(found, expected);
     }
 }

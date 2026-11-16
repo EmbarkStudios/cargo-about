@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Fixed
+- [PR#331](https://github.com/EmbarkStudios/cargo-about/pull/331) resolved [#330](https://github.com/EmbarkStudios/cargo-about/issues/330) by scanning license files with names such as `license-mit` and `LICENSE_MIT`, which the default file types skipped, so those crates no longer fall back to the canonical license text.
+
 ## [0.9.3] - 2026-10-26
 ### Fixed
 - [PR#319](https://github.com/EmbarkStudios/cargo-about/pull/319) and [PR#320](https://github.com/EmbarkStudios/cargo-about/pull/320) fixed issues with manifest synthesis.
