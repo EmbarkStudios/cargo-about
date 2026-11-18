@@ -216,6 +216,19 @@ pub fn generate<'kl>(
                     .or_insert_with(BTreeMap::new);
 
                 let lic = entry.entry(license.text.clone()).or_insert_with(|| license);
+
+                // A crate can ship several byte-identical license files (eg. the same
+                // `LICENSE-MIT` at two paths), which all land in the same text group,
+                // so only list the crate once. The crates are visited one at a time,
+                // so a repeat can only be the most recently added entry.
+                if lic
+                    .used_by
+                    .last()
+                    .is_some_and(|ub| ub.krate.id == krate_license.krate.id)
+                {
+                    continue;
+                }
+
                 lic.used_by.push(UsedBy {
                     krate: krate_license.krate,
                     path: None,

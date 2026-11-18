@@ -444,3 +444,94 @@ fn fails_when_dependency_has_non_accepted_license_field() -> Result<()> {
 
     Ok(())
 }
+
+/// Prints one `[ID: crate; crate;]` line per license text, plus the overview
+/// counts, so tests can assert on exactly which crates a license lists.
+const USED_BY_TEMPLATE: &str = "\
+    {{#each licenses}}\
+    [{{id}}:{{#each used_by}} {{crate.name}};{{/each}}]\n\
+    {{/each}}\
+    {{#each overview}}count({{id}})={{count}}\n{{/each}}\
+";
+
+#[test]
+fn lists_crate_once_when_it_has_identical_license_files() -> Result<()> {
+    let license_text = mit_license_text("2022", "Big Birdz");
+
+    // Like pyo3, which ships byte-identical `LICENSE-MIT` files at two paths.
+    let package = Package::builder()
+        .license(Some("MIT"))
+        .accepted(&["MIT"])
+        .file("LICENSE-MIT", &license_text)
+        .file("runtime/LICENSE-MIT", &license_text)
+        .file("about.hbs", USED_BY_TEMPLATE)
+        .build()?;
+
+    CargoAbout::new(&package)?
+        .generate()
+        .template(package.template()?)
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("[MIT: package;]\n").count(1))
+        .stdout(predicates::str::contains("count(MIT)=1\n"));
+
+    Ok(())
+}
+
+#[test]
+fn lists_each_crate_once_when_dependency_also_has_identical_license_files() -> Result<()> {
+    let license_text = mit_license_text("2022", "Big Birdz");
+
+    let package_b = Package::builder()
+        .name("package-b")
+        .license(Some("MIT"))
+        .file("LICENSE-MIT", &license_text)
+        .file("runtime/LICENSE-MIT", &license_text)
+        .build()?;
+
+    let package_a = Package::builder()
+        .name("package-a")
+        .license(Some("MIT"))
+        .accepted(&["MIT"])
+        .file("LICENSE-MIT", &license_text)
+        .file("runtime/LICENSE-MIT", &license_text)
+        .file("about.hbs", USED_BY_TEMPLATE)
+        .dependency(&package_b)
+        .build()?;
+
+    CargoAbout::new(&package_a)?
+        .generate()
+        .template(package_a.template()?)
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("package-a;").count(1))
+        .stdout(predicates::str::contains("package-b;").count(1))
+        .stdout(predicates::str::contains("count(MIT)=2\n"));
+
+    Ok(())
+}
+
+#[test]
+fn lists_crate_under_each_text_when_license_files_differ() -> Result<()> {
+    let text_a = mit_license_text("2022", "Package A Owner");
+    let text_b = mit_license_text("2023", "Other Owner");
+
+    let package = Package::builder()
+        .license(Some("MIT"))
+        .accepted(&["MIT"])
+        .file("LICENSE-MIT", &text_a)
+        .file("runtime/LICENSE-MIT", &text_b)
+        .file("vendored/LICENSE-MIT", &text_b)
+        .file("about.hbs", USED_BY_TEMPLATE)
+        .build()?;
+
+    CargoAbout::new(&package)?
+        .generate()
+        .template(package.template()?)
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("[MIT: package;]\n").count(2))
+        .stdout(predicates::str::contains("count(MIT)=2\n"));
+
+    Ok(())
+}
